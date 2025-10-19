@@ -84,12 +84,12 @@ namespace pathfinder
      */
     enum PathSmoothStyle
     {
-        NONE = 0,               ///< No smoothing - use raw waypoints (fastest, angular paths)
-        CATMULL_ROM = 1,        ///< Passes through all waypoints with smooth curves (moderate performance)
-        BEZIER_CUBIC = 2,       ///< Very smooth approximating curves, two control points (slowest, most deviation)
-        BEZIER_QUADRATIC = 3,   ///< Corner-only smoothing, one control point (recommended, good balance)
-        BEZIER_ADAPTIVE = 4,    ///< Adaptive corner smoothing with configurable tightness (slow, highly customizable)
-        CIRCULAR_ARC = 5        ///< Perfect circular arcs at corners (best for tile-based/grid movement)
+        NONE = 0,             ///< No smoothing - use raw waypoints (fastest, angular paths)
+        CATMULL_ROM = 1,      ///< Passes through all waypoints with smooth curves (moderate performance)
+        BEZIER_CUBIC = 2,     ///< Very smooth approximating curves, two control points (slowest, most deviation)
+        BEZIER_QUADRATIC = 3, ///< Corner-only smoothing, one control point (recommended, good balance)
+        BEZIER_ADAPTIVE = 4,  ///< Adaptive corner smoothing with configurable tightness (slow, highly customizable)
+        CIRCULAR_ARC = 5      ///< Perfect circular arcs at corners (best for tile-based/grid movement)
     };
 
     /**
@@ -110,28 +110,28 @@ namespace pathfinder
      */
     enum PathStatus
     {
-        SUCCESS = 0,                        ///< Operation completed successfully
+        SUCCESS = 0, ///< Operation completed successfully
 
         // Pathfinding Errors (path not found or unreachable)
-        ERROR_NO_PATH = -1,                 ///< No valid path exists between start and goal nodes
+        ERROR_NO_PATH = -1, ///< No valid path exists between start and goal nodes
 
         // Node Validation Errors
-        ERROR_START_NODE_INVALID = -2,      ///< Start node ID is invalid, inactive, or out of bounds
-        ERROR_GOAL_NODE_INVALID = -3,       ///< Goal node ID is invalid, inactive, or out of bounds
+        ERROR_START_NODE_INVALID = -2, ///< Start node ID is invalid, inactive, or out of bounds
+        ERROR_GOAL_NODE_INVALID = -3,  ///< Goal node ID is invalid, inactive, or out of bounds
 
         // Capacity Errors (system limits reached)
-        ERROR_NODE_FULL = -4,               ///< Maximum node capacity reached, cannot add more nodes
-        ERROR_EDGE_FULL = -5,               ///< Node's edge capacity full, cannot add more edges
-        ERROR_HEAP_FULL = -6,               ///< Heap pool exhausted during pathfinding (increase pool_block_size)
-        ERROR_PATH_TOO_LONG = -7,           ///< Path exceeds max_path length limit (currently unused)
+        ERROR_NODE_FULL = -4,     ///< Maximum node capacity reached, cannot add more nodes
+        ERROR_EDGE_FULL = -5,     ///< Node's edge capacity full, cannot add more edges
+        ERROR_HEAP_FULL = -6,     ///< Heap pool exhausted during pathfinding (increase pool_block_size)
+        ERROR_PATH_TOO_LONG = -7, ///< Path exceeds max_path length limit (currently unused)
 
         // Graph Consistency Errors
-        ERROR_GRAPH_CHANGED = -8,           ///< Graph was modified during pathfinding (triggers automatic retry)
+        ERROR_GRAPH_CHANGED = -8,            ///< Graph was modified during pathfinding (triggers automatic retry)
         ERROR_GRAPH_CHANGED_TOO_OFTEN = -11, ///< Graph changed too many times during pathfinding (>3 retries)
 
         // Projected Pathfinding Errors
-        ERROR_NO_PROJECTION = -9,           ///< Cannot project point onto graph (no edges exist)
-        ERROR_VIRTUAL_NODE_FAILED = -10     ///< Failed to create/connect virtual node for projection
+        ERROR_NO_PROJECTION = -9,       ///< Cannot project point onto graph (no edges exist)
+        ERROR_VIRTUAL_NODE_FAILED = -10 ///< Failed to create/connect virtual node for projection
     };
 
     /**

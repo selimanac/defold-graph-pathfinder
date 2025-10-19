@@ -379,7 +379,6 @@ static const luaL_reg Module_methods[] = {
     { "remove_node", pathfinder_remove_node },
     { "remove_edge", pathfinder_remove_edge },
     { "move_node", pathfinder_move_node },
-
     { "add_nodes", pathfinder_add_nodes },
     { "add_edges", pathfinder_add_edges },
     { "find_path", pathfinder_find_path },
@@ -392,28 +391,54 @@ static void LuaInit(lua_State* L)
 {
     int top = lua_gettop(L);
 
-    // Register lua names
+    // Register module functions
     luaL_register(L, MODULE_NAME, Module_methods);
 
-#define SETCONSTANT(name) \
+    // ----------------------------
+    // PathStatus enum
+    // ----------------------------
+    lua_newtable(L); // PathStatus table
+    int pathStatusTable = lua_gettop(L);
+#define SET_CONSTANT(table, name) \
     lua_pushnumber(L, (lua_Number)pathfinder::name); \
-    lua_setfield(L, -2, #name);
+    lua_setfield(L, table, #name)
 
-    SETCONSTANT(SUCCESS);
-    SETCONSTANT(ERROR_NO_PATH);
-    SETCONSTANT(ERROR_START_NODE_INVALID);
-    SETCONSTANT(ERROR_GOAL_NODE_INVALID);
-    SETCONSTANT(ERROR_NODE_FULL);
-    SETCONSTANT(ERROR_EDGE_FULL);
-    SETCONSTANT(ERROR_HEAP_FULL);
-    SETCONSTANT(ERROR_PATH_TOO_LONG);
-    SETCONSTANT(ERROR_GRAPH_CHANGED);
-    SETCONSTANT(ERROR_GRAPH_CHANGED_TOO_OFTEN);
-    SETCONSTANT(ERROR_NO_PROJECTION);
-    SETCONSTANT(ERROR_VIRTUAL_NODE_FAILED);
-#undef SETCONSTANT
+    SET_CONSTANT(pathStatusTable, SUCCESS);
+    SET_CONSTANT(pathStatusTable, ERROR_NO_PATH);
+    SET_CONSTANT(pathStatusTable, ERROR_START_NODE_INVALID);
+    SET_CONSTANT(pathStatusTable, ERROR_GOAL_NODE_INVALID);
+    SET_CONSTANT(pathStatusTable, ERROR_NODE_FULL);
+    SET_CONSTANT(pathStatusTable, ERROR_EDGE_FULL);
+    SET_CONSTANT(pathStatusTable, ERROR_HEAP_FULL);
+    SET_CONSTANT(pathStatusTable, ERROR_PATH_TOO_LONG);
+    SET_CONSTANT(pathStatusTable, ERROR_GRAPH_CHANGED);
+    SET_CONSTANT(pathStatusTable, ERROR_GRAPH_CHANGED_TOO_OFTEN);
+    SET_CONSTANT(pathStatusTable, ERROR_NO_PROJECTION);
+    SET_CONSTANT(pathStatusTable, ERROR_VIRTUAL_NODE_FAILED);
 
-    lua_pop(L, 1);
+#undef SET_CONSTANT
+    lua_setfield(L, -2, "PathStatus"); // attach as module.PathStatus
+
+    // ----------------------------
+    // PathSmoothStyle enum
+    // ----------------------------
+    lua_newtable(L); // PathSmoothStyle table
+    int pathStyleTable = lua_gettop(L);
+#define SET_CONSTANT(table, name) \
+    lua_pushnumber(L, (lua_Number)pathfinder::name); \
+    lua_setfield(L, table, #name)
+
+    SET_CONSTANT(pathStyleTable, NONE);
+    SET_CONSTANT(pathStyleTable, CATMULL_ROM);
+    SET_CONSTANT(pathStyleTable, BEZIER_CUBIC);
+    SET_CONSTANT(pathStyleTable, BEZIER_QUADRATIC);
+    SET_CONSTANT(pathStyleTable, BEZIER_ADAPTIVE);
+    SET_CONSTANT(pathStyleTable, CIRCULAR_ARC);
+
+#undef SET_CONSTANT
+    lua_setfield(L, -2, "PathSmoothStyle"); // attach as module.PathSmoothStyle
+
+    lua_pop(L, 1); // pop module table
     assert(top == lua_gettop(L));
 }
 
