@@ -3,7 +3,7 @@
 ## Repository Overview
 
 **Defold Native Extension** for high-performance A* pathfinding in games. C++11 library with Lua bindings.
-- **Size**: ~4,400 lines C++, 53 files, ~600KB
+- **Size**: ~4,400 lines C++, 27 files, ~600KB
 - **Entry Point**: `graph_pathfinder/src/pathfinder.cpp` (Lua API - 458 lines)
 - **Core Library**: Header-only in `graph_pathfinder/include/` (11 modules)
 - **Platforms**: Desktop (Linux, macOS, Windows), Mobile (iOS, Android), Web (JS, WASM)
@@ -70,9 +70,9 @@ Use `DM_LUA_STACK_CHECK(L, N)` for stack balance.
 - `src/pathfinder.cpp` - Lua API (458 lines)
 - `include/pathfinder_*.h` - 11 header-only modules (4,400 lines total)
   - `pathfinder_path.h` (262 lines) - Main A* API
-  - `pathfinder_math.h` (700 lines) - Vector math
-  - `pathfinder_smooth.h` (531 lines) - Path smoothing
-  - `pathfinder_types.h` (147 lines) - Data structures (Vec2, Edge, Node)
+  - `pathfinder_math.h` (701 lines) - Vector math
+  - `pathfinder_smooth.h` (532 lines) - Path smoothing
+  - `pathfinder_types.h` (148 lines) - Data structures (Vec2, Edge, Node)
   - Others: heap, cache, distance_cache, constants, utils
 - `include/dmarray.h`, `dmhashtable.h` - Defold SDK containers (DO NOT MODIFY)
 - `lib/arm64-osx/` - Pre-built static libraries (managed by Defold)
