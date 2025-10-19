@@ -17,7 +17,21 @@
 - ❌ Search for build scripts (they don't exist)
 - ❌ Install compilers or build tools
 
-### Validation: clang-format ONLY
+### CI/CD with GitHub Actions (Optional)
+This repository can use Defold's reusable workflows for automated builds:
+
+**Bob Build Workflow** (from [defold/github-actions-common](https://github.com/defold/github-actions-common)):
+```yaml
+name: Build with bob
+on: [push, pull_request]
+jobs:
+  build:
+    uses: defold/github-actions-common/.github/workflows/bob.yml@master
+```
+
+Create this as `.github/workflows/build.yml` to enable automated builds on push/PR.
+
+### Validation: clang-format
 **ALWAYS format before committing:**
 ```bash
 clang-format --style=file -i graph_pathfinder/src/pathfinder.cpp
@@ -116,8 +130,8 @@ Provided by build server (not available locally):
 4. ✅ Lua functions use `DM_LUA_STACK_CHECK(L, N)`
 5. ✅ Update README.md if API changes
 
-### NO CI Pipeline
-No GitHub Actions. Manual validation only.
+### CI Pipeline (Optional)
+Currently no GitHub Actions configured. Can add Bob build workflow (see CI/CD section above).
 
 ### Example Workflow:
 ```bash
