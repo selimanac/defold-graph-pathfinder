@@ -1,0 +1,104 @@
+local node_positions = {
+	{ x = 100, y = 100 },
+	{ x = 200, y = 200 },
+	{ x = 500, y = 200 }
+}
+
+local nodes = {}
+
+
+function init(self)
+	--[[
+ Initialize the pathfinding system
+pathfinder::path::init(
+    120,    // max_nodes
+    6,      // max_edges_per_node
+    20,     // heap_pool_block_size
+    8       // max_cache_path_length
+);
+
+]]
+	pathfinder.init(100, 4, 32, 32)
+
+	for _, node_position in ipairs(node_positions) do
+		local node_id = pathfinder.add_node(node_position.x, node_position.y)
+		table.insert(nodes, node_id)
+	end
+
+	local edges = {
+		{ from_node_id = nodes[1], to_node_id = nodes[2], bidirectional = true },
+		{ from_node_id = nodes[2], to_node_id = nodes[3], bidirectional = true }
+	}
+
+	for i, edge in ipairs(edges) do
+		pathfinder.add_edge(edge.from_node_id, edge.to_node_id, edge.bidirectional)
+	end
+
+	local start_id = nodes[1]
+	local goal_id = nodes[3]
+	local max_path = 64
+
+	local path_size, status, status_text, path = pathfinder.find_path(start_id, goal_id, max_path)
+
+	pprint("-> " .. status_text)
+	if status == pathfinder.SUCCESS then
+		pprint(path_size, status, path)
+	end
+
+	print("===================")
+
+	local mouse_position = vmath.vector3(20, 20, 0)
+	path_size, status, status_text, entry_point, path = pathfinder.find_projected_path(mouse_position.x, mouse_position.y, goal_id, max_path)
+
+	pprint("-> " .. status_text)
+	if status == pathfinder.SUCCESS then
+		pprint(path_size, status, entry_point, path)
+	end
+
+	pathfinder.shutdown()
+
+	pathfinder.init(100, 4, 32, 32)
+	pprint(node_positions)
+	local node_ids = pathfinder.add_nodes(node_positions)
+	pprint(node_ids)
+
+	edges = {
+		{ from_node_id = node_ids[1], to_node_id = node_ids[2], bidirectional = true },
+		{ from_node_id = node_ids[2], to_node_id = node_ids[3], bidirectional = true }
+	}
+
+	pathfinder.add_edges(edges)
+	pprint(edges)
+
+	path_size, status, status_text, path = pathfinder.find_path(start_id, goal_id, max_path)
+
+	pprint("-> " .. status_text)
+	if status == pathfinder.SUCCESS then
+		pprint(path_size, status, path)
+	end
+end
+
+function final(self)
+	-- Add finalization code here
+	-- Remove this function if not needed
+end
+
+function update(self, dt)
+	-- Add update code here
+	-- Remove this function if not needed
+end
+
+function on_message(self, message_id, message, sender)
+	-- Add message-handling code here
+	-- Remove this function if not needed
+end
+
+function on_input(self, action_id, action)
+	-- Add input-handling code here
+	-- Remove this function if not needed
+end
+
+function on_reload(self)
+	-- Add reload-handling code here
+	-- Remove this function if not needed
+end
