@@ -526,6 +526,73 @@ static int pathfinder_add_path_smoothing(lua_State* L)
     return 1;
 }
 
+static int pathfinder_smooth_path(lua_State* L)
+{
+    DM_LUA_STACK_CHECK(L, 2);
+
+    // IN <<-
+    uint32_t smooth_id = luaL_checkinteger(L, 1);
+    luaL_checktype(L, 2, LUA_TTABLE);
+
+    int                       path_count = (int)lua_objlen(L, 2);
+    dmArray<pathfinder::Vec2> waypoints;
+    waypoints.SetCapacity(path_count);
+
+    for (int i = 1; i <= path_count; ++i)
+    {
+        lua_rawgeti(L, 2, i);
+
+        if (lua_istable(L, -1))
+        {
+            lua_getfield(L, -1, "x");
+            float x = luaL_checkint(L, -1);
+            lua_pop(L, 1);
+
+            lua_getfield(L, -1, "y");
+            float y = luaL_checkint(L, -1);
+            lua_pop(L, 1);
+
+            pathfinder::Vec2 pos = pathfinder::Vec2(x, y);
+            waypoints.Push(pos);
+        }
+
+        lua_pop(L, 1); // pop inner table
+    }
+
+    pathfinder::PathStatus    status;
+    dmArray<pathfinder::Vec2> smoothed_path;
+    uint32_t                  samples_per_segment = pathfinder::extension::get_smooth_sample_segment(smooth_id);
+
+    smoothed_path.SetCapacity(path_count * samples_per_segment);
+
+    pathfinder::extension::smooth_path_waypoint(smooth_id, waypoints, smoothed_path);
+
+    // OUT ->>
+    lua_pushinteger(L, smoothed_path.Size());
+
+    // Result table
+    lua_createtable(L, smoothed_path.Size(), 0);
+    int newTable = lua_gettop(L);
+    for (int ii = 0; ii < smoothed_path.Size(); ++ii)
+    {
+        lua_createtable(L, 0, 2);
+
+        pathfinder::Vec2 pos = smoothed_path[ii];
+
+        lua_pushstring(L, "x");
+        lua_pushinteger(L, pos.x);
+        lua_settable(L, -3);
+
+        lua_pushstring(L, "y");
+        lua_pushinteger(L, pos.y);
+        lua_settable(L, -3);
+
+        lua_rawseti(L, newTable, ii + 1);
+    }
+
+    return 2;
+}
+
 // Functions exposed to Lua
 static const luaL_reg Module_methods[] = {
     { "init", pathfinder_init },
@@ -539,6 +606,7 @@ static const luaL_reg Module_methods[] = {
     { "find_path", pathfinder_find_path },
     { "find_projected_path", pathfinder_find_projected_path },
     { "get_node_position", pathfinder_get_node_position },
+    { "smooth_path", pathfinder_smooth_path },
     { "shutdown", pathfinder_shutdown },
 
     { "add_path_smoothing", pathfinder_add_path_smoothing },

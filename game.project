@@ -15,7 +15,7 @@ title = defold-graph-pathfinder
 include_dirs = myextension
 
 [render]
-clear_color_red = 1.0
-clear_color_green = 1.0
-clear_color_blue = 1.0
+clear_color_red = 0.5
+clear_color_green = 0.5
+clear_color_blue = 0.7
 

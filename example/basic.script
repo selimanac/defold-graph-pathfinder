@@ -60,6 +60,10 @@ local path_status = 0
 local path_status_text = ""
 local path = {}
 
+
+local smoothed_path_size = 0
+local smoothed_path = {}
+
 -- Path Projected
 local projected_path_size = 0
 local projected_path_status = 0
@@ -115,6 +119,15 @@ local function draw_edges(is_init)
 end
 
 
+local function draw_static_smoothed_path()
+	for i = 1, smoothed_path_size - 1, 1 do
+		local from_node = smoothed_path[i]
+		local to_node = smoothed_path[i + 1]
+
+		msg.post("@render:", "draw_line", { start_point = vmath.vector3(from_node.x, from_node.y, 0), end_point = vmath.vector3(to_node.x, to_node.y, 0), color = vmath.vector4(1, 0, 0, 1) })
+	end
+end
+
 local function draw_static_path()
 	for i = 1, path_size - 1, 1 do
 		local from_node = path[i]
@@ -141,6 +154,8 @@ end
 
 function init(self)
 	msg.post(".", "acquire_input_focus")
+	profiler.enable_ui(true)
+	profiler.set_ui_view_mode(profiler.VIEW_MODE_MINIMIZED)
 
 	pathfinder.init(100, 4, 32, 32)
 
@@ -180,12 +195,14 @@ function init(self)
 	-- ========================
 	--FIND PATH
 	-- ========================
-	path_size, path_status, path_status_text, path = pathfinder.find_path(start_id, goal_id, max_path, 2)
+	path_size, path_status, path_status_text, path = pathfinder.find_path(start_id, goal_id, max_path)
 
 	pprint("-> " .. path_status_text)
 	if path_status == pathfinder.PathStatus.SUCCESS then
 		--	pprint(path_size, path_status, path)
 	end
+
+	smoothed_path_size, smoothed_path = pathfinder.smooth_path(2, path)
 
 	draw_nodes()
 	draw_edges(true)
@@ -199,8 +216,8 @@ local max_y = 150
 
 
 function update(self, dt)
-	--draw_static_path()
-
+	draw_static_path()
+	draw_static_smoothed_path()
 
 	-- Move up or down
 	y = y + speed * dir * dt
