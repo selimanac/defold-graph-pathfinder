@@ -2,15 +2,18 @@
 // Extension lib defines
 
 #include "dmsdk/dlib/log.h"
+
 #define LIB_NAME "GraphPathfinder"
 #define MODULE_NAME "pathfinder"
-
 #include <dmsdk/sdk.h>
 
 // pathfinder
+#include "pathfinder_extension.h"
+#include "navigation_types.h"
 #include "pathfinder_types.h"
 #include <pathfinder_path.h>
 #include <pathfinder_math.h>
+#include "pathfinder_smooth.h"
 
 static inline const char* path_status_to_string(enum pathfinder::PathStatus status)
 {
@@ -242,38 +245,77 @@ static int pathfinder_find_path(lua_State* L)
     uint32_t start_node_id = luaL_checkint(L, 1);
     uint32_t goal_node_id = luaL_checkint(L, 2);
     uint32_t max_path = luaL_checkint(L, 3);
+    uint32_t smooth_id = (uint32_t)luaL_optinteger(L, 4, 0);
 
     // OUT ->
     dmArray<uint32_t>      path;
     pathfinder::PathStatus status;
     uint32_t               path_length = pathfinder::path::find_path(start_node_id, goal_node_id, &path, max_path, &status);
 
-    lua_pushinteger(L, path_length);
-    lua_pushinteger(L, status);
-    lua_pushstring(L, path_status_to_string(status));
-
-    lua_createtable(L, path_length, 0);
-    int newTable = lua_gettop(L);
-
-    for (int ii = 0; ii < path_length; ++ii)
+    // Smoothing
+    if (status == pathfinder::SUCCESS && path_length > 0 && smooth_id > 0)
     {
-        pathfinder::Vec2 node_position = pathfinder::path::get_node_position(path[ii]);
+        dmArray<pathfinder::Vec2> smoothed_path;
+        uint32_t                  samples_per_segment = pathfinder::extension::get_smooth_sample_segment(smooth_id);
+        uint32_t                  capacity = pathfinder::smooth::calculate_smoothed_path_capacity(path, samples_per_segment);
+        smoothed_path.SetCapacity(capacity);
 
-        lua_createtable(L, 0, 3);
+        pathfinder::extension::smooth_path(smooth_id, path, smoothed_path);
 
-        lua_pushstring(L, "x");
-        lua_pushinteger(L, node_position.x);
-        lua_settable(L, -3);
+        lua_pushinteger(L, smoothed_path.Size());
+        lua_pushinteger(L, status);
+        lua_pushstring(L, path_status_to_string(status));
 
-        lua_pushstring(L, "y");
-        lua_pushinteger(L, node_position.y);
-        lua_settable(L, -3);
+        // Result table
+        lua_createtable(L, smoothed_path.Size(), 0);
+        int newTable = lua_gettop(L);
+        for (int ii = 0; ii < smoothed_path.Size(); ++ii)
+        {
+            lua_createtable(L, 0, 2);
 
-        lua_pushstring(L, "id");
-        lua_pushinteger(L, path[ii]);
-        lua_settable(L, -3);
+            pathfinder::Vec2 pos = smoothed_path[ii];
 
-        lua_rawseti(L, newTable, ii + 1);
+            lua_pushstring(L, "x");
+            lua_pushinteger(L, pos.x);
+            lua_settable(L, -3);
+
+            lua_pushstring(L, "y");
+            lua_pushinteger(L, pos.y);
+            lua_settable(L, -3);
+
+            lua_rawseti(L, newTable, ii + 1);
+        }
+    }
+
+    if (smooth_id == 0)
+    {
+        lua_pushinteger(L, path_length);
+        lua_pushinteger(L, status);
+        lua_pushstring(L, path_status_to_string(status));
+
+        // Result table
+        lua_createtable(L, path_length, 0);
+        int newTable = lua_gettop(L);
+        for (int ii = 0; ii < path_length; ++ii)
+        {
+            pathfinder::Vec2 node_position = pathfinder::path::get_node_position(path[ii]);
+
+            lua_createtable(L, 0, 3);
+
+            lua_pushstring(L, "x");
+            lua_pushinteger(L, node_position.x);
+            lua_settable(L, -3);
+
+            lua_pushstring(L, "y");
+            lua_pushinteger(L, node_position.y);
+            lua_settable(L, -3);
+
+            lua_pushstring(L, "id");
+            lua_pushinteger(L, path[ii]);
+            lua_settable(L, -3);
+
+            lua_rawseti(L, newTable, ii + 1);
+        }
     }
 
     return 4;
@@ -299,9 +341,9 @@ static int pathfinder_find_projected_path(lua_State* L)
     lua_pushinteger(L, path_length);
     lua_pushinteger(L, status);
     lua_pushstring(L, path_status_to_string(status));
-
     dmScript::PushVector3(L, dmVMath::Vector3(entry_point.x, entry_point.y, 0));
 
+    // Result table
     lua_createtable(L, path_length, 0);
     int newTable = lua_gettop(L);
     for (int ii = 0; ii < path_length; ii++)
@@ -342,6 +384,14 @@ static int pathfinder_remove_node(lua_State* L)
     return 0;
 }
 
+static int pathfinder_get_node_position(lua_State* L)
+{
+    DM_LUA_STACK_CHECK(L, 0);
+    uint32_t node_id = luaL_checkint(L, 1);
+    pathfinder::path::get_node_position(node_id);
+    return 0;
+}
+
 static int pathfinder_remove_edge(lua_State* L)
 {
     DM_LUA_STACK_CHECK(L, 0);
@@ -370,6 +420,73 @@ static int pathfinder_move_node(lua_State* L)
     return 0;
 }
 
+/*
+local smooting_config = {
+        style                               = pathfinder.PathSmoothStyle.BEZIER_QUADRATIC,
+        bezier_sample_segment               = 8,
+        bezier_control_point_ooffset        = 0.4, -- bezier_cubic
+        bezier_curve_radius                 = 0.4, -- bezier_quadratic
+        bezier_adaptive_tightness           = 0.5, -- bezier_adaptive
+        bezier_adaptive_roundness           = 0.5, -- bezier_adaptive
+        bezier_adaptive_max_corner_distance = 50.0, -- bezier_adaptive
+        bezier_arc_radius                   = 60.0 -- circular_arc
+    }
+*/
+static int pathfinder_add_path_smoothing(lua_State* L)
+{
+    DM_LUA_STACK_CHECK(L, 1);
+
+    // IN <-
+    luaL_checktype(L, 1, LUA_TTABLE);
+
+    navigation::AgentPathSmoothConfig path_smooth_config;
+
+    // Get "style"
+    lua_getfield(L, 1, "style");
+    uint32_t smooth_style = luaL_checkinteger(L, -1);
+    lua_pop(L, 1);
+
+    // Get "bezier_sample_segment"
+    lua_getfield(L, 1, "bezier_sample_segment");
+    path_smooth_config.m_SampleSegment = luaL_optinteger(L, -1, 0);
+    lua_pop(L, 1);
+
+    // Get "bezier_control_point_ooffset"
+    lua_getfield(L, 1, "bezier_control_point_ooffset");
+    path_smooth_config.m_ControlPointOffset = (float)luaL_optnumber(L, -1, 0.0);
+    lua_pop(L, 1);
+
+    // Get "bezier_curve_radius"
+    lua_getfield(L, 1, "bezier_curve_radius");
+    path_smooth_config.m_CurveRadius = (float)luaL_optnumber(L, -1, 0.0);
+    lua_pop(L, 1);
+
+    // Get "bezier_adaptive_tightness"
+    lua_getfield(L, 1, "bezier_adaptive_tightness");
+    path_smooth_config.m_BezierAdaptiveTightness = (float)luaL_optnumber(L, -1, 0.0);
+    lua_pop(L, 1);
+
+    // Get "bezier_adaptive_roundness"
+    lua_getfield(L, 1, "bezier_adaptive_roundness");
+    path_smooth_config.m_BezierAdaptiveRoundness = (float)luaL_optnumber(L, -1, 0.0);
+    lua_pop(L, 1);
+
+    // Get "bezier_adaptive_max_corner_distance"
+    lua_getfield(L, 1, "bezier_adaptive_max_corner_distance");
+    path_smooth_config.m_BezierAdaptiveMaxCornerDist = (float)luaL_optnumber(L, -1, 0.0);
+    lua_pop(L, 1);
+
+    // Get "bezier_arc_radius"
+    lua_getfield(L, 1, "bezier_arc_radius");
+    path_smooth_config.m_ArcRadius = (float)luaL_optnumber(L, -1, 0.0);
+    lua_pop(L, 1);
+
+    // OUT ->
+    uint32_t smooth_id = pathfinder::extension::add_smooth_config(smooth_style, path_smooth_config);
+    lua_pushinteger(L, smooth_id);
+    return 1;
+}
+
 // Functions exposed to Lua
 static const luaL_reg Module_methods[] = {
     { "init", pathfinder_init },
@@ -382,7 +499,10 @@ static const luaL_reg Module_methods[] = {
     { "add_edges", pathfinder_add_edges },
     { "find_path", pathfinder_find_path },
     { "find_projected_path", pathfinder_find_projected_path },
+    { "get_node_position", pathfinder_get_node_position },
     { "shutdown", pathfinder_shutdown },
+
+    { "add_path_smoothing", pathfinder_add_path_smoothing },
     { 0, 0 }
 };
 
@@ -444,6 +564,7 @@ static void LuaInit(lua_State* L)
 static dmExtension::Result AppInitializeGraphPathfinder(dmExtension::AppParams* params)
 {
     dmLogInfo("AppInitializeGraphPathfinder");
+    pathfinder::extension::init();
     return dmExtension::RESULT_OK;
 }
 
@@ -458,12 +579,8 @@ static dmExtension::Result InitializeGraphPathfinder(dmExtension::Params* params
 static dmExtension::Result AppFinalizeGraphPathfinder(dmExtension::AppParams* params)
 {
     dmLogInfo("AppFinalizeGraphPathfinder");
-    return dmExtension::RESULT_OK;
-}
-
-static dmExtension::Result FinalizeGraphPathfinder(dmExtension::Params* params)
-{
-    dmLogInfo("FinalizeGraphPathfinder");
+    pathfinder::extension::shutdown();
+    pathfinder::path::shutdown();
     return dmExtension::RESULT_OK;
 }
 
@@ -479,4 +596,4 @@ static dmExtension::Result FinalizeGraphPathfinder(dmExtension::Params* params)
 
 // GraphPathfinder is the C++ symbol that holds all relevant extension data.
 // It must match the name field in the `ext.manifest`
-DM_DECLARE_EXTENSION(GraphPathfinder, LIB_NAME, AppInitializeGraphPathfinder, AppFinalizeGraphPathfinder, InitializeGraphPathfinder, 0, 0, FinalizeGraphPathfinder)
+DM_DECLARE_EXTENSION(GraphPathfinder, LIB_NAME, AppInitializeGraphPathfinder, AppFinalizeGraphPathfinder, InitializeGraphPathfinder, 0, 0, 0)

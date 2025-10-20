@@ -1,37 +1,60 @@
 name: "main"
 scale_along_z: 0
 embedded_instances {
-  id: "go"
+  id: "scripts"
   data: "components {\n"
-  "  id: \"example\"\n"
-  "  component: \"/example/example.script\"\n"
-  "  position {\n"
-  "    x: 0.0\n"
-  "    y: 0.0\n"
-  "    z: 0.0\n"
-  "  }\n"
-  "  rotation {\n"
-  "    x: 0.0\n"
-  "    y: 0.0\n"
-  "    z: 0.0\n"
-  "    w: 1.0\n"
-  "  }\n"
+  "  id: \"basic\"\n"
+  "  component: \"/example/basic.script\"\n"
   "}\n"
   ""
-  position {
-    x: 0.0
-    y: 0.0
-    z: 0.0
-  }
-  rotation {
-    x: 0.0
-    y: 0.0
-    z: 0.0
-    w: 1.0
-  }
-  scale3 {
-    x: 1.0
-    y: 1.0
-    z: 1.0
-  }
+}
+embedded_instances {
+  id: "factories"
+  data: "components {\n"
+  "  id: \"node\"\n"
+  "  component: \"/example/node.factory\"\n"
+  "}\n"
+  "components {\n"
+  "  id: \"direction\"\n"
+  "  component: \"/example/direction.factory\"\n"
+  "}\n"
+  ""
+}
+embedded_instances {
+  id: "entry"
+  data: "embedded_components {\n"
+  "  id: \"sprite\"\n"
+  "  type: \"sprite\"\n"
+  "  data: \"default_animation: \\\"entry\\\"\\n"
+  "material: \\\"/builtins/materials/sprite.material\\\"\\n"
+  "size {\\n"
+  "  x: 16.0\\n"
+  "  y: 16.0\\n"
+  "}\\n"
+  "textures {\\n"
+  "  sampler: \\\"texture_sampler\\\"\\n"
+  "  texture: \\\"/example/demo.atlas\\\"\\n"
+  "}\\n"
+  "\"\n"
+  "}\n"
+  ""
+}
+embedded_instances {
+  id: "mouse"
+  data: "embedded_components {\n"
+  "  id: \"sprite\"\n"
+  "  type: \"sprite\"\n"
+  "  data: \"default_animation: \\\"mouse\\\"\\n"
+  "material: \\\"/builtins/materials/sprite.material\\\"\\n"
+  "size {\\n"
+  "  x: 16.0\\n"
+  "  y: 16.0\\n"
+  "}\\n"
+  "textures {\\n"
+  "  sampler: \\\"texture_sampler\\\"\\n"
+  "  texture: \\\"/example/demo.atlas\\\"\\n"
+  "}\\n"
+  "\"\n"
+  "}\n"
+  ""
 }

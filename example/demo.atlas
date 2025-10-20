@@ -1,0 +1,25 @@
+images {
+  image: "/example/img/node.png"
+}
+images {
+  image: "/example/img/entry.png"
+}
+images {
+  image: "/example/img/mouse.png"
+}
+images {
+  image: "/example/img/pointy_dot_ac.png"
+}
+images {
+  image: "/example/img/pointy_dot.png"
+}
+images {
+  image: "/example/img/pointy_dot_s.png"
+}
+images {
+  image: "/example/img/direction.png"
+}
+images {
+  image: "/example/img/pointy_up.png"
+}
+extrude_borders: 2
