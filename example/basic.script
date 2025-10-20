@@ -157,9 +157,13 @@ function init(self)
 	profiler.enable_ui(true)
 	profiler.set_ui_view_mode(profiler.VIEW_MODE_MINIMIZED)
 
-	pathfinder.init(100, 4, 32, 32)
+	pathfinder.init(100, 10, 4, 32, 32)
 
 	nodes = pathfinder.add_nodes(node_positions)
+
+
+	local go_url = msg.url("/node_1")
+	local node_id = pathfinder.add_gameobject_node(go_url)
 
 	pathfinder.add_edges(edges)
 

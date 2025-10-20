@@ -18,7 +18,7 @@ pathfinder::path::init(
 );
 
 ]]
-	pathfinder.init(100, 4, 32, 32)
+	pathfinder.init(100, nil, 4, 32, 32)
 
 	for _, node_position in ipairs(node_positions) do
 		local node_id = pathfinder.add_node(node_position.x, node_position.y)

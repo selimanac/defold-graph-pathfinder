@@ -53,11 +53,16 @@ static int pathfinder_init(lua_State* L)
     DM_LUA_STACK_CHECK(L, 0);
 
     uint32_t max_nodes = luaL_checkint(L, 1);
-    uint32_t max_edge_per_node = luaL_checkint(L, 2);
-    uint32_t pool_block_size = luaL_checkint(L, 3);
-    uint32_t max_cache_path_length = luaL_checkint(L, 4);
+    uint32_t max_gameobject_nodes = (uint32_t)luaL_optinteger(L, 2, 0);
+    uint32_t max_edge_per_node = luaL_checkint(L, 3);
+    uint32_t pool_block_size = luaL_checkint(L, 4);
+    uint32_t max_cache_path_length = luaL_checkint(L, 5);
     pathfinder::path::init(max_nodes, max_edge_per_node, pool_block_size, max_cache_path_length);
 
+    if (max_gameobject_nodes > 0)
+    {
+        pathfinder::extension::set_gameobject_capacity(max_gameobject_nodes);
+    }
     return 0;
 }
 
@@ -143,6 +148,31 @@ static int pathfinder_add_nodes(lua_State* L)
     {
         lua_pushinteger(L, node_ids[i]);
         lua_rawseti(L, -2, i + 1);
+    }
+
+    return 1;
+}
+
+static int pathfinder_add_gameobject_node(lua_State* L)
+{
+    DM_LUA_STACK_CHECK(L, 1);
+
+    dmGameObject::HInstance gameobject_instance = dmScript::CheckGOInstance(L, 1);
+    bool                    use_world_position = lua_toboolean(L, 2);
+
+    dmVMath::Point3         gameobject_position = dmGameObject::GetPosition(gameobject_instance);
+    pathfinder::Vec2        pos = pathfinder::Vec2(gameobject_position.getX(), gameobject_position.getY());
+
+    pathfinder::PathStatus  status;
+
+    uint32_t                node_id = pathfinder::path::add_node(pos, &status);
+    pathfinder::extension::add_gameobject_node(node_id, gameobject_instance, gameobject_position, use_world_position);
+
+    lua_pushinteger(L, node_id);
+
+    if (status != pathfinder::SUCCESS)
+    {
+        dmLogError("Failed. %s  (status: %d)", path_status_to_string(status), status);
     }
 
     return 1;
@@ -597,6 +627,7 @@ static int pathfinder_smooth_path(lua_State* L)
 static const luaL_reg Module_methods[] = {
     { "init", pathfinder_init },
     { "add_node", pathfinder_add_node },
+    { "add_gameobject_node", pathfinder_add_gameobject_node },
     { "add_edge", pathfinder_add_edge },
     { "remove_node", pathfinder_remove_node },
     { "remove_edge", pathfinder_remove_edge },
@@ -608,7 +639,6 @@ static const luaL_reg Module_methods[] = {
     { "get_node_position", pathfinder_get_node_position },
     { "smooth_path", pathfinder_smooth_path },
     { "shutdown", pathfinder_shutdown },
-
     { "add_path_smoothing", pathfinder_add_path_smoothing },
     { 0, 0 }
 };
