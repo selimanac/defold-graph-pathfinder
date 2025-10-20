@@ -38,6 +38,31 @@ namespace pathfinder
             SmoothConfig* smooth_config = m_SmoothConfig.Get(smooth_id);
             return smooth_config->m_PathSmoothConfig.m_SampleSegment;
         }
+        void smooth_path_waypoint(uint32_t smooth_id, dmArray<Vec2>& waypoints, dmArray<Vec2>& smoothed_path)
+        {
+            SmoothConfig* smooth_config = m_SmoothConfig.Get(smooth_id);
+
+            switch (smooth_config->m_PathSmoothStyle)
+            {
+                case NONE:
+                    break;
+                case CATMULL_ROM:
+                    pathfinder::smooth::catmull_rom_waypoints(waypoints, smoothed_path, smooth_config->m_PathSmoothConfig.m_SampleSegment);
+                    break;
+                case BEZIER_CUBIC:
+                    pathfinder::smooth::bezier_cubic_waypoints(waypoints, smoothed_path, smooth_config->m_PathSmoothConfig.m_SampleSegment, smooth_config->m_PathSmoothConfig.m_ControlPointOffset);
+                    break;
+                case BEZIER_QUADRATIC:
+                    pathfinder::smooth::bezier_quadratic_waypoints(waypoints, smoothed_path, smooth_config->m_PathSmoothConfig.m_SampleSegment, smooth_config->m_PathSmoothConfig.m_CurveRadius);
+                    break;
+                case BEZIER_ADAPTIVE:
+                    pathfinder::smooth::bezier_adaptive_waypoints(waypoints, smoothed_path, smooth_config->m_PathSmoothConfig.m_SampleSegment, smooth_config->m_PathSmoothConfig.m_BezierAdaptiveTightness, smooth_config->m_PathSmoothConfig.m_BezierAdaptiveRoundness, smooth_config->m_PathSmoothConfig.m_BezierAdaptiveMaxCornerDist);
+                    break;
+                case CIRCULAR_ARC:
+                    pathfinder::smooth::circular_arc_waypoints(waypoints, smoothed_path, smooth_config->m_PathSmoothConfig.m_SampleSegment, smooth_config->m_PathSmoothConfig.m_ArcRadius);
+                    break;
+            }
+        }
 
         void smooth_path(uint32_t smooth_id, dmArray<uint32_t>& path, dmArray<Vec2>& smoothed_path)
         {
@@ -46,25 +71,20 @@ namespace pathfinder
             switch (smooth_config->m_PathSmoothStyle)
             {
                 case NONE:
+                    break;
                 case CATMULL_ROM:
-                    printf("CATMULL_ROM\n");
                     pathfinder::smooth::catmull_rom(path, smoothed_path, smooth_config->m_PathSmoothConfig.m_SampleSegment);
                     break;
                 case BEZIER_CUBIC:
-                    printf("BEZIER_CUBIC\n");
                     pathfinder::smooth::bezier_cubic(path, smoothed_path, smooth_config->m_PathSmoothConfig.m_SampleSegment, smooth_config->m_PathSmoothConfig.m_ControlPointOffset);
                     break;
                 case BEZIER_QUADRATIC:
-                    printf("BEZIER_QUADRATIC\n");
-                    printf("smooth_config->m_PathSmoothConfig.m_CurveRadius %f\n", smooth_config->m_PathSmoothConfig.m_CurveRadius);
                     pathfinder::smooth::bezier_quadratic(path, smoothed_path, smooth_config->m_PathSmoothConfig.m_SampleSegment, smooth_config->m_PathSmoothConfig.m_CurveRadius);
                     break;
                 case BEZIER_ADAPTIVE:
-                    printf("BEZIER_ADAPTIVE\n");
                     pathfinder::smooth::bezier_adaptive(path, smoothed_path, smooth_config->m_PathSmoothConfig.m_SampleSegment, smooth_config->m_PathSmoothConfig.m_BezierAdaptiveTightness, smooth_config->m_PathSmoothConfig.m_BezierAdaptiveRoundness, smooth_config->m_PathSmoothConfig.m_BezierAdaptiveMaxCornerDist);
                     break;
                 case CIRCULAR_ARC:
-                    printf("CIRCULAR_ARC\n");
                     pathfinder::smooth::circular_arc(path, smoothed_path, smooth_config->m_PathSmoothConfig.m_SampleSegment, smooth_config->m_PathSmoothConfig.m_ArcRadius);
                     break;
             }

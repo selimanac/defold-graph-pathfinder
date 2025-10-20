@@ -52,7 +52,7 @@ local edges = {
 	{ from_node_id = 20, to_node_id = 9,  bidirectional = true }
 }
 
-local node_go = {}
+local nodes_go = {}
 
 -- Path
 local path_size = 0
@@ -82,6 +82,8 @@ local function draw_nodes()
 		u.fragment = "node_id"
 
 		label.set_text(u, i - 1)
+
+		table.insert(nodes_go, node_id)
 	end
 end
 
@@ -189,22 +191,48 @@ function init(self)
 	draw_edges(true)
 end
 
-function update(self, dt)
-	draw_edges()
+local y = 120
+local speed = 160 -- units per second
+local dir = 1     -- 1 = up, -1 = down
+local min_y = 100
+local max_y = 150
 
-	draw_static_path()
+
+function update(self, dt)
+	--draw_static_path()
+
+
+	-- Move up or down
+	y = y + speed * dir * dt
+
+	-- Reverse when reaching limits
+	if y > max_y then
+		y = max_y
+		dir = -1
+	elseif y < min_y then
+		y = min_y
+		dir = 1
+	end
+
+	pathfinder.move_node(2, y, 270)
+	node_positions[3].x = y
+	node_positions[3].y = 270
+	go.set_position(vmath.vector3(y, 270, 0), nodes_go[3])
+
+
+	draw_edges()
 
 
 	-- ========================
 	-- PROJECTED PATH
 	-- ========================
-	projected_path_size, projected_path_status, projected_path_status_text, projected_path_entry_point, projected_path = pathfinder.find_projected_path(mouse_position.x, mouse_position.y, goal_id, max_path)
+	projected_path_size, projected_path_status, projected_path_status_text, projected_path_entry_point, projected_path = pathfinder.find_projected_path(mouse_position.x, mouse_position.y, goal_id, max_path, 2)
 
 	--	pprint("-> " .. projected_path_status_text)
 	go.set_position(projected_path_entry_point, "/entry")
 	if projected_path_status == pathfinder.PathStatus.SUCCESS then
 		--	pprint(projected_path_size, projected_path_status, projected_path_entry_point, projected_path)
-		--draw_projected_path()
+		draw_projected_path()
 	end
 end
 
