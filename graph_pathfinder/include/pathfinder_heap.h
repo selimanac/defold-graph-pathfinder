@@ -334,7 +334,7 @@ namespace pathfinder
         /**
          * @brief Extract the minimum element from the heap
          * @param heap Heap block to extract from
-         * @return Node index/ID with the lowest f-score, or ERROR if heap is empty
+         * @return Node index/ID with the lowest f-score, or INVALID_ID if heap is empty
          *
          * Removes and returns the root element (minimum f-score), then restores
          * the min-heap property using bubble-down (heapify-down).
@@ -350,7 +350,7 @@ namespace pathfinder
         {
             if (heap->m_Size == 0)
             {
-                return ERROR; // Empty heap
+                return INVALID_ID; // Empty heap
             }
 
             // Save the minimum element (root)

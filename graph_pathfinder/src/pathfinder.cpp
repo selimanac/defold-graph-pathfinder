@@ -1,15 +1,14 @@
 // extension.cpp
 // Extension lib defines
-#include "dmarray.h"
+
 #include "dmsdk/dlib/log.h"
-#include "dmsdk/script/script.h"
-#include "pathfinder_types.h"
-#include <cstdio>
 #define LIB_NAME "GraphPathfinder"
 #define MODULE_NAME "pathfinder"
 
-// include the Defold SDK
 #include <dmsdk/sdk.h>
+
+// pathfinder
+#include "pathfinder_types.h"
 #include <pathfinder_path.h>
 #include <pathfinder_math.h>
 

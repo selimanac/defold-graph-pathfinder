@@ -92,7 +92,7 @@ namespace pathfinder
          * (to,from) due to commutative hash function.
          *
          * Special cases:
-         * - Returns 0.0f if either node ID is UINT32_MAX (ERROR)
+         * - Returns 0.0f if either node ID is UINT32_MAX (INVALID_ID)
          * - Falls back to direct computation if cache is full
          *
          * Time Complexity: O(1) average case, O(MAX_PROBES) worst case

@@ -69,7 +69,7 @@ namespace pathfinder
          * @brief Add a new node to the graph at the specified position
          * @param node_position 2D position of the node
          * @param status Output parameter for operation status (optional)
-         * @return Node ID (0 to max_nodes-1) on success, ERROR (UINT32_MAX) on failure
+         * @return Node ID (0 to max_nodes-1) on success, INVALID_ID (UINT32_MAX) on failure
          *
          * Finds first inactive slot and reuses it. Node IDs are stable until removed.
          * Increments node version to invalidate affected cached paths.

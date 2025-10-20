@@ -44,7 +44,7 @@ namespace pathfinder
          * @param goal_id Goal node ID
          * @param out_path Output array to receive the cached path
          * @param max_path Maximum number of nodes to copy
-         * @return Number of nodes in path, or ERROR if not found/invalid
+         * @return Number of nodes in path, or INVALID_ID if not found/invalid
          */
         uint32_t find_path(const uint32_t start_id, const uint32_t goal_id, dmArray<uint32_t>* out_path, const uint32_t max_path);
 
@@ -64,7 +64,7 @@ namespace pathfinder
          * @param out_path Output array to receive the cached path
          * @param max_path Maximum number of nodes to copy
          * @param out_entry_point Output: point where agent enters the graph
-         * @return Number of nodes in path, or ERROR if not found/invalid
+         * @return Number of nodes in path, or INVALID_ID if not found/invalid
          */
         uint32_t find_projected_path(const Vec2 start_point, const uint32_t goal_id, dmArray<uint32_t>* out_path, const uint32_t max_path, Vec2* out_entry_point);
 
