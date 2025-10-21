@@ -739,7 +739,6 @@ static dmExtension::Result AppFinalizeGraphPathfinder(dmExtension::AppParams* pa
 
 static dmExtension::Result OnUpdateGraphPathfinder(dmExtension::Params* params)
 {
-    dmLogInfo("OnUpdateGraphPathfinder");
     pathfinder::extension::update();
     return dmExtension::RESULT_OK;
 }

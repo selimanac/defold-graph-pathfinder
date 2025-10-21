@@ -1,3 +1,5 @@
+---@diagnostic disable: missing-return, unused-local
+
 ---@meta pathfinder
 ---Defold Graph Pathfinder Extension
 ---High-performance A* pathfinding library for real-time games and simulations.
@@ -26,29 +28,29 @@
 ---PathStatus enum - Status codes for pathfinding operations
 ---@enum PathStatus
 pathfinder.PathStatus = {
-    SUCCESS = 0,                           -- Operation completed successfully
-    ERROR_NO_PATH = -1,                    -- No valid path found between start and goal nodes
-    ERROR_START_NODE_INVALID = -2,         -- Invalid or inactive start node ID
-    ERROR_GOAL_NODE_INVALID = -3,          -- Invalid or inactive goal node ID
-    ERROR_NODE_FULL = -4,                  -- Node capacity reached, cannot add more nodes
-    ERROR_EDGE_FULL = -5,                  -- Edge capacity reached, cannot add more edges
-    ERROR_HEAP_FULL = -6,                  -- Heap pool exhausted during pathfinding
-    ERROR_PATH_TOO_LONG = -7,              -- Path exceeds maximum allowed length
-    ERROR_GRAPH_CHANGED = -8,              -- Graph modified during pathfinding (retrying)
-    ERROR_GRAPH_CHANGED_TOO_OFTEN = -11,   -- Graph changed too often during pathfinding
-    ERROR_NO_PROJECTION = -9,              -- Cannot project point onto graph (no edges exist)
-    ERROR_VIRTUAL_NODE_FAILED = -10        -- Failed to create or connect virtual node
+    SUCCESS = 0,                         -- Operation completed successfully
+    ERROR_NO_PATH = -1,                  -- No valid path found between start and goal nodes
+    ERROR_START_NODE_INVALID = -2,       -- Invalid or inactive start node ID
+    ERROR_GOAL_NODE_INVALID = -3,        -- Invalid or inactive goal node ID
+    ERROR_NODE_FULL = -4,                -- Node capacity reached, cannot add more nodes
+    ERROR_EDGE_FULL = -5,                -- Edge capacity reached, cannot add more edges
+    ERROR_HEAP_FULL = -6,                -- Heap pool exhausted during pathfinding
+    ERROR_PATH_TOO_LONG = -7,            -- Path exceeds maximum allowed length
+    ERROR_GRAPH_CHANGED = -8,            -- Graph modified during pathfinding (retrying)
+    ERROR_GRAPH_CHANGED_TOO_OFTEN = -11, -- Graph changed too often during pathfinding
+    ERROR_NO_PROJECTION = -9,            -- Cannot project point onto graph (no edges exist)
+    ERROR_VIRTUAL_NODE_FAILED = -10      -- Failed to create or connect virtual node
 }
 
 ---PathSmoothStyle enum - Path smoothing algorithms
 ---@enum PathSmoothStyle
 pathfinder.PathSmoothStyle = {
-    NONE = 0,                -- No smoothing (angular paths, fastest)
-    CATMULL_ROM = 1,         -- Passes through all waypoints with smooth curves
-    BEZIER_CUBIC = 2,        -- Very smooth curves with two control points
-    BEZIER_QUADRATIC = 3,    -- Corner-only smoothing (recommended)
-    BEZIER_ADAPTIVE = 4,     -- Adaptive corner smoothing (highly customizable)
-    CIRCULAR_ARC = 5         -- Perfect circular arcs (best for tile-based games)
+    NONE = 0,             -- No smoothing (angular paths, fastest)
+    CATMULL_ROM = 1,      -- Passes through all waypoints with smooth curves
+    BEZIER_CUBIC = 2,     -- Very smooth curves with two control points
+    BEZIER_QUADRATIC = 3, -- Corner-only smoothing (recommended)
+    BEZIER_ADAPTIVE = 4,  -- Adaptive corner smoothing (highly customizable)
+    CIRCULAR_ARC = 5      -- Perfect circular arcs (best for tile-based games)
 }
 
 ---Initialize the pathfinding system. Must be called before any other pathfinding operations.

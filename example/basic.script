@@ -193,7 +193,7 @@ function init(self)
 
 	local smooting_config = {
 		style                               = pathfinder.PathSmoothStyle.BEZIER_QUADRATIC,
-		bezier_sample_segment               = 6,
+		bezier_sample_segment               = 8,
 		bezier_control_point_offset         = 0.4, -- bezier_cubic
 		bezier_curve_radius                 = 0.8, -- bezier_quadratic
 		bezier_adaptive_tightness           = 0.5, -- bezier_adaptive
@@ -217,41 +217,19 @@ function init(self)
 
 	smoothed_path_size, smoothed_path = pathfinder.smooth_path(2, path)
 
+
+
 	draw_nodes()
 	draw_edges(true)
 
 	go.animate("/node_2", "position.x", go.PLAYBACK_LOOP_PINGPONG, 170, go.EASING_INOUTSINE, 1)
+
+	go.animate("/node_21", "position.y", go.PLAYBACK_LOOP_PINGPONG, 170, go.EASING_INOUTSINE, 1)
 end
-
-local y = 120
-local speed = 160 -- units per second
-local dir = 1     -- 1 = up, -1 = down
-local min_y = 100
-local max_y = 150
-
 
 function update(self, dt)
 	draw_static_path()
 	draw_static_smoothed_path()
-
-	-- Move up or down
-	y = y + speed * dir * dt
-
-	-- Reverse when reaching limits
-	if y > max_y then
-		y = max_y
-		dir = -1
-	elseif y < min_y then
-		y = min_y
-		dir = 1
-	end
-
-	--[[	pathfinder.move_node(2, y, 270)
-	node_positions[3].x = y
-	node_positions[3].y = 270
-	go.set_position(vmath.vector3(y, 270, 0), nodes_go[3])]]
-
-
 	draw_edges()
 
 
