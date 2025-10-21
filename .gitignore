@@ -16,3 +16,4 @@ RELEASE-NOTES.md
 *.sublime-workspace
 *.appmanifest
 /.cache
+_codeql_detected_source_root

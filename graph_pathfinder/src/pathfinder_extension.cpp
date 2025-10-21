@@ -50,7 +50,7 @@ namespace pathfinder
         static dmHashTable32<Gameobject> m_Gameobjects;
 
         //=========================
-        // Upate
+        // Update
         //=========================
         static uint8_t  m_UpdateFrequency;
         static uint64_t m_PreviousFrameTime;
@@ -60,7 +60,7 @@ namespace pathfinder
         //
         void init()
         {
-            m_SmoothConfigs.SetCapacity(MAX_SMOOTH_CONFIG); // TODO Check if hit capacity
+            m_SmoothConfigs.SetCapacity(MAX_SMOOTH_CONFIG);
         }
 
         void get_cache_stats(uint32_t& path_cache_entries,
@@ -134,16 +134,26 @@ namespace pathfinder
         void pause_gameobject_node(uint32_t node_id)
         {
             Gameobject* gameobject = m_Gameobjects.Get(node_id);
+            if (gameobject == 0x0)
+            {
+                dmLogWarning("Cannot pause gameobject node %u: not found", node_id);
+                return;
+            }
             gameobject->m_GameobjectState = GameobjectState::PAUSED;
         }
 
         void resume_gameobject_node(uint32_t node_id)
         {
             Gameobject* gameobject = m_Gameobjects.Get(node_id);
+            if (gameobject == 0x0)
+            {
+                dmLogWarning("Cannot resume gameobject node %u: not found", node_id);
+                return;
+            }
             gameobject->m_GameobjectState = GameobjectState::RUNNING;
         }
 
-        static inline void gameobject_iterate_callback(void*, const uint32_t* key, Gameobject* gameobject)
+        static inline void gameobject_iterate_callback(void* /*context*/, const uint32_t* /*key*/, Gameobject* gameobject)
         {
             if (gameobject->m_GameobjectState == GameobjectState::PAUSED)
             {
@@ -207,7 +217,7 @@ namespace pathfinder
             m_Gameobjects.Put(node_id, gameobject);
         }
 
-        uint32_t add_smooth_config(uint32_t path_style, navigation::AgentPathSmoothConfig path_smooth_config)
+        uint32_t add_smooth_config(uint32_t path_style, const navigation::AgentPathSmoothConfig path_smooth_config)
         {
             if (m_SmoothConfigs.Full())
             {
@@ -220,19 +230,24 @@ namespace pathfinder
             smooth_config.m_PathSmoothConfig = path_smooth_config;
 
             m_SmoothId++;
-            m_SmoothConfigs.Put(m_SmoothId, smooth_config); // TODO Check if hit capacity
+            m_SmoothConfigs.Put(m_SmoothId, smooth_config);
             return m_SmoothId;
         }
 
         uint32_t get_smooth_sample_segment(uint32_t smooth_id)
         {
             SmoothConfig* smooth_config = m_SmoothConfigs.Get(smooth_id);
+            if (smooth_config == 0x0)
+            {
+                dmLogError("Invalid smooth_id %u: config not found", smooth_id);
+                return 0;
+            }
             return smooth_config->m_PathSmoothConfig.m_SampleSegment;
         }
-        void smooth_path_waypoint(uint32_t smooth_id, dmArray<Vec2>& waypoints, dmArray<Vec2>& smoothed_path)
-        {
-            SmoothConfig* smooth_config = m_SmoothConfigs.Get(smooth_id);
 
+        // Helper function to apply smoothing based on style
+        static void apply_smoothing(const SmoothConfig* smooth_config, dmArray<Vec2>& waypoints, dmArray<Vec2>& smoothed_path)
+        {
             switch (smooth_config->m_PathSmoothStyle)
             {
                 case NONE:
@@ -255,9 +270,25 @@ namespace pathfinder
             }
         }
 
+        void smooth_path_waypoint(uint32_t smooth_id, dmArray<Vec2>& waypoints, dmArray<Vec2>& smoothed_path)
+        {
+            SmoothConfig* smooth_config = m_SmoothConfigs.Get(smooth_id);
+            if (smooth_config == 0x0)
+            {
+                dmLogError("Invalid smooth_id %u: config not found", smooth_id);
+                return;
+            }
+            apply_smoothing(smooth_config, waypoints, smoothed_path);
+        }
+
         void smooth_path(uint32_t smooth_id, dmArray<uint32_t>& path, dmArray<Vec2>& smoothed_path)
         {
             SmoothConfig* smooth_config = m_SmoothConfigs.Get(smooth_id);
+            if (smooth_config == 0x0)
+            {
+                dmLogError("Invalid smooth_id %u: config not found", smooth_id);
+                return;
+            }
 
             switch (smooth_config->m_PathSmoothStyle)
             {
