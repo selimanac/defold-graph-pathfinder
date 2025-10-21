@@ -289,8 +289,6 @@ static int pathfinder_add_edges(lua_State* L)
     int edge_count = (int)lua_objlen(L, 1);
     dmLogInfo("Adding %d edges", edge_count);
 
-    pathfinder::PathStatus status;
-
     for (int i = 1; i <= edge_count; ++i)
     {
         lua_rawgeti(L, 1, i); // push edges[i] onto stack
@@ -552,7 +550,9 @@ static int pathfinder_remove_edge(lua_State* L)
 
     pathfinder::path::remove_edge(from, to);
     if (lua_toboolean(L, 3))
+    {
         pathfinder::path::remove_edge(to, from);
+    }
 
     return 0;
 }
