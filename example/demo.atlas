@@ -22,4 +22,7 @@ images {
 images {
   image: "/example/img/pointy_up.png"
 }
+images {
+  image: "/example/img/td2.jpg"
+}
 extrude_borders: 2

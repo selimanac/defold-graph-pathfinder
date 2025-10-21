@@ -62,7 +62,7 @@ static inline pathfinder::Vec2 parse_vec2_from_table(lua_State* L, int index)
 }
 
 // Helper function to create a Lua table with path waypoints (node positions with optional IDs)
-static void push_path_node_table(lua_State* L, const pathfinder::Vec2& pos, uint32_t node_id = 0, bool include_id = false)
+static inline void push_path_node_table(lua_State* L, const pathfinder::Vec2& pos, uint32_t node_id = 0, bool include_id = false)
 {
     lua_createtable(L, 0, include_id ? 3 : 2);
 
@@ -83,7 +83,7 @@ static void push_path_node_table(lua_State* L, const pathfinder::Vec2& pos, uint
 }
 
 // Helper function to create a Lua table array from smoothed path positions
-static void push_smoothed_path_table(lua_State* L, const dmArray<pathfinder::Vec2>& smoothed_path)
+static inline void push_smoothed_path_table(lua_State* L, const dmArray<pathfinder::Vec2>& smoothed_path)
 {
     lua_createtable(L, smoothed_path.Size(), 0);
     int newTable = lua_gettop(L);
@@ -104,7 +104,12 @@ static int pathfinder_init(lua_State* L)
     uint32_t pool_block_size = luaL_checkint(L, 4);
     uint32_t max_cache_path_length = luaL_checkint(L, 5);
 
-    pathfinder::path::init(max_nodes, max_edge_per_node, pool_block_size, max_cache_path_length);
+    /*
+     * IMPORTANT: The heap pool capacity equals max_nodes. If pool_block_size > max_nodes,
+     * it will be automatically clamped to max_nodes to prevent heap allocation failures.
+     * Recommended: Use pool_block_size = 32 (default) and ensure max_nodes >= 32.
+     */
+    pathfinder::path::init(max_nodes + 32, max_edge_per_node, pool_block_size, max_cache_path_length);
 
     if (max_gameobject_nodes > 0)
     {
@@ -116,7 +121,8 @@ static int pathfinder_init(lua_State* L)
 static int pathfinder_add_nodes(lua_State* L)
 {
     DM_LUA_STACK_CHECK(L, 1);
-    // IN  <-
+
+    // IN  <<-
     luaL_checktype(L, 1, LUA_TTABLE);
 
     int node_count = (int)lua_objlen(L, 1);
@@ -149,7 +155,7 @@ static int pathfinder_add_nodes(lua_State* L)
         lua_pop(L, 1); // pop inner table
     }
 
-    // OUT ->
+    // OUT ->>
     lua_createtable(L, node_ids.Size(), 0);
     for (int i = 0; i < node_ids.Size(); ++i)
     {
@@ -189,6 +195,8 @@ static int pathfinder_add_gameobject_node(lua_State* L)
 static int pathfinder_add_gameobject_nodes(lua_State* L)
 {
     DM_LUA_STACK_CHECK(L, 1);
+
+    // IN <<-
     luaL_checktype(L, 1, LUA_TTABLE);
 
     int gameobject_count = (int)lua_objlen(L, 1);
@@ -235,7 +243,7 @@ static int pathfinder_add_gameobject_nodes(lua_State* L)
         lua_pop(L, 1); // pop nodes[i]
     }
 
-    // Return array of node IDs
+    // OUT ->>
     lua_createtable(L, node_ids.Size(), 0);
     for (int i = 0; i < node_ids.Size(); ++i)
     {
@@ -310,7 +318,7 @@ static int pathfinder_add_edges(lua_State* L)
             lua_pop(L, 1);
 
             lua_getfield(L, -1, "bidirectional");
-            bool bidirectional = lua_toboolean(L, -1);
+            bool bidirectional = lua_isnil(L, -1) ? true : lua_toboolean(L, -1);
             lua_pop(L, 1);
 
             // Optional cost
@@ -355,7 +363,7 @@ static int pathfinder_add_edge(lua_State* L)
 
     uint32_t from_node_id = luaL_checkint(L, 1);
     uint32_t to_node_id = luaL_checkint(L, 2);
-    bool     bidirectional = lua_toboolean(L, 3);
+    bool     bidirectional = lua_isnil(L, 3) ? true : lua_toboolean(L, 3);
 
     float    cost;
 

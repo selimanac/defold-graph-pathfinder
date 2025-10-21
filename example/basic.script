@@ -165,7 +165,7 @@ function init(self)
 	pathfinder.init(100, 10, 4, 32, 32)
 
 	nodes = pathfinder.add_nodes(node_positions)
-
+	pprint(node_positions)
 
 	local go_url = msg.url("/node_21")
 	local node_id = pathfinder.add_gameobject_node(go_url)

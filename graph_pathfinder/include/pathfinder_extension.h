@@ -36,11 +36,9 @@ namespace pathfinder
 
         // Smooth
         uint32_t add_smooth_config(uint32_t path_style, const navigation::AgentPathSmoothConfig path_smooth_config);
+        uint32_t get_smooth_sample_segment(uint32_t smooth_id);
         void     smooth_path(uint32_t smooth_id, dmArray<uint32_t>& path, dmArray<Vec2>& smoothed_path);
         void     smooth_path_waypoint(uint32_t smooth_id, dmArray<Vec2>& waypoints, dmArray<Vec2>& smoothed_path);
-        uint32_t get_smooth_sample_segment(uint32_t smooth_id);
-
-        // Shutdown
 
     } // namespace extension
 } // namespace pathfinder

@@ -16,9 +16,9 @@ namespace pathfinder
 {
     namespace extension
     {
-        //=========================
+        //==========================================================
         // Smooth
-        //=========================
+        //==========================================================
         typedef struct SmoothConfig
         {
             pathfinder::PathSmoothStyle       m_PathSmoothStyle;
@@ -29,9 +29,9 @@ namespace pathfinder
         static dmHashTable16<SmoothConfig> m_SmoothConfigs;
         static uint32_t                    m_SmoothId = 0;
 
-        //=========================
+        //==========================================================
         // Gameobjects
-        //=========================
+        //==========================================================
         enum GameobjectState
         {
             RUNNING = 0,
@@ -49,31 +49,13 @@ namespace pathfinder
 
         static dmHashTable32<Gameobject> m_Gameobjects;
 
-        //=========================
+        //==========================================================
         // Update
-        //=========================
+        //==========================================================
         static uint8_t  m_UpdateFrequency;
         static uint64_t m_PreviousFrameTime;
         static float    m_AccumFrameTime;
         static bool     m_UpdateLoopState = true;
-
-        //
-        void init()
-        {
-            m_SmoothConfigs.SetCapacity(MAX_SMOOTH_CONFIG);
-        }
-
-        void get_cache_stats(uint32_t& path_cache_entries,
-                             uint32_t& path_cache_capacity,
-                             uint32_t& path_cache_hit_rate,
-                             uint32_t& dist_cache_size,
-                             uint32_t& dist_cache_hits,
-                             uint32_t& dist_cache_misses,
-                             uint32_t& dist_cache_hit_rate)
-        {
-            pathfinder::cache::get_cache_stats(&path_cache_entries, &path_cache_capacity, &path_cache_hit_rate);
-            pathfinder::distance_cache::get_stats(&dist_cache_size, &dist_cache_hits, &dist_cache_misses, &dist_cache_hit_rate);
-        }
 
         // From Defold source
         // https://github.com/defold/defold/blob/cdaa870389ca00062bfc03bcda8f4fb34e93124a/engine/engine/src/engine.cpp#L1860
@@ -121,14 +103,83 @@ namespace pathfinder
             m_AccumFrameTime = m_AccumFrameTime - num_steps * fixed_dt;
         }
 
-        void set_update_frequency(uint8_t update_frequency)
+        static inline void gameobject_iterate_callback(void* /*context*/, const uint32_t* /*key*/, Gameobject* gameobject)
         {
-            m_UpdateFrequency = update_frequency;
+            if (gameobject->m_GameobjectState == GameobjectState::PAUSED)
+            {
+                return;
+            }
+
+            if (gameobject->m_UseWorldPosition)
+            {
+                gameobject->m_Position = dmGameObject::GetWorldPosition(gameobject->m_GameObjectInstance);
+            }
+            else
+            {
+                gameobject->m_Position = dmGameObject::GetPosition(gameobject->m_GameObjectInstance);
+            }
+
+            pathfinder::path::move_node(gameobject->m_NodeId, Vec2(gameobject->m_Position.getX(), gameobject->m_Position.getY()));
         }
 
-        void set_update_state(bool state)
+        //==========================================================
+        // OPs
+        //==========================================================
+
+        //
+        void init()
         {
-            m_UpdateLoopState = state;
+            m_SmoothConfigs.SetCapacity(MAX_SMOOTH_CONFIG);
+        }
+
+        void shutdown()
+        {
+            m_Gameobjects.Clear();
+            m_SmoothConfigs.Clear();
+            m_SmoothId = 0;
+        }
+
+        void get_cache_stats(uint32_t& path_cache_entries,
+                             uint32_t& path_cache_capacity,
+                             uint32_t& path_cache_hit_rate,
+                             uint32_t& dist_cache_size,
+                             uint32_t& dist_cache_hits,
+                             uint32_t& dist_cache_misses,
+                             uint32_t& dist_cache_hit_rate)
+        {
+            pathfinder::cache::get_cache_stats(&path_cache_entries, &path_cache_capacity, &path_cache_hit_rate);
+            pathfinder::distance_cache::get_stats(&dist_cache_size, &dist_cache_hits, &dist_cache_misses, &dist_cache_hit_rate);
+        }
+
+        //==========================================================
+        // Gameobjects
+        //==========================================================
+
+        void set_gameobject_capacity(uint32_t gameobject_capacity)
+        {
+            m_Gameobjects.SetCapacity(gameobject_capacity);
+        }
+
+        void add_gameobject_node(uint32_t node_id, dmGameObject::HInstance instance, dmVMath::Point3 position, bool use_world_position)
+        {
+            if (m_Gameobjects.Full())
+            {
+                dmLogError("max_gameobject_nodes not defined on init or it is full. Size: %u", m_Gameobjects.Size());
+                return;
+            }
+            Gameobject gameobject;
+            gameobject.m_NodeId = node_id;
+            gameobject.m_Position = position;
+            gameobject.m_GameObjectInstance = instance;
+            gameobject.m_GameobjectState = GameobjectState::RUNNING;
+            gameobject.m_UseWorldPosition = use_world_position;
+
+            m_Gameobjects.Put(node_id, gameobject);
+        }
+
+        void remove_gameobject_node(uint32_t node_id)
+        {
+            m_Gameobjects.Erase(node_id);
         }
 
         void pause_gameobject_node(uint32_t node_id)
@@ -153,23 +204,18 @@ namespace pathfinder
             gameobject->m_GameobjectState = GameobjectState::RUNNING;
         }
 
-        static inline void gameobject_iterate_callback(void* /*context*/, const uint32_t* /*key*/, Gameobject* gameobject)
+        //==========================================================
+        // Update
+        //==========================================================
+
+        void set_update_state(bool state)
         {
-            if (gameobject->m_GameobjectState == GameobjectState::PAUSED)
-            {
-                return;
-            }
+            m_UpdateLoopState = state;
+        }
 
-            if (gameobject->m_UseWorldPosition)
-            {
-                gameobject->m_Position = dmGameObject::GetWorldPosition(gameobject->m_GameObjectInstance);
-            }
-            else
-            {
-                gameobject->m_Position = dmGameObject::GetPosition(gameobject->m_GameObjectInstance);
-            }
-
-            pathfinder::path::move_node(gameobject->m_NodeId, Vec2(gameobject->m_Position.getX(), gameobject->m_Position.getY()));
+        void set_update_frequency(uint8_t update_frequency)
+        {
+            m_UpdateFrequency = update_frequency;
         }
 
         void update()
@@ -190,32 +236,9 @@ namespace pathfinder
             }
         }
 
-        void set_gameobject_capacity(uint32_t gameobject_capacity)
-        {
-            m_Gameobjects.SetCapacity(gameobject_capacity);
-        }
-
-        void remove_gameobject_node(uint32_t node_id)
-        {
-            m_Gameobjects.Erase(node_id);
-        }
-
-        void add_gameobject_node(uint32_t node_id, dmGameObject::HInstance instance, dmVMath::Point3 position, bool use_world_position)
-        {
-            if (m_Gameobjects.Full())
-            {
-                dmLogError("max_gameobject_nodes not defined on init or it is full. Size: %u", m_Gameobjects.Size());
-                return;
-            }
-            Gameobject gameobject;
-            gameobject.m_NodeId = node_id;
-            gameobject.m_Position = position;
-            gameobject.m_GameObjectInstance = instance;
-            gameobject.m_GameobjectState = GameobjectState::RUNNING;
-            gameobject.m_UseWorldPosition = use_world_position;
-
-            m_Gameobjects.Put(node_id, gameobject);
-        }
+        //==========================================================
+        // Smooth
+        //==========================================================
 
         uint32_t add_smooth_config(uint32_t path_style, const navigation::AgentPathSmoothConfig path_smooth_config)
         {
@@ -243,42 +266,6 @@ namespace pathfinder
                 return 0;
             }
             return smooth_config->m_PathSmoothConfig.m_SampleSegment;
-        }
-
-        // Helper function to apply smoothing based on style
-        static void apply_smoothing(const SmoothConfig* smooth_config, dmArray<Vec2>& waypoints, dmArray<Vec2>& smoothed_path)
-        {
-            switch (smooth_config->m_PathSmoothStyle)
-            {
-                case NONE:
-                    break;
-                case CATMULL_ROM:
-                    pathfinder::smooth::catmull_rom_waypoints(waypoints, smoothed_path, smooth_config->m_PathSmoothConfig.m_SampleSegment);
-                    break;
-                case BEZIER_CUBIC:
-                    pathfinder::smooth::bezier_cubic_waypoints(waypoints, smoothed_path, smooth_config->m_PathSmoothConfig.m_SampleSegment, smooth_config->m_PathSmoothConfig.m_ControlPointOffset);
-                    break;
-                case BEZIER_QUADRATIC:
-                    pathfinder::smooth::bezier_quadratic_waypoints(waypoints, smoothed_path, smooth_config->m_PathSmoothConfig.m_SampleSegment, smooth_config->m_PathSmoothConfig.m_CurveRadius);
-                    break;
-                case BEZIER_ADAPTIVE:
-                    pathfinder::smooth::bezier_adaptive_waypoints(waypoints, smoothed_path, smooth_config->m_PathSmoothConfig.m_SampleSegment, smooth_config->m_PathSmoothConfig.m_BezierAdaptiveTightness, smooth_config->m_PathSmoothConfig.m_BezierAdaptiveRoundness, smooth_config->m_PathSmoothConfig.m_BezierAdaptiveMaxCornerDist);
-                    break;
-                case CIRCULAR_ARC:
-                    pathfinder::smooth::circular_arc_waypoints(waypoints, smoothed_path, smooth_config->m_PathSmoothConfig.m_SampleSegment, smooth_config->m_PathSmoothConfig.m_ArcRadius);
-                    break;
-            }
-        }
-
-        void smooth_path_waypoint(uint32_t smooth_id, dmArray<Vec2>& waypoints, dmArray<Vec2>& smoothed_path)
-        {
-            SmoothConfig* smooth_config = m_SmoothConfigs.Get(smooth_id);
-            if (smooth_config == 0x0)
-            {
-                dmLogError("Invalid smooth_id %u: config not found", smooth_id);
-                return;
-            }
-            apply_smoothing(smooth_config, waypoints, smoothed_path);
         }
 
         void smooth_path(uint32_t smooth_id, dmArray<uint32_t>& path, dmArray<Vec2>& smoothed_path)
@@ -312,11 +299,36 @@ namespace pathfinder
             }
         }
 
-        void shutdown()
+        void smooth_path_waypoint(uint32_t smooth_id, dmArray<Vec2>& waypoints, dmArray<Vec2>& smoothed_path)
         {
-            m_Gameobjects.Clear();
-            m_SmoothConfigs.Clear();
-            m_SmoothId = 0;
+            SmoothConfig* smooth_config = m_SmoothConfigs.Get(smooth_id);
+            if (smooth_config == 0x0)
+            {
+                dmLogError("Invalid smooth_id %u: config not found", smooth_id);
+                return;
+            }
+
+            switch (smooth_config->m_PathSmoothStyle)
+            {
+                case NONE:
+                    break;
+                case CATMULL_ROM:
+                    pathfinder::smooth::catmull_rom_waypoints(waypoints, smoothed_path, smooth_config->m_PathSmoothConfig.m_SampleSegment);
+                    break;
+                case BEZIER_CUBIC:
+                    pathfinder::smooth::bezier_cubic_waypoints(waypoints, smoothed_path, smooth_config->m_PathSmoothConfig.m_SampleSegment, smooth_config->m_PathSmoothConfig.m_ControlPointOffset);
+                    break;
+                case BEZIER_QUADRATIC:
+                    pathfinder::smooth::bezier_quadratic_waypoints(waypoints, smoothed_path, smooth_config->m_PathSmoothConfig.m_SampleSegment, smooth_config->m_PathSmoothConfig.m_CurveRadius);
+                    break;
+                case BEZIER_ADAPTIVE:
+                    pathfinder::smooth::bezier_adaptive_waypoints(waypoints, smoothed_path, smooth_config->m_PathSmoothConfig.m_SampleSegment, smooth_config->m_PathSmoothConfig.m_BezierAdaptiveTightness, smooth_config->m_PathSmoothConfig.m_BezierAdaptiveRoundness, smooth_config->m_PathSmoothConfig.m_BezierAdaptiveMaxCornerDist);
+                    break;
+                case CIRCULAR_ARC:
+                    pathfinder::smooth::circular_arc_waypoints(waypoints, smoothed_path, smooth_config->m_PathSmoothConfig.m_SampleSegment, smooth_config->m_PathSmoothConfig.m_ArcRadius);
+                    break;
+            }
         }
+
     } // namespace extension
 } // namespace pathfinder
