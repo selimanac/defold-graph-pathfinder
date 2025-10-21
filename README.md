@@ -3,19 +3,19 @@
 
 A high-performance A* pathfinding library written in C++11, designed for real-time games and simulations with hundreds to thousands of moving objects. Built with a focus on performance, using flat array data structures and advanced caching mechanisms.
 
+## Technical Features
 
-
-## Features
-
-- **High Performance**: Optimized for real-time pathfinding with 100s-1000s of moving objects
-- **A* Algorithm**: Classic A* with heuristics for optimal pathfinding
-- **Flat Array Architecture**: Cache-friendly memory layout using `dmArray<T>` (included from Defold SDK)
-- **Path Caching**: LRU cache with version-tracked invalidation for frequently used paths
-- **Projected Pathfinding**: Find paths from arbitrary positions (not just nodes)
-- **Dynamic Graph Updates**: Add/remove nodes and edges at runtime with automatic cache invalidation
-- **Min-Heap Priority Queue**: Custom implementation with true zero-copy memory pooling and bulk operations
-- **Distance Caching**: Spatial hashing for fast distance lookups
-
+- **High Performance**: Optimized for real-time pathfinding with hundreds to thousands of moving objects  
+- **A* Algorithm**: Classic A* with heuristics for optimal and efficient pathfinding  
+- **Flat Array Architecture**: Cache-friendly memory layout using `dmArray<T>` from the Defold SDK  
+- **Path Caching**: LRU cache with version-based invalidation for frequently reused paths  
+- **Projected Pathfinding**: Supports pathfinding from arbitrary positions, not limited to graph nodes  
+- **Dynamic Graph Updates**: Add or remove nodes and edges at runtime with automatic cache invalidation  
+- **Min-Heap Priority Queue**: Custom implementation with zero-copy memory pooling and bulk operations  
+- **Distance Caching**: Spatial hashing for fast approximate distance lookups  
+- **No STL Containers**: Uses `dmArray<T>` and `dmHashTable<T>` for all data structures  
+- **Memory Pre-allocation**: All arrays are pre-allocated at initialization; pathfinding uses only pre-allocated memory  
+- **No Exceptions**: Uses explicit error codes instead of C++ exceptions
 
 ### Available Platforms
 
@@ -35,27 +35,15 @@ A high-performance A* pathfinding library written in C++11, designed for real-ti
 | `bezier_cubic()` | Cinematic cameras, UI | Maximum smoothness with two control points |
 
 
-### Memory Management
 
-- **No STL containers**: Uses `dmArray<T>` or `dmHashtable<T>` instead of STL containers
-- **Pre-allocation**: All arrays pre-allocated at initialization
-- **No runtime allocation**: Pathfinding operations use pre-allocated memory
-- **Object pooling**: Heap nodes are pooled and reused
-- **No `auto` keyword**: All types are explicit
-- **No modern C++ features**: Strictly C++11 compliant
-- **No exceptions**: Uses error codes
-- **Flat arrays**: For cache-friendly memory access
-- **No dynamic allocation**: In hot paths
+---
 
-## Performance Characteristics
+## Toss a Coin to Your Witcher
 
-- **Graph Size**: Tested with 120 nodes, 1000+ paths
-- **Cache Hit Rate**: ~90%+ for common paths with appropriate cache size
-- **Memory**: Pre-allocated at initialization, zero allocation during pathfinding
-- **Pathfinding**: O((V + E) log V) typical A* complexity
-- **Heap Operations**: O(log n) push/pop, O(n) bulk build
+If you find my [Defold extensions](https://github.com/selimanac) useful in your projects, please consider [supporting me](https://github.com/sponsors/selimanac) on GitHub Sponsors.  
+I’d also love to hear about your games or apps that use these extensions, sharing your released projects really motivates me to keep building more tools for the community!
 
-
+---
 
 ## License
 
@@ -63,8 +51,6 @@ A high-performance A* pathfinding library written in C++11, designed for real-ti
 - 💲 Commercial use (any monetized game/app) requires a **one-time $10 payment via GitHub Sponsors**.  
 - 📩 Free releases are welcome to share project info (name, genre, date, links).  
 - 🔒 The Software is **closed-source**; source access may be granted **upon request**.
-
-
 
 ---
 
