@@ -180,7 +180,7 @@ function init(self)
 	local smooting_config = {
 		style                               = pathfinder.PathSmoothStyle.BEZIER_QUADRATIC,
 		bezier_sample_segment               = 8,
-		bezier_control_point_ooffset        = 0.4, -- bezier_cubic
+		bezier_control_point_offset         = 0.4, -- bezier_cubic
 		bezier_curve_radius                 = 0.8, -- bezier_quadratic
 		bezier_adaptive_tightness           = 0.5, -- bezier_adaptive
 		bezier_adaptive_roundness           = 0.5, -- bezier_adaptive
@@ -194,7 +194,7 @@ function init(self)
 	local smooting_config = {
 		style                               = pathfinder.PathSmoothStyle.BEZIER_QUADRATIC,
 		bezier_sample_segment               = 6,
-		bezier_control_point_ooffset        = 0.4, -- bezier_cubic
+		bezier_control_point_offset         = 0.4, -- bezier_cubic
 		bezier_curve_radius                 = 0.8, -- bezier_quadratic
 		bezier_adaptive_tightness           = 0.5, -- bezier_adaptive
 		bezier_adaptive_roundness           = 0.5, -- bezier_adaptive

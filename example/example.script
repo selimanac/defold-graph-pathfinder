@@ -58,7 +58,7 @@ pathfinder::path::init(
 
 	pathfinder.shutdown()
 
-	pathfinder.init(100, 4, 32, 32)
+	pathfinder.init(100, nil, 4, 32, 32)
 	pprint(node_positions)
 	local node_ids = pathfinder.add_nodes(node_positions)
 	pprint(node_ids)
