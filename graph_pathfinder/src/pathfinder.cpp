@@ -829,7 +829,7 @@ static void LuaInit(lua_State* L)
     SET_CONSTANT(pathStatusTable, ERROR_VIRTUAL_NODE_FAILED);
 
 #undef SET_CONSTANT
-    lua_setfield(L, -2, "PathStatus"); // attach as module.PathStatus
+    lua_setfield(L, -2, "PathStatus"); // pathfinder.PathStatus
 
     // ----------------------------
     // PathSmoothStyle enum
@@ -848,7 +848,7 @@ static void LuaInit(lua_State* L)
     SET_CONSTANT(pathStyleTable, CIRCULAR_ARC);
 
 #undef SET_CONSTANT
-    lua_setfield(L, -2, "PathSmoothStyle"); // attach as module.PathSmoothStyle
+    lua_setfield(L, -2, "PathSmoothStyle"); // pathfinder.PathSmoothStyle
 
     lua_pop(L, 1); // pop module table
     assert(top == lua_gettop(L));
