@@ -129,7 +129,7 @@ local function draw_static_smoothed_path()
 		local from_node = smoothed_path[i]
 		local to_node = smoothed_path[i + 1]
 
-		msg.post("@render:", "draw_line", { start_point = vmath.vector3(from_node.x, from_node.y, 0), end_point = vmath.vector3(to_node.x, to_node.y, 0), color = vmath.vector4(1, 0, 0, 1) })
+		msg.post("@render:", "draw_line", { start_point = vmath.vector3(from_node.x, from_node.y, 0), end_point = vmath.vector3(to_node.x, to_node.y, 0), color = vmath.vector4(1, 1, 0, 1) })
 	end
 end
 
@@ -138,7 +138,7 @@ local function draw_static_path()
 		local from_node = path[i]
 		local to_node = path[i + 1]
 
-		msg.post("@render:", "draw_line", { start_point = vmath.vector3(from_node.x, from_node.y, 0), end_point = vmath.vector3(to_node.x, to_node.y, 0), color = vmath.vector4(1, 0, 0, 1) })
+		msg.post("@render:", "draw_line", { start_point = vmath.vector3(from_node.x, from_node.y, 0), end_point = vmath.vector3(to_node.x, to_node.y, 0), color = vmath.vector4(1, 1, 0, 1) })
 	end
 end
 

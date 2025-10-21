@@ -26,7 +26,7 @@ function update(self, dt)
 	)
 
 	path_distance_cache_text = string.format(
-		"Path Cache: current_size=%u | hit_count=%u | hit_rate=%u | miss_count=%u ",
+		"Distance Cache: current_size=%u | hit_count=%u | hit_rate=%u | miss_count=%u ",
 		cache_result.distance_cache.current_size,
 		cache_result.distance_cache.hit_count,
 		cache_result.distance_cache.hit_rate,
