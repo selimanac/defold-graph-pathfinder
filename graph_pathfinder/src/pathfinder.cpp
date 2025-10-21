@@ -48,7 +48,7 @@ static inline const char* path_status_to_string(enum pathfinder::PathStatus stat
 }
 
 // Helper function to parse a Vec2 from a Lua table with x and y fields
-static pathfinder::Vec2 parse_vec2_from_table(lua_State* L, int index)
+static inline pathfinder::Vec2 parse_vec2_from_table(lua_State* L, int index)
 {
     lua_getfield(L, index, "x");
     float x = luaL_checknumber(L, -1);
