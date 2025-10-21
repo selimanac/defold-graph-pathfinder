@@ -36,7 +36,7 @@ This helps the author track and support projects using the Software.
 If your project generates **any income**, directly or indirectly, you must:
 
 1. Make a **one-time payment of at least $10 USD** via  
-   [GitHub Sponsors](https://github.com/sponsors/YourUsername).  
+   [GitHub Sponsors](https://github.com/sponsors/selimanac).  
    *(This is the only accepted payment method.)*
 
 2. Provide the following **project details** to the author:
