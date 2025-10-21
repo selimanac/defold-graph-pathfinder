@@ -49,7 +49,8 @@ local edges = {
 	{ from_node_id = 14, to_node_id = 20, bidirectional = false },
 	{ from_node_id = 18, to_node_id = 19, bidirectional = true },
 	{ from_node_id = 19, to_node_id = 20, bidirectional = true },
-	{ from_node_id = 20, to_node_id = 9,  bidirectional = true }
+	{ from_node_id = 20, to_node_id = 9,  bidirectional = true },
+	{ from_node_id = 3,  to_node_id = 21, bidirectional = true }
 }
 
 local nodes_go = {}
@@ -108,10 +109,9 @@ local function draw_edges(is_init)
 	is_init = is_init or false
 
 	for i, edge in ipairs(edges) do
-		local from_v2 = node_positions[edge.from_node_id + 1]
+		local from_v2 = pathfinder.get_node_position(edge.from_node_id)
 		local from = vmath.vector3(from_v2.x, from_v2.y, 0)
-
-		local to_v2 = node_positions[edge.to_node_id + 1]
+		local to_v2 = pathfinder.get_node_position(edge.to_node_id)
 		local to = vmath.vector3(to_v2.x, to_v2.y, 0)
 
 		draw_edge(from, to, edge.bidirectional, is_init)
@@ -162,8 +162,17 @@ function init(self)
 	nodes = pathfinder.add_nodes(node_positions)
 
 
-	local go_url = msg.url("/node_1")
+	local go_url = msg.url("/node_21")
 	local node_id = pathfinder.add_gameobject_node(go_url)
+	go_url.fragment = "node_id"
+	label.set_text(go_url, node_id)
+	print("node_id", node_id)
+
+	go_url = msg.url("/node_2")
+	pathfinder.convert_gameobject_node(2, go_url)
+	go_url.fragment = "node_id"
+	label.set_text(go_url, 2)
+
 
 	pathfinder.add_edges(edges)
 
@@ -210,6 +219,8 @@ function init(self)
 
 	draw_nodes()
 	draw_edges(true)
+
+	go.animate("/node_2", "position.x", go.PLAYBACK_LOOP_PINGPONG, 170, go.EASING_INOUTSINE, 1)
 end
 
 local y = 120
@@ -235,10 +246,10 @@ function update(self, dt)
 		dir = 1
 	end
 
-	pathfinder.move_node(2, y, 270)
+	--[[	pathfinder.move_node(2, y, 270)
 	node_positions[3].x = y
 	node_positions[3].y = 270
-	go.set_position(vmath.vector3(y, 270, 0), nodes_go[3])
+	go.set_position(vmath.vector3(y, 270, 0), nodes_go[3])]]
 
 
 	draw_edges()

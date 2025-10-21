@@ -1,4 +1,19 @@
 name: "main"
+instances {
+  id: "node_21"
+  prototype: "/example/node.go"
+  position {
+    x: 81.0
+  }
+}
+instances {
+  id: "node_2"
+  prototype: "/example/node.go"
+  position {
+    x: 32.0
+    y: 101.0
+  }
+}
 scale_along_z: 0
 embedded_instances {
   id: "scripts"
@@ -45,25 +60,6 @@ embedded_instances {
   "  id: \"sprite\"\n"
   "  type: \"sprite\"\n"
   "  data: \"default_animation: \\\"mouse\\\"\\n"
-  "material: \\\"/builtins/materials/sprite.material\\\"\\n"
-  "size {\\n"
-  "  x: 16.0\\n"
-  "  y: 16.0\\n"
-  "}\\n"
-  "textures {\\n"
-  "  sampler: \\\"texture_sampler\\\"\\n"
-  "  texture: \\\"/example/demo.atlas\\\"\\n"
-  "}\\n"
-  "\"\n"
-  "}\n"
-  ""
-}
-embedded_instances {
-  id: "node_1"
-  data: "embedded_components {\n"
-  "  id: \"sprite1\"\n"
-  "  type: \"sprite\"\n"
-  "  data: \"default_animation: \\\"node\\\"\\n"
   "material: \\\"/builtins/materials/sprite.material\\\"\\n"
   "size {\\n"
   "  x: 16.0\\n"

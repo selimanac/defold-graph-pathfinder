@@ -2,7 +2,6 @@
 // Extension lib defines
 
 #include "dmsdk/dlib/log.h"
-
 #define LIB_NAME "GraphPathfinder"
 #define MODULE_NAME "pathfinder"
 #include <dmsdk/sdk.h>
@@ -57,6 +56,7 @@ static int pathfinder_init(lua_State* L)
     uint32_t max_edge_per_node = luaL_checkint(L, 3);
     uint32_t pool_block_size = luaL_checkint(L, 4);
     uint32_t max_cache_path_length = luaL_checkint(L, 5);
+
     pathfinder::path::init(max_nodes, max_edge_per_node, pool_block_size, max_cache_path_length);
 
     if (max_gameobject_nodes > 0)
@@ -157,6 +157,7 @@ static int pathfinder_add_gameobject_node(lua_State* L)
 {
     DM_LUA_STACK_CHECK(L, 1);
 
+    // IN <<-
     dmGameObject::HInstance gameobject_instance = dmScript::CheckGOInstance(L, 1);
     bool                    use_world_position = lua_toboolean(L, 2);
 
@@ -164,10 +165,10 @@ static int pathfinder_add_gameobject_node(lua_State* L)
     pathfinder::Vec2        pos = pathfinder::Vec2(gameobject_position.getX(), gameobject_position.getY());
 
     pathfinder::PathStatus  status;
-
     uint32_t                node_id = pathfinder::path::add_node(pos, &status);
     pathfinder::extension::add_gameobject_node(node_id, gameobject_instance, gameobject_position, use_world_position);
 
+    // OUT ->>
     lua_pushinteger(L, node_id);
 
     if (status != pathfinder::SUCCESS)
@@ -176,6 +177,23 @@ static int pathfinder_add_gameobject_node(lua_State* L)
     }
 
     return 1;
+}
+
+static int pathfinder_convert_gameobject_node(lua_State* L)
+{
+    DM_LUA_STACK_CHECK(L, 0);
+
+    // IN <<-
+    uint32_t                node_id = luaL_checkinteger(L, 1);
+    dmGameObject::HInstance gameobject_instance = dmScript::CheckGOInstance(L, 2);
+    bool                    use_world_position = lua_toboolean(L, 3);
+
+    dmVMath::Point3         gameobject_position = dmGameObject::GetPosition(gameobject_instance);
+    pathfinder::Vec2        pos = pathfinder::Vec2(gameobject_position.getX(), gameobject_position.getY());
+
+    pathfinder::extension::add_gameobject_node(node_id, gameobject_instance, gameobject_position, use_world_position);
+
+    return 0;
 }
 
 static int pathfinder_add_node(lua_State* L)
@@ -465,12 +483,31 @@ static int pathfinder_remove_node(lua_State* L)
     return 0;
 }
 
-static int pathfinder_get_node_position(lua_State* L)
+static int pathfinder_remove_gameobject_node(lua_State* L)
 {
     DM_LUA_STACK_CHECK(L, 0);
     uint32_t node_id = luaL_checkint(L, 1);
-    pathfinder::path::get_node_position(node_id);
+    pathfinder::extension::remove_gameobject_node(node_id);
+    pathfinder::path::remove_node(node_id);
     return 0;
+}
+
+static int pathfinder_get_node_position(lua_State* L)
+{
+    DM_LUA_STACK_CHECK(L, 1);
+    uint32_t         node_id = luaL_checkint(L, 1);
+    pathfinder::Vec2 pos = pathfinder::path::get_node_position(node_id);
+
+    // Create a table with 0 array slots, 2 hash entries
+    lua_createtable(L, 0, 2);
+
+    lua_pushnumber(L, pos.x);
+    lua_setfield(L, -2, "x");
+
+    lua_pushnumber(L, pos.y);
+    lua_setfield(L, -2, "y");
+
+    return 1; // the table
 }
 
 static int pathfinder_remove_edge(lua_State* L)
@@ -623,23 +660,76 @@ static int pathfinder_smooth_path(lua_State* L)
     return 2;
 }
 
+static int pathfinder_set_gameobject_update(lua_State* L)
+{
+    DM_LUA_STACK_CHECK(L, 0);
+    bool state = lua_toboolean(L, 1);
+    pathfinder::extension::set_update_state(state);
+    return 0;
+}
+
+static int pathfinder_pause_gameobject_node(lua_State* L)
+{
+    DM_LUA_STACK_CHECK(L, 0);
+    uint32_t node_id = luaL_checkinteger(L, 1);
+    pathfinder::extension::pause_gameobject_node(node_id);
+    return 0;
+}
+
+static int pathfinder_resume_gameobject_node(lua_State* L)
+{
+    DM_LUA_STACK_CHECK(L, 0);
+    uint32_t node_id = luaL_checkinteger(L, 1);
+    pathfinder::extension::resume_gameobject_node(node_id);
+    return 0;
+}
+
+static int pathfinder_set_update_frequency(lua_State* L)
+{
+    DM_LUA_STACK_CHECK(L, 0);
+    uint8_t frequency = luaL_checknumber(L, 1);
+    pathfinder::extension::set_update_frequency(frequency);
+    return 0;
+}
+
 // Functions exposed to Lua
 static const luaL_reg Module_methods[] = {
+
+    // OPs
     { "init", pathfinder_init },
+    { "shutdown", pathfinder_shutdown },
+
+    // Nodes
     { "add_node", pathfinder_add_node },
-    { "add_gameobject_node", pathfinder_add_gameobject_node },
-    { "add_edge", pathfinder_add_edge },
-    { "remove_node", pathfinder_remove_node },
-    { "remove_edge", pathfinder_remove_edge },
-    { "move_node", pathfinder_move_node },
     { "add_nodes", pathfinder_add_nodes },
+    { "remove_node", pathfinder_remove_node },
+    { "move_node", pathfinder_move_node },
+    { "get_node_position", pathfinder_get_node_position },
+
+    // Edges
+    { "add_edge", pathfinder_add_edge },
     { "add_edges", pathfinder_add_edges },
+    { "remove_edge", pathfinder_remove_edge },
+
+    // Path
     { "find_path", pathfinder_find_path },
     { "find_projected_path", pathfinder_find_projected_path },
-    { "get_node_position", pathfinder_get_node_position },
+
+    // Smooth
     { "smooth_path", pathfinder_smooth_path },
-    { "shutdown", pathfinder_shutdown },
     { "add_path_smoothing", pathfinder_add_path_smoothing },
+
+    // Gameobjects
+    { "add_gameobject_node", pathfinder_add_gameobject_node },
+    { "convert_gameobject_node", pathfinder_convert_gameobject_node },
+    { "remove_gameobject_node", pathfinder_remove_gameobject_node },
+    { "pause_gameobject_node", pathfinder_pause_gameobject_node },
+    { "resume_gameobject_node", pathfinder_resume_gameobject_node },
+
+    // Update
+    { "gameobject_update", pathfinder_set_gameobject_update },
+    { "set_update_frequency", pathfinder_set_update_frequency },
+
     { 0, 0 }
 };
 
@@ -701,7 +791,11 @@ static void LuaInit(lua_State* L)
 static dmExtension::Result AppInitializeGraphPathfinder(dmExtension::AppParams* params)
 {
     dmLogInfo("AppInitializeGraphPathfinder");
+    uint8_t update_frequency = dmConfigFile::GetInt(params->m_ConfigFile, "display.update_frequency", 0);
+
     pathfinder::extension::init();
+    pathfinder::extension::set_update_frequency(update_frequency);
+
     return dmExtension::RESULT_OK;
 }
 
@@ -721,11 +815,12 @@ static dmExtension::Result AppFinalizeGraphPathfinder(dmExtension::AppParams* pa
     return dmExtension::RESULT_OK;
 }
 
-/*static dmExtension::Result OnUpdateGraphPathfinder(dmExtension::Params* params)
+static dmExtension::Result OnUpdateGraphPathfinder(dmExtension::Params* params)
 {
     dmLogInfo("OnUpdateGraphPathfinder");
+    pathfinder::extension::update();
     return dmExtension::RESULT_OK;
-}*/
+}
 
 // Defold SDK uses a macro for setting up extension entry points:
 //
@@ -733,4 +828,4 @@ static dmExtension::Result AppFinalizeGraphPathfinder(dmExtension::AppParams* pa
 
 // GraphPathfinder is the C++ symbol that holds all relevant extension data.
 // It must match the name field in the `ext.manifest`
-DM_DECLARE_EXTENSION(GraphPathfinder, LIB_NAME, AppInitializeGraphPathfinder, AppFinalizeGraphPathfinder, InitializeGraphPathfinder, 0, 0, 0)
+DM_DECLARE_EXTENSION(GraphPathfinder, LIB_NAME, AppInitializeGraphPathfinder, AppFinalizeGraphPathfinder, InitializeGraphPathfinder, OnUpdateGraphPathfinder, 0, 0)

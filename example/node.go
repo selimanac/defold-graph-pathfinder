@@ -21,7 +21,7 @@ embedded_components {
   "  y: 0.0\n"
   "  z: 0.0\n"
   "}\n"
-  "text: \"Label\"\n"
+  "text: \"2\"\n"
   "font: \"/builtins/fonts/default.font\"\n"
   "material: \"/builtins/fonts/label-df.material\"\n"
   ""

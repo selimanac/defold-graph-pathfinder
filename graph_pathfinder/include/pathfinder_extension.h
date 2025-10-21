@@ -16,12 +16,15 @@ namespace pathfinder
 
         // Gameobjects
         void set_gameobject_capacity(uint32_t gameobject_capacity);
-
         void add_gameobject_node(uint32_t node_id, dmGameObject::HInstance instance, dmVMath::Point3 position, bool use_world_position);
         void remove_gameobject_node(uint32_t node_id);
-        void set_update_gameobjects(bool state);
         void pause_gameobject_node(uint32_t node_id);
         void resume_gameobject_node(uint32_t node_id);
+
+        // Update
+        void set_update_state(bool state);
+        void set_update_frequency(uint8_t update_frequency);
+        void update();
 
         // Smooth
         uint32_t add_smooth_config(uint32_t path_style, navigation::AgentPathSmoothConfig path_smooth_config);
