@@ -1,7 +1,16 @@
 
-# A* Graph Pathfinding  Defold native extension
+# A* Graph Pathfinding Defold Native Extension
 
 A high-performance A* pathfinding library written in C++11, designed for real-time games and simulations with hundreds to thousands of moving objects. Built with a focus on performance, using flat array data structures and advanced caching mechanisms.
+
+
+## Discussions & Release Notes
+
+https://github.com/selimanac/defold-graph-pathfinder/discussions  
+
+## Documentation
+
+For full function details and usage examples, see the [API Reference](./API.md).  
 
 ## Technical Features
 
