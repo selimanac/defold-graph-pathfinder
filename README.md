@@ -33,17 +33,6 @@ For full function details and usage examples, see the [API Reference](./API.md).
 - **Web**: JavaScript, WebAssembly (via Emscripten)
 
 
-### Smoothing Methods:
-
-| Method | Best For | Characteristics |
-|--------|----------|-----------------|
-| `circular_arc()` | ⭐ Railroads, tower defense, tile-based games | **Perfect circular arcs** for corners - ideal for tile matching |
-| `bezier_quadratic()` | Character movement, vehicles | Straight segments stay straight, only corners smoothed |
-| `bezier_adaptive()` | Dynamic paths, varying turn angles | Adaptive control point placement based on corner sharpness |
-| `catmull_rom()` | Precise waypoint following | Passes through all waypoints |
-| `bezier_cubic()` | Cinematic cameras, UI | Maximum smoothness with two control points |
-
-
 
 ---
 
