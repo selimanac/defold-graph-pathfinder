@@ -50,7 +50,7 @@ I’d also love to hear about your games or apps that use these extensions, shar
 - 📩 Free releases are welcome to share project info (name, genre, date, links).  
 - 🔒 The Software is **closed-source**; source access may be granted **upon request**.
 
-Full  [licensee](./LICENSE.md)
+See  [License](./LICENSE.md)
 
 ---
 
