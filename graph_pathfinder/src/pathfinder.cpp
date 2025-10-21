@@ -47,6 +47,20 @@ static inline const char* path_status_to_string(enum pathfinder::PathStatus stat
     }
 }
 
+// Helper function to parse a Vec2 from a Lua table with x and y fields
+static inline pathfinder::Vec2 parse_vec2_from_table(lua_State* L, int index)
+{
+    lua_getfield(L, index, "x");
+    float x = luaL_checknumber(L, -1);
+    lua_pop(L, 1);
+
+    lua_getfield(L, index, "y");
+    float y = luaL_checknumber(L, -1);
+    lua_pop(L, 1);
+
+    return pathfinder::Vec2(x, y);
+}
+
 // Helper function to create a Lua table with path waypoints (node positions with optional IDs)
 static void push_path_node_table(lua_State* L, const pathfinder::Vec2& pos, uint32_t node_id = 0, bool include_id = false)
 {
@@ -119,20 +133,12 @@ static int pathfinder_add_nodes(lua_State* L)
 
         if (lua_istable(L, -1))
         {
-            lua_getfield(L, -1, "x");
-            float x = luaL_checknumber(L, -1);
-            lua_pop(L, 1);
-
-            lua_getfield(L, -1, "y");
-            float y = luaL_checknumber(L, -1);
-            lua_pop(L, 1);
-
-            pathfinder::Vec2 pos = pathfinder::Vec2(x, y);
+            pathfinder::Vec2 pos = parse_vec2_from_table(L, -1);
             uint32_t         node_id = pathfinder::path::add_node(pos, &status);
 
             if (status != pathfinder::SUCCESS)
             {
-                dmLogError("Node %d: x=%.1f, y=%.1f Failed. %s  (status: %d)", i, x, y, path_status_to_string(status), status);
+                dmLogError("Node %d: x=%.1f, y=%.1f Failed. %s  (status: %d)", i, pos.x, pos.y, path_status_to_string(status), status);
             }
             else
             {
@@ -644,15 +650,7 @@ static int pathfinder_smooth_path(lua_State* L)
 
         if (lua_istable(L, -1))
         {
-            lua_getfield(L, -1, "x");
-            float x = luaL_checknumber(L, -1);
-            lua_pop(L, 1);
-
-            lua_getfield(L, -1, "y");
-            float y = luaL_checknumber(L, -1);
-            lua_pop(L, 1);
-
-            pathfinder::Vec2 pos = pathfinder::Vec2(x, y);
+            pathfinder::Vec2 pos = parse_vec2_from_table(L, -1);
             waypoints.Push(pos);
         }
 

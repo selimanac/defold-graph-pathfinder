@@ -149,6 +149,15 @@ function pathfinder.add_path_smoothing(config) end
 ---@return number node_id Unique identifier for the created node
 function pathfinder.add_gameobject_node(game_object_instance, use_world_position) end
 
+---@class GameObjectNodeConfig
+---@field [1] userdata Game object instance (msg.url)
+---@field [2] boolean|nil Optional: Whether to use world position (default: false if omitted)
+
+---Add multiple game object nodes that automatically track their game objects' positions.
+---@param game_object_nodes GameObjectNodeConfig[] Array of game object node configurations
+---@return number[] node_ids Array of created node IDs
+function pathfinder.add_gameobject_nodes(game_object_nodes) end
+
 ---Convert an existing node to a game object node.
 ---@param node_id number Existing node ID to convert
 ---@param game_object_instance userdata Game object instance to track
@@ -174,5 +183,25 @@ function pathfinder.gameobject_update(enabled) end
 ---Set the update frequency for game object node position updates.
 ---@param frequency number Update frequency in Hz
 function pathfinder.set_update_frequency(frequency) end
+
+---@class PathCacheStats
+---@field current_entries number Current number of cached paths
+---@field max_capacity number Maximum cache capacity
+---@field hit_rate number Cache hit rate percentage (0-100)
+
+---@class DistanceCacheStats
+---@field current_size number Current number of cached distance calculations
+---@field hit_count number Number of cache hits
+---@field miss_count number Number of cache misses
+---@field hit_rate number Cache hit rate percentage (0-100)
+
+---@class CacheStats
+---@field path_cache PathCacheStats Path cache statistics
+---@field distance_cache DistanceCacheStats Distance cache statistics
+
+---Get caching statistics for pathfinding operations.
+---Returns detailed statistics about path caching and distance caching performance.
+---@return CacheStats stats Cache statistics with path_cache and distance_cache fields
+function pathfinder.get_cache_stats() end
 
 return pathfinder
