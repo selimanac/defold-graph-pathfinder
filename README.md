@@ -59,7 +59,12 @@ A high-performance A* pathfinding library written in C++11, designed for real-ti
 
 ## License
 
-TODO
+- ✅ Free for personal, educational, and **completely free** games or apps.  
+- 💲 Commercial use (any monetized game/app) requires a **one-time $10 payment via GitHub Sponsors**.  
+- 📩 Free releases are welcome to share project info (name, genre, date, links).  
+- 🔒 The Software is **closed-source**; source access may be granted **upon request**.
+
+
 
 ---
 

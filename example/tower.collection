@@ -65,6 +65,10 @@ embedded_instances {
   "  }\n"
   "}\n"
   ""
+  position {
+    x: 232.0
+    y: 63.0
+  }
 }
 embedded_instances {
   id: "go1"
@@ -80,7 +84,7 @@ embedded_instances {
   "}\n"
   ""
   position {
-    x: 703.0
-    y: 483.0
+    x: 935.0
+    y: 546.0
   }
 }
