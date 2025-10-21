@@ -47,6 +47,39 @@ static inline const char* path_status_to_string(enum pathfinder::PathStatus stat
     }
 }
 
+// Helper function to create a Lua table with path waypoints (node positions with optional IDs)
+static void push_path_node_table(lua_State* L, const pathfinder::Vec2& pos, uint32_t node_id = 0, bool include_id = false)
+{
+    lua_createtable(L, 0, include_id ? 3 : 2);
+
+    lua_pushstring(L, "x");
+    lua_pushnumber(L, pos.x);
+    lua_settable(L, -3);
+
+    lua_pushstring(L, "y");
+    lua_pushnumber(L, pos.y);
+    lua_settable(L, -3);
+
+    if (include_id)
+    {
+        lua_pushstring(L, "id");
+        lua_pushinteger(L, node_id);
+        lua_settable(L, -3);
+    }
+}
+
+// Helper function to create a Lua table array from smoothed path positions
+static void push_smoothed_path_table(lua_State* L, const dmArray<pathfinder::Vec2>& smoothed_path)
+{
+    lua_createtable(L, smoothed_path.Size(), 0);
+    int newTable = lua_gettop(L);
+    for (int i = 0; i < smoothed_path.Size(); ++i)
+    {
+        push_path_node_table(L, smoothed_path[i]);
+        lua_rawseti(L, newTable, i + 1);
+    }
+}
+
 static int pathfinder_init(lua_State* L)
 {
     DM_LUA_STACK_CHECK(L, 0);
@@ -65,38 +98,6 @@ static int pathfinder_init(lua_State* L)
     }
     return 0;
 }
-
-/*static int pathfinder_add_nodes(lua_State* L)
-{
-    DM_LUA_STACK_CHECK(L, 0);
-
-    luaL_checktype(L, 1, LUA_TTABLE);
-
-    int count = (int)lua_objlen(L, 1);
-    dmLogInfo("Adding %d nodes", count);
-
-    lua_pushnil(L);
-    // for pairs -> order not guaranteed
-    while (lua_next(L, 1) != 0)
-    {
-        if (lua_istable(L, -1))
-        {
-            lua_getfield(L, -1, "x");
-            lua_getfield(L, -2, "y");
-
-            float x = luaL_checknumber(L, -2);
-            float y = luaL_checknumber(L, -1);
-
-            dmLogInfo("x %.1f - y %.1f", x, y);
-
-            lua_pop(L, 2); // pop x, y
-        }
-
-        lua_pop(L, 1); // pop value (inner table), keep key for next iteration
-    }
-
-    return 0;
-}*/
 
 static int pathfinder_add_nodes(lua_State* L)
 {
@@ -315,27 +316,9 @@ static int pathfinder_find_path(lua_State* L)
         lua_pushstring(L, path_status_to_string(status));
 
         // Result table
-        lua_createtable(L, smoothed_path.Size(), 0);
-        int newTable = lua_gettop(L);
-        for (int ii = 0; ii < smoothed_path.Size(); ++ii)
-        {
-            lua_createtable(L, 0, 2);
-
-            pathfinder::Vec2 pos = smoothed_path[ii];
-
-            lua_pushstring(L, "x");
-            lua_pushinteger(L, pos.x);
-            lua_settable(L, -3);
-
-            lua_pushstring(L, "y");
-            lua_pushinteger(L, pos.y);
-            lua_settable(L, -3);
-
-            lua_rawseti(L, newTable, ii + 1);
-        }
+        push_smoothed_path_table(L, smoothed_path);
     }
-
-    if (smooth_id == 0)
+    else
     {
         lua_pushinteger(L, path_length);
         lua_pushinteger(L, status);
@@ -344,25 +327,11 @@ static int pathfinder_find_path(lua_State* L)
         // Result table
         lua_createtable(L, path_length, 0);
         int newTable = lua_gettop(L);
-        for (int ii = 0; ii < path_length; ++ii)
+        for (int i = 0; i < path_length; ++i)
         {
-            pathfinder::Vec2 node_position = pathfinder::path::get_node_position(path[ii]);
-
-            lua_createtable(L, 0, 3);
-
-            lua_pushstring(L, "x");
-            lua_pushinteger(L, node_position.x);
-            lua_settable(L, -3);
-
-            lua_pushstring(L, "y");
-            lua_pushinteger(L, node_position.y);
-            lua_settable(L, -3);
-
-            lua_pushstring(L, "id");
-            lua_pushinteger(L, path[ii]);
-            lua_settable(L, -3);
-
-            lua_rawseti(L, newTable, ii + 1);
+            pathfinder::Vec2 node_position = pathfinder::path::get_node_position(path[i]);
+            push_path_node_table(L, node_position, path[i], true);
+            lua_rawseti(L, newTable, i + 1);
         }
     }
 
@@ -415,27 +384,9 @@ static int pathfinder_find_projected_path(lua_State* L)
         dmScript::PushVector3(L, dmVMath::Vector3(entry_point.x, entry_point.y, 0));
 
         // Result table
-        lua_createtable(L, smoothed_path.Size(), 0);
-        int newTable = lua_gettop(L);
-        for (int ii = 0; ii < smoothed_path.Size(); ++ii)
-        {
-            lua_createtable(L, 0, 2);
-
-            pathfinder::Vec2 pos = smoothed_path[ii];
-
-            lua_pushstring(L, "x");
-            lua_pushinteger(L, pos.x);
-            lua_settable(L, -3);
-
-            lua_pushstring(L, "y");
-            lua_pushinteger(L, pos.y);
-            lua_settable(L, -3);
-
-            lua_rawseti(L, newTable, ii + 1);
-        }
+        push_smoothed_path_table(L, smoothed_path);
     }
-
-    if (smooth_id == 0)
+    else
     {
         lua_pushinteger(L, path_length);
         lua_pushinteger(L, status);
@@ -445,22 +396,11 @@ static int pathfinder_find_projected_path(lua_State* L)
         // Result table
         lua_createtable(L, path_length, 0);
         int newTable = lua_gettop(L);
-        for (int ii = 0; ii < path_length; ii++)
+        for (int i = 0; i < path_length; i++)
         {
-            pathfinder::Vec2 node_position = pathfinder::path::get_node_position(path[ii]);
-
-            lua_createtable(L, 2, 0);
-            lua_pushstring(L, "x");
-            lua_pushinteger(L, node_position.x);
-            lua_settable(L, -3);
-            lua_pushstring(L, "y");
-            lua_pushinteger(L, node_position.y);
-            lua_settable(L, -3);
-            lua_pushstring(L, "id");
-            lua_pushinteger(L, path[ii]);
-            lua_settable(L, -3);
-
-            lua_rawseti(L, newTable, ii + 1);
+            pathfinder::Vec2 node_position = pathfinder::path::get_node_position(path[i]);
+            push_path_node_table(L, node_position, path[i], true);
+            lua_rawseti(L, newTable, i + 1);
         }
     }
     return 5;
@@ -557,8 +497,8 @@ static int pathfinder_add_path_smoothing(lua_State* L)
     path_smooth_config.m_SampleSegment = luaL_optinteger(L, -1, 0);
     lua_pop(L, 1);
 
-    // Get "bezier_control_point_ooffset"
-    lua_getfield(L, 1, "bezier_control_point_ooffset");
+    // Get "bezier_control_point_offset"
+    lua_getfield(L, 1, "bezier_control_point_offset");
     path_smooth_config.m_ControlPointOffset = (float)luaL_optnumber(L, -1, 0.0);
     lua_pop(L, 1);
 
@@ -612,11 +552,11 @@ static int pathfinder_smooth_path(lua_State* L)
         if (lua_istable(L, -1))
         {
             lua_getfield(L, -1, "x");
-            float x = luaL_checkint(L, -1);
+            float x = luaL_checknumber(L, -1);
             lua_pop(L, 1);
 
             lua_getfield(L, -1, "y");
-            float y = luaL_checkint(L, -1);
+            float y = luaL_checknumber(L, -1);
             lua_pop(L, 1);
 
             pathfinder::Vec2 pos = pathfinder::Vec2(x, y);
@@ -626,7 +566,6 @@ static int pathfinder_smooth_path(lua_State* L)
         lua_pop(L, 1); // pop inner table
     }
 
-    pathfinder::PathStatus    status;
     dmArray<pathfinder::Vec2> smoothed_path;
     uint32_t                  samples_per_segment = pathfinder::extension::get_smooth_sample_segment(smooth_id);
 
@@ -638,24 +577,7 @@ static int pathfinder_smooth_path(lua_State* L)
     lua_pushinteger(L, smoothed_path.Size());
 
     // Result table
-    lua_createtable(L, smoothed_path.Size(), 0);
-    int newTable = lua_gettop(L);
-    for (int ii = 0; ii < smoothed_path.Size(); ++ii)
-    {
-        lua_createtable(L, 0, 2);
-
-        pathfinder::Vec2 pos = smoothed_path[ii];
-
-        lua_pushstring(L, "x");
-        lua_pushinteger(L, pos.x);
-        lua_settable(L, -3);
-
-        lua_pushstring(L, "y");
-        lua_pushinteger(L, pos.y);
-        lua_settable(L, -3);
-
-        lua_rawseti(L, newTable, ii + 1);
-    }
+    push_smoothed_path_table(L, smoothed_path);
 
     return 2;
 }
