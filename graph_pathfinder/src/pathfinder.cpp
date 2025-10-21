@@ -180,6 +180,66 @@ static int pathfinder_add_gameobject_node(lua_State* L)
     return 1;
 }
 
+static int pathfinder_add_gameobject_nodes(lua_State* L)
+{
+    DM_LUA_STACK_CHECK(L, 1);
+    luaL_checktype(L, 1, LUA_TTABLE);
+
+    int gameobject_count = (int)lua_objlen(L, 1);
+    dmLogInfo("Adding %d gameobject nodes", gameobject_count);
+
+    pathfinder::PathStatus status;
+    dmArray<uint32_t>      node_ids;
+    node_ids.SetCapacity(gameobject_count);
+
+    for (int i = 1; i <= gameobject_count; ++i)
+    {
+        lua_rawgeti(L, 1, i); // push nodes[i]
+        if (!lua_istable(L, -1))
+        {
+            lua_pop(L, 1);
+            continue;
+        }
+        // Get nodes[i][1] = msg.url(...)
+        lua_rawgeti(L, -1, 1);
+        dmGameObject::HInstance go_instance = dmScript::CheckGOInstance(L, -1);
+        lua_pop(L, 1); // pop url
+
+        // Get nodes[i][2] = optional boolean
+        lua_rawgeti(L, -1, 2);
+        bool use_world_position = lua_toboolean(L, -1); // false if nil
+        lua_pop(L, 1);                                  // pop bool
+
+        // Now process gameobject
+        dmVMath::Point3  gameobject_position = dmGameObject::GetPosition(go_instance);
+        pathfinder::Vec2 pos(gameobject_position.getX(), gameobject_position.getY());
+
+        uint32_t         node_id = pathfinder::path::add_node(pos, &status);
+        pathfinder::extension::add_gameobject_node(node_id, go_instance, gameobject_position, use_world_position);
+
+        if (status != pathfinder::SUCCESS)
+        {
+            dmLogError("Node %d: x=%.1f, y=%.1f Failed (%s)", i, pos.x, pos.y, path_status_to_string(status));
+        }
+        else
+        {
+            node_ids.Push(node_id);
+        }
+
+        lua_pop(L, 1); // pop nodes[i]
+    }
+
+    // Return array of node IDs
+    lua_createtable(L, node_ids.Size(), 0);
+    for (int i = 0; i < node_ids.Size(); ++i)
+    {
+        lua_pushinteger(L, node_ids[i]);
+        lua_rawseti(L, -2, i + 1);
+    }
+
+    return 1;
+}
+
 static int pathfinder_convert_gameobject_node(lua_State* L)
 {
     DM_LUA_STACK_CHECK(L, 0);
@@ -233,7 +293,7 @@ static int pathfinder_add_edges(lua_State* L)
 
     for (int i = 1; i <= edge_count; ++i)
     {
-        lua_rawgeti(L, 1, i); // push node_positions[i] onto stack
+        lua_rawgeti(L, 1, i); // push edges[i] onto stack
 
         if (lua_istable(L, -1))
         {
@@ -249,13 +309,33 @@ static int pathfinder_add_edges(lua_State* L)
             bool bidirectional = lua_toboolean(L, -1);
             lua_pop(L, 1);
 
-            float cost = pathfinder::math::distance(pathfinder::path::get_node_position(from_node_id), pathfinder::path::get_node_position(to_node_id));
+            // Optional cost
+            lua_getfield(L, -1, "cost");
+            float cost;
+            if (!lua_isnoneornil(L, -1))
+            {
+                cost = (float)luaL_checknumber(L, -1);
+            }
+            else
+            {
+                cost = pathfinder::math::distance(
+                pathfinder::path::get_node_position(from_node_id),
+                pathfinder::path::get_node_position(to_node_id));
+            }
+            lua_pop(L, 1);
+            // -----------------------------
 
+            pathfinder::PathStatus status;
             pathfinder::path::add_edge(from_node_id, to_node_id, cost, bidirectional, &status);
 
             if (status != pathfinder::SUCCESS)
             {
-                dmLogError("Edge %d: from_node_id=%u, to_node_id=%u Failed. %s  (status: %d)", i, from_node_id, to_node_id, path_status_to_string(status), status);
+                dmLogError("Edge %d: from_node_id=%u, to_node_id=%u Failed. %s (status: %d)",
+                           i,
+                           from_node_id,
+                           to_node_id,
+                           path_status_to_string(status),
+                           status);
             }
         }
 
@@ -269,18 +349,31 @@ static int pathfinder_add_edge(lua_State* L)
 {
     DM_LUA_STACK_CHECK(L, 0);
 
-    uint32_t               from_node_id = luaL_checkint(L, 1);
-    uint32_t               to_node_id = luaL_checkint(L, 2);
-    bool                   bidirectional = lua_toboolean(L, 3);
+    uint32_t from_node_id = luaL_checkint(L, 1);
+    uint32_t to_node_id = luaL_checkint(L, 2);
+    bool     bidirectional = lua_toboolean(L, 3);
+
+    float    cost;
+
+    // If 4th argument is given and not nil, use it
+    if (!lua_isnoneornil(L, 4))
+    {
+        cost = (float)luaL_checknumber(L, 4);
+    }
+    else
+    {
+        // Default cost = distance between nodes
+        cost = pathfinder::math::distance(
+        pathfinder::path::get_node_position(from_node_id),
+        pathfinder::path::get_node_position(to_node_id));
+    }
 
     pathfinder::PathStatus status;
-    float                  cost = pathfinder::math::distance(pathfinder::path::get_node_position(from_node_id), pathfinder::path::get_node_position(to_node_id));
-
     pathfinder::path::add_edge(from_node_id, to_node_id, cost, bidirectional, &status);
 
     if (status != pathfinder::SUCCESS)
     {
-        dmLogError("Failed. %s  (status: %d)", path_status_to_string(status), status);
+        dmLogError("Failed. %s (status: %d)", path_status_to_string(status), status);
     }
 
     return 0;
@@ -614,12 +707,64 @@ static int pathfinder_set_update_frequency(lua_State* L)
     return 0;
 }
 
+static int pathfinder_cache_stats(lua_State* L)
+{
+    DM_LUA_STACK_CHECK(L, 1);
+
+    // ============================================================================
+    // CACHE STATISTICS VARIABLES
+    // ============================================================================
+    uint32_t path_cache_entries;  // Path cache: current entries
+    uint32_t path_cache_capacity; // Path cache: max capacity
+    uint32_t path_cache_hit_rate; // Path cache: hit rate percentage
+
+    uint32_t dist_cache_size;     // Distance cache: current size
+    uint32_t dist_cache_hits;     // Distance cache: hit count
+    uint32_t dist_cache_misses;   // Distance cache: miss count
+    uint32_t dist_cache_hit_rate; // Distance cache: hit rate percentage
+
+    pathfinder::extension::get_cache_stats(path_cache_entries, path_cache_capacity, path_cache_hit_rate, dist_cache_size, dist_cache_hits, dist_cache_misses, dist_cache_hit_rate);
+    // ============================================================================
+    // CREATE RESULT TABLE
+    // ============================================================================
+    lua_createtable(L, 0, 2); // main table (2 hash fields: path_cache, distance_cache)
+
+    //  path_cache
+    lua_createtable(L, 0, 3);
+    lua_pushinteger(L, path_cache_entries);
+    lua_setfield(L, -2, "current_entries");
+    lua_pushinteger(L, path_cache_capacity);
+    lua_setfield(L, -2, "max_capacity");
+    lua_pushinteger(L, path_cache_hit_rate);
+    lua_setfield(L, -2, "hit_rate");
+
+    // add to main table
+    lua_setfield(L, -2, "path_cache");
+
+    //  distance_cache
+    lua_createtable(L, 0, 4);
+    lua_pushinteger(L, dist_cache_size);
+    lua_setfield(L, -2, "current_size");
+    lua_pushinteger(L, dist_cache_hits);
+    lua_setfield(L, -2, "hit_count");
+    lua_pushinteger(L, dist_cache_misses);
+    lua_setfield(L, -2, "miss_count");
+    lua_pushinteger(L, dist_cache_hit_rate);
+    lua_setfield(L, -2, "hit_rate");
+
+    // add to main table
+    lua_setfield(L, -2, "distance_cache");
+
+    return 1; // one table on stack
+}
+
 // Functions exposed to Lua
 static const luaL_reg Module_methods[] = {
 
     // OPs
     { "init", pathfinder_init },
     { "shutdown", pathfinder_shutdown },
+    { "get_cache_stats", pathfinder_cache_stats },
 
     // Nodes
     { "add_node", pathfinder_add_node },
@@ -643,6 +788,7 @@ static const luaL_reg Module_methods[] = {
 
     // Gameobjects
     { "add_gameobject_node", pathfinder_add_gameobject_node },
+    { "add_gameobject_nodes", pathfinder_add_gameobject_nodes },
     { "convert_gameobject_node", pathfinder_convert_gameobject_node },
     { "remove_gameobject_node", pathfinder_remove_gameobject_node },
     { "pause_gameobject_node", pathfinder_pause_gameobject_node },

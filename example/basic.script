@@ -28,7 +28,7 @@ local edges = {
 	{ from_node_id = 0,  to_node_id = 2,  bidirectional = true },
 	{ from_node_id = 2,  to_node_id = 3,  bidirectional = true },
 	{ from_node_id = 2,  to_node_id = 4,  bidirectional = true },
-	{ from_node_id = 4,  to_node_id = 5,  bidirectional = true },
+	{ from_node_id = 4,  to_node_id = 5,  bidirectional = true, cost = 1 },
 	{ from_node_id = 5,  to_node_id = 8,  bidirectional = true },
 	{ from_node_id = 7,  to_node_id = 6,  bidirectional = true },
 	{ from_node_id = 8,  to_node_id = 19, bidirectional = true },
@@ -37,7 +37,7 @@ local edges = {
 	{ from_node_id = 3,  to_node_id = 10, bidirectional = true },
 	{ from_node_id = 10, to_node_id = 11, bidirectional = true },
 	{ from_node_id = 11, to_node_id = 16, bidirectional = true },
-	{ from_node_id = 10, to_node_id = 12, bidirectional = true },
+	{ from_node_id = 10, to_node_id = 12, bidirectional = true, cost = 2000 },
 	{ from_node_id = 12, to_node_id = 15, bidirectional = true },
 	{ from_node_id = 12, to_node_id = 13, bidirectional = true },
 	{ from_node_id = 13, to_node_id = 14, bidirectional = true },
@@ -50,8 +50,13 @@ local edges = {
 	{ from_node_id = 18, to_node_id = 19, bidirectional = true },
 	{ from_node_id = 19, to_node_id = 20, bidirectional = true },
 	{ from_node_id = 20, to_node_id = 9,  bidirectional = true },
-	{ from_node_id = 3,  to_node_id = 21, bidirectional = true }
+	{ from_node_id = 3,  to_node_id = 21, bidirectional = true },
+	{ from_node_id = 9,  to_node_id = 22, bidirectional = true },
+	{ from_node_id = 22, to_node_id = 23, bidirectional = true },
+	{ from_node_id = 23, to_node_id = 24, bidirectional = true },
 }
+
+
 
 local nodes_go = {}
 
@@ -174,6 +179,19 @@ function init(self)
 	label.set_text(go_url, 2)
 
 
+	local node_gos = {
+		{ msg.url("/node_22"), true },
+		{ msg.url("/node_23"), false },
+		{ msg.url("/node_24") }
+	}
+
+	local go_node_ids = pathfinder.add_gameobject_nodes(node_gos)
+	pprint(go_node_ids)
+
+	for i, v in ipairs(node_gos) do
+		label.set_text(v[1], go_node_ids[i])
+	end
+
 	pathfinder.add_edges(edges)
 
 
@@ -217,8 +235,6 @@ function init(self)
 
 	smoothed_path_size, smoothed_path = pathfinder.smooth_path(2, path)
 
-
-
 	draw_nodes()
 	draw_edges(true)
 
@@ -231,7 +247,6 @@ function update(self, dt)
 	draw_static_path()
 	draw_static_smoothed_path()
 	draw_edges()
-
 
 	-- ========================
 	-- PROJECTED PATH

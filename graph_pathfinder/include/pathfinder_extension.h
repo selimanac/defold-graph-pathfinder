@@ -11,8 +11,16 @@ namespace pathfinder
     namespace extension
     {
 
-        // Init
+        // OPs
         void init();
+        void shutdown();
+        void get_cache_stats(uint32_t& path_cache_entries,
+                             uint32_t& path_cache_capacity,
+                             uint32_t& path_cache_hit_rate,
+                             uint32_t& dist_cache_size,
+                             uint32_t& dist_cache_hits,
+                             uint32_t& dist_cache_misses,
+                             uint32_t& dist_cache_hit_rate);
 
         // Gameobjects
         void set_gameobject_capacity(uint32_t gameobject_capacity);
@@ -33,7 +41,6 @@ namespace pathfinder
         uint32_t get_smooth_sample_segment(uint32_t smooth_id);
 
         // Shutdown
-        void shutdown();
 
     } // namespace extension
 } // namespace pathfinder

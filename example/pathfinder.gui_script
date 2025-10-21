@@ -1,0 +1,62 @@
+local path_cache
+local distance_cache
+
+local path_cache_text = ""
+local path_distance_cache_text = ""
+
+function init(self)
+	path_cache = gui.get_node("path_cache")
+	distance_cache = gui.get_node("distance_cache")
+end
+
+function final(self)
+	-- Add finalization code here
+	-- Learn more: https://defold.com/manuals/script/
+	-- Remove this function if not needed
+end
+
+function update(self, dt)
+	local cache_result = pathfinder.get_cache_stats()
+
+	path_cache_text = string.format(
+		"Path Cache: Capacity=%u | Hit Rate=%u | Entries=%u ",
+		cache_result.path_cache.max_capacity,
+		cache_result.path_cache.hit_rate,
+		cache_result.path_cache.current_entries
+	)
+
+	path_distance_cache_text = string.format(
+		"Path Cache: current_size=%u | hit_count=%u | hit_rate=%u | miss_count=%u ",
+		cache_result.distance_cache.current_size,
+		cache_result.distance_cache.hit_count,
+		cache_result.distance_cache.hit_rate,
+		cache_result.distance_cache.miss_count
+	)
+
+	gui.set_text(path_cache, path_cache_text)
+	gui.set_text(distance_cache, path_distance_cache_text)
+end
+
+function on_message(self, message_id, message, sender)
+	-- Add message-handling code here
+	-- Learn more: https://defold.com/manuals/message-passing/
+	-- Remove this function if not needed
+end
+
+function on_input(self, action_id, action)
+	-- Add input-handling code here. The game object this script is attached to
+	-- must have acquired input focus:
+	--
+	--    msg.post(".", "acquire_input_focus")
+	--
+	-- All mapped input bindings will be received. Mouse and touch input will
+	-- be received regardless of where on the screen it happened.
+	-- Learn more: https://defold.com/manuals/input/
+	-- Remove this function if not needed
+end
+
+function on_reload(self)
+	-- Add reload-handling code here
+	-- Learn more: https://defold.com/manuals/hot-reload/
+	-- Remove this function if not needed
+end

@@ -1,2 +1,6 @@
 # C++ symbol in your extension
 name: "GraphPathfinder"
+platforms:
+    common:
+        context:
+            flags: ["-std=c++11"]

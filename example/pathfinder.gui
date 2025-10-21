@@ -1,0 +1,70 @@
+script: "/example/pathfinder.gui_script"
+fonts {
+  name: "default"
+  font: "/builtins/fonts/default.font"
+}
+nodes {
+  size {
+    x: 650.0
+    y: 80.0
+  }
+  color {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  }
+  type: TYPE_BOX
+  id: "box"
+  xanchor: XANCHOR_LEFT
+  yanchor: YANCHOR_TOP
+  pivot: PIVOT_SW
+  layer: "gfx"
+  alpha: 0.23
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  position {
+    x: 15.0
+    y: 64.0
+  }
+  size {
+    x: 400.0
+    y: 25.0
+  }
+  type: TYPE_TEXT
+  text: "<text>"
+  font: "default"
+  id: "path_cache"
+  xanchor: XANCHOR_LEFT
+  yanchor: YANCHOR_TOP
+  pivot: PIVOT_NW
+  parent: "box"
+  layer: "txt"
+}
+nodes {
+  position {
+    x: 15.0
+    y: 35.0
+  }
+  size {
+    x: 400.0
+    y: 25.0
+  }
+  type: TYPE_TEXT
+  text: "<text>"
+  font: "default"
+  id: "distance_cache"
+  xanchor: XANCHOR_LEFT
+  yanchor: YANCHOR_TOP
+  pivot: PIVOT_NW
+  parent: "box"
+  layer: "txt"
+}
+layers {
+  name: "gfx"
+}
+layers {
+  name: "txt"
+}
+material: "/builtins/materials/gui.material"
+adjust_reference: ADJUST_REFERENCE_PARENT

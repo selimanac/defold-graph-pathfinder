@@ -9,6 +9,9 @@
 #include "pathfinder_path.h"
 #include "pathfinder_smooth.h"
 
+#include "pathfinder_cache.h"
+#include "pathfinder_distance_cache.h"
+
 namespace pathfinder
 {
     namespace extension
@@ -58,6 +61,18 @@ namespace pathfinder
         void init()
         {
             m_SmoothConfigs.SetCapacity(MAX_SMOOTH_CONFIG); // TODO Check if hit capacity
+        }
+
+        void get_cache_stats(uint32_t& path_cache_entries,
+                             uint32_t& path_cache_capacity,
+                             uint32_t& path_cache_hit_rate,
+                             uint32_t& dist_cache_size,
+                             uint32_t& dist_cache_hits,
+                             uint32_t& dist_cache_misses,
+                             uint32_t& dist_cache_hit_rate)
+        {
+            pathfinder::cache::get_cache_stats(&path_cache_entries, &path_cache_capacity, &path_cache_hit_rate);
+            pathfinder::distance_cache::get_stats(&dist_cache_size, &dist_cache_hits, &dist_cache_misses, &dist_cache_hit_rate);
         }
 
         // From Defold source

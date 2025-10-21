@@ -37,14 +37,12 @@ A high-performance A* pathfinding library written in C++11, designed for real-ti
 
 ### Memory Management
 
-- **No STL containers**: Uses `dmArray<T>` instead of STL containers
+- **No STL containers**: Uses `dmArray<T>` or `dmHashtable<T>` instead of STL containers
 - **Pre-allocation**: All arrays pre-allocated at initialization
 - **No runtime allocation**: Pathfinding operations use pre-allocated memory
 - **Object pooling**: Heap nodes are pooled and reused
 - **No `auto` keyword**: All types are explicit
-- **No STL containers**: Uses `dmArray<T>` from Defold SDK
 - **No modern C++ features**: Strictly C++11 compliant
-- **Explicit error handling**: Via `PathStatus` enum and output parameters
 - **No exceptions**: Uses error codes
 - **Flat arrays**: For cache-friendly memory access
 - **No dynamic allocation**: In hot paths

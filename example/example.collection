@@ -14,6 +14,30 @@ instances {
     y: 101.0
   }
 }
+instances {
+  id: "node_22"
+  prototype: "/example/node.go"
+  position {
+    x: 1031.0
+    y: 404.0
+  }
+}
+instances {
+  id: "node_23"
+  prototype: "/example/node.go"
+  position {
+    x: 1079.0
+    y: 245.0
+  }
+}
+instances {
+  id: "node_24"
+  prototype: "/example/node.go"
+  position {
+    x: 976.0
+    y: 101.0
+  }
+}
 scale_along_z: 0
 embedded_instances {
   id: "scripts"
@@ -70,6 +94,14 @@ embedded_instances {
   "  texture: \\\"/example/demo.atlas\\\"\\n"
   "}\\n"
   "\"\n"
+  "}\n"
+  ""
+}
+embedded_instances {
+  id: "gui"
+  data: "components {\n"
+  "  id: \"pathfinder\"\n"
+  "  component: \"/example/pathfinder.gui\"\n"
   "}\n"
   ""
 }
