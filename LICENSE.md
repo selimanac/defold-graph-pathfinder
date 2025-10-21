@@ -86,6 +86,6 @@ SOFTWARE.
 ### Summary (not legally binding)
 
 - ✅ Free for personal, educational, and **completely free** games or apps.  
-- 💲 Commercial use (any monetized game/app) requires a **one-time $10 payment via GitHub Sponsors**.  
+- 💲 Commercial use (any monetized game/app) requires a **one-time payment of at least $10 via GitHub Sponsors**.  
 - 📩 Free releases are welcome to share project info (name, genre, date, links).  
 - 🔒 The Software is **closed-source**; source access may be granted **upon request**.
