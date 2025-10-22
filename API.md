@@ -901,4 +901,24 @@ pathfinder.init(
 );
 ```
 
+## Cache
+
+There are two kinds of caches involved in pathfinding.
+
+### Path Caching
+
+Responsible for caching frequently reused paths.
+
+### Distance (Cost) Caching
+
+Responsible for caching the distances between nodes to speed up calculations.
+
+#### Cache Breaking
+
+- Moving or removing nodes breaks the cache, but only for paths that include the moved or removed node and related edges — not the entire cache.  
+- Removing edges breaks the cache, but only for paths that include the removed edge, related nodes, and related edges — not the entire cache.  
+- Projected paths are cached only if the start point is exactly the same.  
+- If a path includes a moved node (and its edges), it cannot be retrieved from the cache.  
+- Smoothed paths are **not** cached.
+
 ---
