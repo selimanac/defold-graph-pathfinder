@@ -1,11 +1,11 @@
-script: "/example/pathfinder.gui_script"
+script: "/example/scripts/pathfinder.gui_script"
 fonts {
   name: "default"
   font: "/builtins/fonts/default.font"
 }
 nodes {
   size {
-    x: 650.0
+    x: 700.0
     y: 80.0
   }
   color {

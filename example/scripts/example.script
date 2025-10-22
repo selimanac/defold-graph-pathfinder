@@ -1,0 +1,131 @@
+local nodes = {}
+local edges = {}
+
+local projected_count = 20
+
+local mouse_position = vmath.vector3()
+
+local path_smoothing_id = 0
+local smooting_config = {
+	style                 = pathfinder.PathSmoothStyle.BEZIER_QUADRATIC,
+	bezier_sample_segment = 8,
+	bezier_curve_radius   = 0.8, -- bezier_quadratic
+}
+
+local function load_data()
+	local edges_json, error = sys.load_resource("/data/edges_1.json")
+	local nodes_json, error = sys.load_resource("/data/nodes_1.json")
+
+
+	local nodes_data = json.decode(nodes_json)
+	local edges_data = json.decode(edges_json)
+
+	return { nodes = nodes_data, edges = edges_data }
+end
+
+
+local function add_nodes()
+	for i, node_id in ipairs(nodes) do
+		local pos_v2 = pathfinder.get_node_position(node_id)
+		local node_url = factory.create("/factories#node", vmath.vector3(pos_v2.x, pos_v2.y, 0))
+		node_url = msg.url(node_url)
+		node_url.fragment = "node_id"
+
+		label.set_text(node_url, node_id)
+	end
+end
+
+local function get_edge_positions(from_node_id, to_node_id)
+	local from_v2 = pathfinder.get_node_position(from_node_id)
+	local to_v2 = pathfinder.get_node_position(to_node_id)
+	return vmath.vector3(from_v2.x, from_v2.y, 0), vmath.vector3(to_v2.x, to_v2.y, 0)
+end
+
+local function add_edge_directions()
+	for _, edge in ipairs(edges) do
+		if edge.bidirectional == false then
+			local from, to = get_edge_positions(edge.from_node_id, edge.to_node_id)
+			local center = (from + to) * 0.5
+			local dir = to - from
+			local angle = math.atan2(dir.y, dir.x)
+
+			factory.create("/factories#direction", center, vmath.quat_rotation_z(angle - math.pi * 0.5))
+		end
+	end
+end
+
+local function draw_edges()
+	for _, edge in ipairs(edges) do
+		local from, to = get_edge_positions(edge.from_node_id, edge.to_node_id)
+		msg.post("@render:", "draw_line", { start_point = from, end_point = to, color = vmath.vector4(0, 1, 0, 1) })
+	end
+end
+
+local function draw_path(path_size, path)
+	for i = 1, path_size - 1, 1 do
+		local from_node = path[i]
+		local to_node = path[i + 1]
+
+		msg.post("@render:", "draw_line", { start_point = vmath.vector3(from_node.x, from_node.y, 0), end_point = vmath.vector3(to_node.x, to_node.y, 0), color = vmath.vector4(1, 0, 0, 1) })
+	end
+end
+
+local function draw_projected_path(projected_path_size, projected_path_entry_point, projected_path)
+	msg.post("@render:", "draw_line", { start_point = mouse_position, end_point = projected_path_entry_point, color = vmath.vector4(1, 0, 0, 1) })
+
+	local first_node = projected_path[1]
+
+	msg.post("@render:", "draw_line", { start_point = projected_path_entry_point, end_point = vmath.vector3(first_node.x, first_node.y, 0), color = vmath.vector4(1, 0, 0, 1) })
+
+	for i = 1, projected_path_size - 1, 1 do
+		local from_node = projected_path[i]
+		local to_node = projected_path[i + 1]
+
+		msg.post("@render:", "draw_line", { start_point = vmath.vector3(from_node.x, from_node.y, 0), end_point = vmath.vector3(to_node.x, to_node.y, 0), color = vmath.vector4(1, 0, 0, 1) })
+	end
+end
+
+
+function init(self)
+	msg.post(".", "acquire_input_focus")
+	--profiler.enable_ui(true)
+	profiler.set_ui_view_mode(profiler.VIEW_MODE_MINIMIZED)
+
+	local data = load_data()
+	local max_nodes = #data.nodes * projected_count -- For extra enrty point
+	local max_gameobject_nodes = 10
+	local max_edges_per_node = 6
+	local heap_pool_block_size = 32
+	local max_cache_path_length = 64
+
+	pathfinder.init(max_nodes, max_gameobject_nodes, max_edges_per_node, heap_pool_block_size, max_cache_path_length)
+	path_smoothing_id = pathfinder.add_path_smoothing(smooting_config)
+
+	nodes = pathfinder.add_nodes(data.nodes)
+	edges = data.edges
+	pathfinder.add_edges(edges)
+
+	add_nodes()
+	add_edge_directions()
+end
+
+function update(self, dt)
+	draw_edges()
+
+	local path_size, status, status_text, path = pathfinder.find_path(0, 66, 32, path_smoothing_id);
+
+	if status == pathfinder.PathStatus.SUCCESS then
+		draw_path(path_size, path)
+	end
+
+	local projected_path_size, projected_path_status, projected_path_status_text, projected_path_entry_point, projected_path = pathfinder.find_projected_path(mouse_position.x, mouse_position.y, 95, 32, path_smoothing_id)
+	if projected_path_status == pathfinder.PathStatus.SUCCESS then
+		draw_projected_path(projected_path_size, projected_path_entry_point, projected_path)
+	end
+end
+
+function on_input(self, action_id, action)
+	mouse_position.x = action.x
+	mouse_position.y = action.y
+	go.set_position(mouse_position, "/mouse")
+end

@@ -191,7 +191,7 @@ pathfinder.add_edge(from_node_id, to_node_id, bidirectional, cost)
 - `from_node_id` (number): Source node ID
 - `to_node_id` (number): Target node ID
 - `bidirectional` (boolean): If true, creates edges in both directions
-- `cost` (number|nil): Optional edge cost (default: Euclidean distance between nodes)
+- `cost` (number|nil)[optional, default: Euclidean distance between nodes]: Edge cost 
 
 **Example:**
 ```lua
@@ -703,8 +703,8 @@ Distance cache statistics.
 ```lua
 function init(self)
     -- Initialize pathfinder
-    pathfinder.init(100, 10, 4, 32, 32)
-    
+    pathfinder.init(32, nil, 4, 32, 4)
+
     -- Create nodes
     local nodes = pathfinder.add_nodes({
         { x = 100, y = 100 },
@@ -712,14 +712,14 @@ function init(self)
         { x = 300, y = 200 },
         { x = 400, y = 100 }
     })
-    
+
     -- Create edges
     pathfinder.add_edges({
         { from_node_id = nodes[1], to_node_id = nodes[2], bidirectional = true },
         { from_node_id = nodes[2], to_node_id = nodes[3], bidirectional = true },
         { from_node_id = nodes[3], to_node_id = nodes[4], bidirectional = true }
     })
-    
+
     -- Create smoothing configuration
     local smooth_config = {
         style = pathfinder.PathSmoothStyle.BEZIER_QUADRATIC,
@@ -727,12 +727,12 @@ function init(self)
         bezier_curve_radius = 0.8
     }
     local smooth_id = pathfinder.add_path_smoothing(smooth_config)
-    
+
     -- Find path with smoothing
     local start_id = nodes[1]
     local goal_id = nodes[4]
     local path_length, status, status_text, path = pathfinder.find_path(start_id, goal_id, 128, smooth_id)
-    
+
     if status == pathfinder.PathStatus.SUCCESS then
         print("Path found with", path_length, "waypoints")
         for i, waypoint in ipairs(path) do
@@ -741,16 +741,12 @@ function init(self)
     else
         print("Pathfinding failed:", status_text)
     end
-    
-    -- Get cache statistics
-    local stats = pathfinder.get_cache_stats()
-    print("Path cache hit rate:", stats.path_cache.hit_rate .. "%")
-    print("Distance cache hit rate:", stats.distance_cache.hit_rate .. "%")
 end
 
 function final(self)
     pathfinder.shutdown()
 end
+
 ```
 
 ---
@@ -870,7 +866,7 @@ This behavior is **intentional**:
 3. **Predictability**: Fails fast rather than corrupting memory
 
 
-### Real-World Examples
+
 
 #### Example 1: Small Grid (20×20 = 400 nodes)
 ```lua

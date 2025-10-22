@@ -1,438 +1,552 @@
 [
   {
-    "30": 61,
-    "31": 31
+    "from_node_id": 31,
+    "to_node_id": 30,
+    "bidirectional": true
   },
   {
-    "30": 0,
-    "31": 31
+    "from_node_id": 31,
+    "to_node_id": 61,
+    "bidirectional": true
   },
   {
-    "30": 32,
-    "31": 0
+    "from_node_id": 31,
+    "to_node_id": 0,
+    "bidirectional": true
   },
   {
-    "30": 33,
-    "31": 32
+    "from_node_id": 0,
+    "to_node_id": 32,
+    "bidirectional": true
   },
   {
-    "30": 33,
-    "31": 6
+    "from_node_id": 32,
+    "to_node_id": 33,
+    "bidirectional": true
   },
   {
-    "30": 29,
-    "31": 60
+    "from_node_id": 6,
+    "to_node_id": 33,
+    "bidirectional": true
   },
   {
-    "30": 7,
-    "31": 60
+    "from_node_id": 60,
+    "to_node_id": 29,
+    "bidirectional": true
   },
   {
-    "30": 29,
-    "31": 55
+    "from_node_id": 60,
+    "to_node_id": 7,
+    "bidirectional": true
   },
   {
-    "30": 7,
-    "31": 8
+    "from_node_id": 55,
+    "to_node_id": 29,
+    "bidirectional": false
   },
   {
-    "30": 8,
-    "31": 55
+    "from_node_id": 8,
+    "to_node_id": 7,
+    "bidirectional": true
   },
   {
-    "30": 54,
-    "31": 8
+    "from_node_id": 55,
+    "to_node_id": 8,
+    "bidirectional": true
   },
   {
-    "30": 28,
-    "31": 54
+    "from_node_id": 8,
+    "to_node_id": 54,
+    "bidirectional": true
   },
   {
-    "30": 56,
-    "31": 28
+    "from_node_id": 54,
+    "to_node_id": 28,
+    "bidirectional": true
   },
   {
-    "30": 57,
-    "31": 56
+    "from_node_id": 28,
+    "to_node_id": 56,
+    "bidirectional": true
   },
   {
-    "30": 27,
-    "31": 57
+    "from_node_id": 56,
+    "to_node_id": 57,
+    "bidirectional": true
   },
   {
-    "30": 34,
-    "31": 6
+    "from_node_id": 57,
+    "to_node_id": 27,
+    "bidirectional": true
   },
   {
-    "30": 62,
-    "31": 34
+    "from_node_id": 6,
+    "to_node_id": 34,
+    "bidirectional": true
   },
   {
-    "30": 2,
-    "31": 62
+    "from_node_id": 34,
+    "to_node_id": 62,
+    "bidirectional": true
   },
   {
-    "30": 63,
-    "31": 2
+    "from_node_id": 62,
+    "to_node_id": 2,
+    "bidirectional": true
   },
   {
-    "30": 64,
-    "31": 63
+    "from_node_id": 2,
+    "to_node_id": 63,
+    "bidirectional": true
   },
   {
-    "30": 5,
-    "31": 64
+    "from_node_id": 63,
+    "to_node_id": 64,
+    "bidirectional": true
   },
   {
-    "30": 6,
-    "31": 5
+    "from_node_id": 64,
+    "to_node_id": 5,
+    "bidirectional": true
   },
   {
-    "30": 53,
-    "31": 27
+    "from_node_id": 5,
+    "to_node_id": 6,
+    "bidirectional": true
   },
   {
-    "30": 26,
-    "31": 54
+    "from_node_id": 27,
+    "to_node_id": 53,
+    "bidirectional": true
   },
   {
-    "30": 84,
-    "31": 26
+    "from_node_id": 54,
+    "to_node_id": 26,
+    "bidirectional": true
   },
   {
-    "30": 53,
-    "31": 84
+    "from_node_id": 26,
+    "to_node_id": 84,
+    "bidirectional": true
   },
   {
-    "30": 59,
-    "31": 84
+    "from_node_id": 84,
+    "to_node_id": 53,
+    "bidirectional": true
   },
   {
-    "30": 52,
-    "31": 59
+    "from_node_id": 84,
+    "to_node_id": 59,
+    "bidirectional": true
   },
   {
-    "30": 58,
-    "31": 59
+    "from_node_id": 59,
+    "to_node_id": 52,
+    "bidirectional": true
   },
   {
-    "30": 85,
-    "31": 58
+    "from_node_id": 59,
+    "to_node_id": 58,
+    "bidirectional": true
   },
   {
-    "30": 83,
-    "31": 52
+    "from_node_id": 58,
+    "to_node_id": 85,
+    "bidirectional": false
   },
   {
-    "30": 35,
-    "31": 83
+    "from_node_id": 52,
+    "to_node_id": 83,
+    "bidirectional": true
   },
   {
-    "30": 35,
-    "31": 85
+    "from_node_id": 83,
+    "to_node_id": 35,
+    "bidirectional": true
   },
   {
-    "30": 8,
-    "31": 3
+    "from_node_id": 85,
+    "to_node_id": 35,
+    "bidirectional": true
   },
   {
-    "30": 5,
-    "31": 3
+    "from_node_id": 3,
+    "to_node_id": 8,
+    "bidirectional": true
   },
   {
-    "30": 36,
-    "31": 5
+    "from_node_id": 3,
+    "to_node_id": 5,
+    "bidirectional": true
   },
   {
-    "30": 82,
-    "31": 36
+    "from_node_id": 5,
+    "to_node_id": 36,
+    "bidirectional": true
   },
   {
-    "30": 25,
-    "31": 82
+    "from_node_id": 36,
+    "to_node_id": 82,
+    "bidirectional": true
   },
   {
-    "30": 10,
-    "31": 25
+    "from_node_id": 82,
+    "to_node_id": 25,
+    "bidirectional": true
   },
   {
-    "30": 80,
-    "31": 10
+    "from_node_id": 25,
+    "to_node_id": 10,
+    "bidirectional": true
   },
   {
-    "30": 12,
-    "31": 80
+    "from_node_id": 10,
+    "to_node_id": 80,
+    "bidirectional": true
   },
   {
-    "30": 15,
-    "31": 12
+    "from_node_id": 80,
+    "to_node_id": 12,
+    "bidirectional": true
   },
   {
-    "30": 51,
-    "31": 15
+    "from_node_id": 12,
+    "to_node_id": 15,
+    "bidirectional": true
   },
   {
-    "30": 81,
-    "31": 51
+    "from_node_id": 15,
+    "to_node_id": 51,
+    "bidirectional": true
   },
   {
-    "30": 12,
-    "31": 81
+    "from_node_id": 51,
+    "to_node_id": 81,
+    "bidirectional": true
   },
   {
-    "30": 11,
-    "31": 80
+    "from_node_id": 81,
+    "to_node_id": 12,
+    "bidirectional": true
   },
   {
-    "30": 78,
-    "31": 11
+    "from_node_id": 80,
+    "to_node_id": 11,
+    "bidirectional": true
   },
   {
-    "30": 9,
-    "31": 78
+    "from_node_id": 11,
+    "to_node_id": 78,
+    "bidirectional": true
   },
   {
-    "30": 86,
-    "31": 9
+    "from_node_id": 78,
+    "to_node_id": 9,
+    "bidirectional": true
   },
   {
-    "30": 24,
-    "31": 86
+    "from_node_id": 9,
+    "to_node_id": 86,
+    "bidirectional": true
   },
   {
-    "30": 77,
-    "31": 24
+    "from_node_id": 86,
+    "to_node_id": 24,
+    "bidirectional": true
   },
   {
-    "30": 78,
-    "31": 77
+    "from_node_id": 24,
+    "to_node_id": 77,
+    "bidirectional": true
   },
   {
-    "30": 79,
-    "31": 81
+    "from_node_id": 77,
+    "to_node_id": 78,
+    "bidirectional": true
   },
   {
-    "30": 13,
-    "31": 79
+    "from_node_id": 81,
+    "to_node_id": 79,
+    "bidirectional": true
   },
   {
-    "30": 50,
-    "31": 13
+    "from_node_id": 79,
+    "to_node_id": 13,
+    "bidirectional": true
   },
   {
-    "30": 65,
-    "31": 50
+    "from_node_id": 13,
+    "to_node_id": 50,
+    "bidirectional": true
   },
   {
-    "30": 14,
-    "31": 65
+    "from_node_id": 50,
+    "to_node_id": 65,
+    "bidirectional": true
   },
   {
-    "30": 47,
-    "31": 14
+    "from_node_id": 65,
+    "to_node_id": 14,
+    "bidirectional": true
   },
   {
-    "30": 66,
-    "31": 47
+    "from_node_id": 14,
+    "to_node_id": 47,
+    "bidirectional": true
   },
   {
-    "30": 16,
-    "31": 66
+    "from_node_id": 47,
+    "to_node_id": 66,
+    "bidirectional": false
   },
   {
-    "30": 49,
-    "31": 16
+    "from_node_id": 66,
+    "to_node_id": 16,
+    "bidirectional": true
   },
   {
-    "30": 67,
-    "31": 16
+    "from_node_id": 16,
+    "to_node_id": 49,
+    "bidirectional": true
   },
   {
-    "30": 23,
-    "31": 67
+    "from_node_id": 16,
+    "to_node_id": 67,
+    "bidirectional": true
   },
   {
-    "30": 76,
-    "31": 23
+    "from_node_id": 67,
+    "to_node_id": 23,
+    "bidirectional": true
   },
   {
-    "30": 99,
-    "31": 76
+    "from_node_id": 23,
+    "to_node_id": 76,
+    "bidirectional": true
   },
   {
-    "30": 4,
-    "31": 99
+    "from_node_id": 76,
+    "to_node_id": 99,
+    "bidirectional": true
   },
   {
-    "30": 87,
-    "31": 99
+    "from_node_id": 99,
+    "to_node_id": 4,
+    "bidirectional": true
   },
   {
-    "30": 37,
-    "31": 87
+    "from_node_id": 99,
+    "to_node_id": 87,
+    "bidirectional": true
   },
   {
-    "30": 38,
-    "31": 88
+    "from_node_id": 87,
+    "to_node_id": 37,
+    "bidirectional": true
   },
   {
-    "30": 39,
-    "31": 38
+    "from_node_id": 88,
+    "to_node_id": 38,
+    "bidirectional": true
   },
   {
-    "30": 89,
-    "31": 39
+    "from_node_id": 38,
+    "to_node_id": 39,
+    "bidirectional": true
   },
   {
-    "30": 88,
-    "31": 89
+    "from_node_id": 39,
+    "to_node_id": 89,
+    "bidirectional": true
   },
   {
-    "30": 41,
-    "31": 89
+    "from_node_id": 89,
+    "to_node_id": 88,
+    "bidirectional": true
   },
   {
-    "30": 90,
-    "31": 41
+    "from_node_id": 89,
+    "to_node_id": 41,
+    "bidirectional": true
   },
   {
-    "30": 94,
-    "31": 90
+    "from_node_id": 41,
+    "to_node_id": 90,
+    "bidirectional": true
   },
   {
-    "30": 95,
-    "31": 94
+    "from_node_id": 90,
+    "to_node_id": 94,
+    "bidirectional": true
   },
   {
-    "30": 91,
-    "31": 95
+    "from_node_id": 94,
+    "to_node_id": 95,
+    "bidirectional": true
   },
   {
-    "30": 44,
-    "31": 91
+    "from_node_id": 95,
+    "to_node_id": 91,
+    "bidirectional": true
   },
   {
-    "30": 75,
-    "31": 44
+    "from_node_id": 91,
+    "to_node_id": 44,
+    "bidirectional": true
   },
   {
-    "30": 43,
-    "31": 75
+    "from_node_id": 44,
+    "to_node_id": 75,
+    "bidirectional": true
   },
   {
-    "30": 43,
-    "31": 42
+    "from_node_id": 75,
+    "to_node_id": 43,
+    "bidirectional": true
   },
   {
-    "30": 92,
-    "31": 42
+    "from_node_id": 42,
+    "to_node_id": 43,
+    "bidirectional": true
   },
   {
-    "30": 40,
-    "31": 39
+    "from_node_id": 42,
+    "to_node_id": 92,
+    "bidirectional": true
   },
   {
-    "30": 98,
-    "31": 40
+    "from_node_id": 39,
+    "to_node_id": 40,
+    "bidirectional": true
   },
   {
-    "30": 89,
-    "31": 17
+    "from_node_id": 40,
+    "to_node_id": 98,
+    "bidirectional": true
   },
   {
-    "30": 93,
-    "31": 17
+    "from_node_id": 17,
+    "to_node_id": 89,
+    "bidirectional": true
   },
   {
-    "30": 68,
-    "31": 93
+    "from_node_id": 17,
+    "to_node_id": 93,
+    "bidirectional": true
   },
   {
-    "30": 21,
-    "31": 68
+    "from_node_id": 93,
+    "to_node_id": 68,
+    "bidirectional": true
   },
   {
-    "30": 20,
-    "31": 21
+    "from_node_id": 68,
+    "to_node_id": 21,
+    "bidirectional": true
   },
   {
-    "30": 48,
-    "31": 20
+    "from_node_id": 21,
+    "to_node_id": 20,
+    "bidirectional": true
   },
   {
-    "30": 71,
-    "31": 48
+    "from_node_id": 20,
+    "to_node_id": 48,
+    "bidirectional": true
   },
   {
-    "30": 19,
-    "31": 71
+    "from_node_id": 48,
+    "to_node_id": 71,
+    "bidirectional": true
   },
   {
-    "30": 18,
-    "31": 19
+    "from_node_id": 71,
+    "to_node_id": 19,
+    "bidirectional": true
   },
   {
-    "30": 97,
-    "31": 18
+    "from_node_id": 19,
+    "to_node_id": 18,
+    "bidirectional": true
   },
   {
-    "30": 22,
-    "31": 97
+    "from_node_id": 18,
+    "to_node_id": 97,
+    "bidirectional": true
   },
   {
-    "30": 92,
-    "31": 22
+    "from_node_id": 97,
+    "to_node_id": 22,
+    "bidirectional": true
   },
   {
-    "30": 96,
-    "31": 97
+    "from_node_id": 22,
+    "to_node_id": 92,
+    "bidirectional": true
   },
   {
-    "30": 45,
-    "31": 96
+    "from_node_id": 97,
+    "to_node_id": 96,
+    "bidirectional": true
   },
   {
-    "30": 46,
-    "31": 45
+    "from_node_id": 96,
+    "to_node_id": 45,
+    "bidirectional": false
   },
   {
-    "30": 46,
-    "31": 74
+    "from_node_id": 45,
+    "to_node_id": 46,
+    "bidirectional": true
   },
   {
-    "30": 74,
-    "31": 70
+    "from_node_id": 74,
+    "to_node_id": 46,
+    "bidirectional": true
   },
   {
-    "30": 73,
-    "31": 46
+    "from_node_id": 70,
+    "to_node_id": 74,
+    "bidirectional": true
   },
   {
-    "30": 69,
-    "31": 70
+    "from_node_id": 46,
+    "to_node_id": 73,
+    "bidirectional": true
   },
   {
-    "30": 1,
-    "31": 69
+    "from_node_id": 70,
+    "to_node_id": 69,
+    "bidirectional": true
   },
   {
-    "30": 72,
-    "31": 1
+    "from_node_id": 69,
+    "to_node_id": 1,
+    "bidirectional": true
   },
   {
-    "30": 71,
-    "31": 72
+    "from_node_id": 1,
+    "to_node_id": 72,
+    "bidirectional": true
   },
   {
-    "30": 20,
-    "31": 19
+    "from_node_id": 72,
+    "to_node_id": 71,
+    "bidirectional": true
   },
   {
-    "30": 5,
-    "31": 78
+    "from_node_id": 19,
+    "to_node_id": 20,
+    "bidirectional": true
   },
   {
-    "30": 6,
-    "31": 26
+    "from_node_id": 78,
+    "to_node_id": 5,
+    "bidirectional": true
+  },
+  {
+    "from_node_id": 26,
+    "to_node_id": 6,
+    "bidirectional": true
   }
 ]

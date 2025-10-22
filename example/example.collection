@@ -1,49 +1,10 @@
 name: "main"
-instances {
-  id: "node_21"
-  prototype: "/example/node.go"
-  position {
-    x: 81.0
-  }
-}
-instances {
-  id: "node_2"
-  prototype: "/example/node.go"
-  position {
-    x: 32.0
-    y: 101.0
-  }
-}
-instances {
-  id: "node_22"
-  prototype: "/example/node.go"
-  position {
-    x: 1031.0
-    y: 404.0
-  }
-}
-instances {
-  id: "node_23"
-  prototype: "/example/node.go"
-  position {
-    x: 1079.0
-    y: 245.0
-  }
-}
-instances {
-  id: "node_24"
-  prototype: "/example/node.go"
-  position {
-    x: 976.0
-    y: 101.0
-  }
-}
 scale_along_z: 0
 embedded_instances {
   id: "scripts"
   data: "components {\n"
-  "  id: \"basic\"\n"
-  "  component: \"/example/basic.script\"\n"
+  "  id: \"example\"\n"
+  "  component: \"/example/scripts/example.script\"\n"
   "}\n"
   ""
 }
@@ -51,30 +12,15 @@ embedded_instances {
   id: "factories"
   data: "components {\n"
   "  id: \"node\"\n"
-  "  component: \"/example/node.factory\"\n"
+  "  component: \"/example/factories/node.factory\"\n"
   "}\n"
   "components {\n"
   "  id: \"direction\"\n"
-  "  component: \"/example/direction.factory\"\n"
+  "  component: \"/example/factories/direction.factory\"\n"
   "}\n"
-  ""
-}
-embedded_instances {
-  id: "entry"
-  data: "embedded_components {\n"
-  "  id: \"sprite\"\n"
-  "  type: \"sprite\"\n"
-  "  data: \"default_animation: \\\"entry\\\"\\n"
-  "material: \\\"/builtins/materials/sprite.material\\\"\\n"
-  "size {\\n"
-  "  x: 16.0\\n"
-  "  y: 16.0\\n"
-  "}\\n"
-  "textures {\\n"
-  "  sampler: \\\"texture_sampler\\\"\\n"
-  "  texture: \\\"/example/demo.atlas\\\"\\n"
-  "}\\n"
-  "\"\n"
+  "components {\n"
+  "  id: \"entry\"\n"
+  "  component: \"/example/factories/entry.factory\"\n"
   "}\n"
   ""
 }
@@ -91,7 +37,7 @@ embedded_instances {
   "}\\n"
   "textures {\\n"
   "  sampler: \\\"texture_sampler\\\"\\n"
-  "  texture: \\\"/example/demo.atlas\\\"\\n"
+  "  texture: \\\"/example/atlas/demo.atlas\\\"\\n"
   "}\\n"
   "\"\n"
   "}\n"

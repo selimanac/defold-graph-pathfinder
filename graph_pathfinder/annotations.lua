@@ -13,6 +13,7 @@
 ---@field from_node_id number Source node ID
 ---@field to_node_id number Target node ID
 ---@field bidirectional boolean Whether the edge is bidirectional
+---@field cost (number|nil): Optional edge cost (default: Euclidean distance between nodes)
 
 ---@class PathSmoothConfig
 ---@field style number Path smoothing style (use pathfinder.PathSmoothStyle constants)
