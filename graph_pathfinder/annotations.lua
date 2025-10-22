@@ -8,7 +8,6 @@
 ---@class PathNode
 ---@field x number X coordinate of the node position
 ---@field y number Y coordinate of the node position
----@field id number Node ID (only present in path results from find_path)
 
 ---@class PathEdge
 ---@field from_node_id number Source node ID

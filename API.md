@@ -29,7 +29,7 @@ pathfinder.init(max_nodes, [max_gameobject_nodes], max_edges_per_node, heap_pool
 
 **Parameters:**
 - `max_nodes` (number): Maximum number of nodes in the graph. Minimum value is 32. 
-- `max_gameobject_nodes` (number|nil) [optional, default: 0]: Maximum number of game object nodes
+- `max_gameobject_nodes` (number|nil)[optional, default: 0]: Maximum number of game object nodes
 - `max_edges_per_node` (number): Maximum edges per node
 - `heap_pool_block_size` (number): Size of heap pool blocks for A* algorithm
 - `max_cache_path_length` (number): Maximum length of cached paths
@@ -39,10 +39,10 @@ pathfinder.init(max_nodes, [max_gameobject_nodes], max_edges_per_node, heap_pool
 >Recommended: Use `heap_pool_block_size = 32` (default) and ensure `max_nodes >= 32`. 
 
 > [!IMPORTANT]
->If you are going to use projected path finding, you'll consider to add extra nodes to `max_nodes`. Every entry point is considered as a new node. 
->Example: if you have 100 nodes on graph and 100 agents are constanty finding projected paths then you'll have max 100 new entry point in total 200 nodes.
+> If you plan to use projected pathfinding, consider increasing the value of `max_nodes`. Each entry point is treated as a new node.  
+> **Example:** If your graph has 100 nodes and 100 agents are constantly finding projected paths, you'll have up to 100 additional entry points — resulting in a total of 200 nodes.
 
-(More info and QA about)[./API.md#] `heap_pool_block_size` and  `max_nodes`
+[More info and QA about](./API.md#understanding-pool_block_size-deep-dive) `heap_pool_block_size` and  `max_nodes`
 
 **Example:**
 ```lua
@@ -218,7 +218,8 @@ pathfinder.add_edges(edges)
 ```lua
 pathfinder.add_edges({
     { from_node_id = node1, to_node_id = node2, bidirectional = true },
-    { from_node_id = node2, to_node_id = node3, bidirectional = true, cost = 150 }
+    { from_node_id = node2, to_node_id = node3, bidirectional = true, cost = 150 },
+    { from_node_id = node2, to_node_id = node3 }
 })
 ```
 
@@ -228,13 +229,13 @@ Remove an edge between two nodes.
 
 **Syntax:**
 ```lua
-pathfinder.remove_edge(from_node_id, to_node_id, bidirectional)
+pathfinder.remove_edge(from_node_id, to_node_id, [bidirectional])
 ```
 
 **Parameters:**
 - `from_node_id` (number): Source node ID
 - `to_node_id` (number): Target node ID
-- `bidirectional` (boolean): If true, removes edges in both directions
+- `bidirectional` (boolean)[optional, default: false]: If true, removes edges in both directions
 
 **Example:**
 ```lua
@@ -251,14 +252,14 @@ Find a path between two nodes using A* algorithm.
 
 **Syntax:**
 ```lua
-local path_length, status, status_text, path = pathfinder.find_path(start_node_id, goal_node_id, max_path_length, smooth_id)
+local path_length, status, status_text, path = pathfinder.find_path(start_node_id, goal_node_id, max_path_length, [smooth_id])
 ```
 
 **Parameters:**
 - `start_node_id` (number): Starting node ID
 - `goal_node_id` (number): Goal node ID
 - `max_path_length` (number): Maximum path length to search
-- `smooth_id` (number|nil): Optional smoothing configuration ID (default: 0 = no smoothing)
+- `smooth_id` (number|nil) [optional, default: 0 = no smoothing]: Optional smoothing configuration ID
 
 **Returns:**
 - `path_length` (number): Number of waypoints in the path
@@ -286,7 +287,7 @@ Find a path from an arbitrary position (not on graph) to a goal node. Projects t
 
 **Syntax:**
 ```lua
-local path_length, status, status_text, entry_point, path = pathfinder.find_projected_path(x, y, goal_node_id, max_path_length, smooth_id)
+local path_length, status, status_text, entry_point, path = pathfinder.find_projected_path(x, y, goal_node_id, max_path_length, [smooth_id])
 ```
 
 **Parameters:**
@@ -294,7 +295,7 @@ local path_length, status, status_text, entry_point, path = pathfinder.find_proj
 - `y` (number): Y coordinate of start position
 - `goal_node_id` (number): Goal node ID
 - `max_path_length` (number): Maximum path length to search
-- `smooth_id` (number|nil): Optional smoothing configuration ID (default: 0 = no smoothing)
+- `smooth_id` (number|nil)[optionla, default: 0 = no smoothing]: Optional smoothing configuration ID 
 
 **Returns:**
 - `path_length` (number): Number of waypoints in the path
@@ -339,13 +340,9 @@ local smooth_id = pathfinder.add_path_smoothing(config)
 local smooth_config = {
     style = pathfinder.PathSmoothStyle.BEZIER_QUADRATIC,
     bezier_sample_segment = 8,
-    bezier_control_point_offset = 0.4,
-    bezier_curve_radius = 0.8,
-    bezier_adaptive_tightness = 0.5,
-    bezier_adaptive_roundness = 0.5,
-    bezier_adaptive_max_corner_distance = 50.0,
-    bezier_arc_radius = 60.0
+    bezier_curve_radius = 0.8
 }
+
 local smooth_id = pathfinder.add_path_smoothing(smooth_config)
 
 -- Use in pathfinding
@@ -389,12 +386,12 @@ Add a game object node that automatically tracks the game object's position.
 
 **Syntax:**
 ```lua
-local node_id = pathfinder.add_gameobject_node(game_object_instance, use_world_position)
+local node_id = pathfinder.add_gameobject_node(game_object_instance, [use_world_position])
 ```
 
 **Parameters:**
 - `game_object_instance` (userdata): Game object instance
-- `use_world_position` (boolean): Whether to use world or local position
+- `use_world_position` (boolean)[optional, default: false]: Whether to use world or local position
 
 **Returns:**
 - `node_id` (number): Unique identifier for the created node
@@ -520,7 +517,9 @@ pathfinder.gameobject_update(true)  -- Enable automatic updates
 
 ### pathfinder.set_update_frequency()
 
-Set the update frequency for game object node position updates.
+Set the update frequency for game object node position updates. It is possible to set an independent update frequency for the game object position update iteration.
+The default value is taken from the [display.frequency](https://defold.com/manuals/project-settings/#update-frequency) setting in the game.project file.
+The update loop follows the same structure as in the [Defold source](https://github.com/defold/defold/blob/cdaa870389ca00062bfc03bcda8f4fb34e93124a/engine/engine/src/engine.cpp#L1860). 
 
 **Syntax:**
 ```lua
@@ -612,6 +611,8 @@ Path smoothing algorithms.
 | `BEZIER_ADAPTIVE` | 4 | Adaptive corner smoothing (highly customizable) | Dynamic paths, varying turn angles |
 | `CIRCULAR_ARC` | 5 | Perfect circular arcs (best for tile-based games) | Railroads, tower defense |
 
+ `BEZIER_QUADRATIC` offers good balance between quality and performance.
+
 **Usage:**
 ```lua
 local config = {
@@ -632,7 +633,7 @@ Represents a node position in the pathfinding graph.
 **Fields:**
 - `x` (number): X coordinate of the node position
 - `y` (number): Y coordinate of the node position
-- `id` (number): Node ID (only present in path results from find_path)
+
 
 ### PathEdge
 
@@ -641,8 +642,8 @@ Represents an edge between two nodes.
 **Fields:**
 - `from_node_id` (number): Source node ID
 - `to_node_id` (number): Target node ID
-- `bidirectional` (boolean): Whether the edge is bidirectional
-- `cost` (number|nil): Optional edge cost (default: Euclidean distance)
+- `bidirectional` (boolean)[optional]: Whether the edge is bidirectional
+- `cost` (number|nil)[optional]: Optional edge cost (default: Euclidean distance)
 
 ### PathSmoothConfig
 
@@ -651,20 +652,22 @@ Configuration for path smoothing.
 **Fields:**
 - `style` (number): Path smoothing style (use pathfinder.PathSmoothStyle constants)
 - `bezier_sample_segment` (number): Number of samples per segment for Bezier curves (default: 8)
-- `bezier_control_point_offset` (number): Control point offset for BEZIER_CUBIC style (0.0-1.0, default: 0.4)
-- `bezier_curve_radius` (number): Curve radius for BEZIER_QUADRATIC style (0.0-1.0, default: 0.8)
-- `bezier_adaptive_tightness` (number): Tightness for BEZIER_ADAPTIVE style (default: 0.5)
-- `bezier_adaptive_roundness` (number): Roundness for BEZIER_ADAPTIVE style (default: 0.5)
-- `bezier_adaptive_max_corner_distance` (number): Maximum corner distance for BEZIER_ADAPTIVE (default: 50.0)
-- `bezier_arc_radius` (number): Arc radius for CIRCULAR_ARC style (default: 60.0)
+- `bezier_control_point_offset` (number)[0.0-1.0, default: 0.4]: Control point offset for **BEZIER_CUBIC** style 
+- `bezier_curve_radius` (number) [0.0-1.0, default: 0.8]: Curve radius for **BEZIER_QUADRATIC** style
+- `bezier_adaptive_tightness` (number)[default: 0.5]: Tightness for **BEZIER_ADAPTIVE** style 
+- `bezier_adaptive_roundness` (number)[default: 0.5]: Roundness for **BEZIER_ADAPTIVE** style 
+- `bezier_adaptive_max_corner_distance` (number][default: 50.0]: Maximum corner distance for **BEZIER_ADAPTIVE** 
+- `bezier_arc_radius` (number)[default: 60.0]: Arc radius for **CIRCULAR_ARC** style 
+
+
 
 ### GameObjectNodeConfig
 
 Configuration for a game object node (used in add_gameobject_nodes).
 
 **Fields:**
-- `[1]` (userdata): Game object instance (msg.url)
-- `[2]` (boolean|nil): Optional: Whether to use world position (default: false if omitted)
+- `[1]` (msg.url): Game object instance
+- `[2]` (boolean|nil)[optional, default: false if omitted]:  Whether to use world position 
 
 ### CacheStats
 
@@ -751,26 +754,6 @@ end
 ```
 
 ---
-
-### Smoothing Methods:
-
-| Method | Best For | Characteristics |
-|--------|----------|-----------------|
-| `circular_arc()` | ⭐ Railroads, tower defense, tile-based games | **Perfect circular arcs** for corners - ideal for tile matching |
-| `bezier_quadratic()` | Character movement, vehicles | Straight segments stay straight, only corners smoothed |
-| `bezier_adaptive()` | Dynamic paths, varying turn angles | Adaptive control point placement based on corner sharpness |
-| `catmull_rom()` | Precise waypoint following | Passes through all waypoints |
-| `bezier_cubic()` | Cinematic cameras, UI | Maximum smoothness with two control points |
-
-## Performance Tips
-
-1. **Pre-allocate Resources**: Set appropriate capacity values in `init()` to avoid runtime issues
-2. **Use Path Caching**: The library automatically caches frequently used paths
-3. **Batch Operations**: Use `add_nodes()` and `add_edges()` for better performance
-4. **Choose Appropriate Smoothing**: `BEZIER_QUADRATIC` offers good balance between quality and performance
-5. **Monitor Cache Hit Rates**: Use `get_cache_stats()` to optimize cache sizes
-6. **Update Frequency**: Set appropriate update frequency for game object nodes to balance accuracy and performance
-
 
 ## Understanding pool_block_size (Deep Dive)
 
