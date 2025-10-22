@@ -21,11 +21,11 @@ Open your `game.project` file, select `Project`, and add a stable version from t
 
 WIP
 
-### Status
+## Status
 
 This library consists of three parts:
 
-#### Pathfinder
+### Pathfinder
 
 The core library. Responsible for managing nodes, edges, and performing pathfinding.
 
@@ -35,7 +35,7 @@ The core library. Responsible for managing nodes, edges, and performing pathfind
 ✅ Distance Caching  
 🚧 Smoothed Path Caching — not planned, maybe in the future  
 
-#### Path Smoothing
+### Path Smoothing
 
 Responsible for existing path smoothing.  
 Currently available smoothing options:  
@@ -46,7 +46,7 @@ Currently available smoothing options:
 ✅ Cubic Bézier  
 ✅ Circular Arc
 
-#### Navigation
+### Navigation
 
 Responsible for enabling agents to navigate along the path.
 
@@ -59,7 +59,7 @@ Responsible for enabling agents to navigate along the path.
 
 
 
-### Supported Platforms
+## Supported Platforms
 
 - **Desktop**: Linux (x86_64, arm64), macOS (x86_64, arm64), Windows (x86_64)
 - **Mobile**: iOS (arm64, x86_64), Android (armv7, arm64)
