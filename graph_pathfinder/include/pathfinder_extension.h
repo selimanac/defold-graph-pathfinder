@@ -10,7 +10,6 @@ namespace pathfinder
 {
     namespace extension
     {
-
         // OPs
         void init();
         void shutdown();
