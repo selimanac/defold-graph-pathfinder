@@ -905,11 +905,11 @@ pathfinder.init(
 
 There are two kinds of caches involved in pathfinding.
 
-### Path Caching
+### 1- Path Caching
 
 Responsible for caching frequently reused paths.
 
-### Distance (Cost) Caching
+### 2- Distance (Cost) Caching
 
 Responsible for caching the distances between nodes to speed up calculations.
 

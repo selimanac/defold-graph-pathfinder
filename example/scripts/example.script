@@ -26,13 +26,13 @@ local path_smoothing_id = 0
 -- Includes parameters for different smoothing styles (commented styles are not active)
 local smoothing_config = {
 	style                               = pathfinder.PathSmoothStyle.BEZIER_QUADRATIC,
-	bezier_sample_segment               = 8,      -- Number of segments per curve
-	bezier_control_point_offset         = 0.4,    -- For bezier_cubic style
-	bezier_curve_radius                 = 0.8,    -- For bezier_quadratic style (active)
-	bezier_adaptive_tightness           = 0.5,    -- For bezier_adaptive style
-	bezier_adaptive_roundness           = 0.5,    -- For bezier_adaptive style
-	bezier_adaptive_max_corner_distance = 50.0,   -- For bezier_adaptive style
-	bezier_arc_radius                   = 40.0    -- For circular_arc style
+	bezier_sample_segment               = 8, -- Number of segments per curve
+	bezier_control_point_offset         = 0.4, -- For bezier_cubic style
+	bezier_curve_radius                 = 0.8, -- For bezier_quadratic style (active)
+	bezier_adaptive_tightness           = 0.5, -- For bezier_adaptive style
+	bezier_adaptive_roundness           = 0.5, -- For bezier_adaptive style
+	bezier_adaptive_max_corner_distance = 50.0, -- For bezier_adaptive style
+	bezier_arc_radius                   = 40.0 -- For circular_arc style
 }
 
 -- Load graph data from JSON files
@@ -43,7 +43,7 @@ local function load_data()
 		print("Error loading edges:", error)
 		return nil
 	end
-	
+
 	local nodes_json, error = sys.load_resource("/data/nodes_1.json")
 	if error then
 		print("Error loading nodes:", error)
@@ -142,9 +142,9 @@ function init(self)
 		print("Failed to load graph data")
 		return
 	end
-	
+
 	print("Loaded", #data.nodes, "nodes")
-	
+
 	-- Calculate total nodes needed (graph nodes + extra for projected pathfinding)
 	local max_nodes = #data.nodes + projected_count
 	local max_gameobject_nodes = 10
@@ -154,7 +154,7 @@ function init(self)
 
 	-- Initialize the pathfinder system
 	pathfinder.init(max_nodes, max_gameobject_nodes, max_edges_per_node, heap_pool_block_size, max_cache_path_length)
-	
+
 	-- Create path smoothing configuration
 	path_smoothing_id = pathfinder.add_path_smoothing(smoothing_config)
 
@@ -190,7 +190,7 @@ function update(self, dt)
 	-- Example 2: Dynamic projected pathfinding following mouse cursor
 	-- Find and draw a path from mouse position to node 85
 	local projected_path_size, projected_path_status, projected_path_status_text, projected_path_entry_point, projected_path = pathfinder.find_projected_path(mouse_position.x, mouse_position.y, 85, 32, path_smoothing_id)
-	
+
 	if projected_path_status == pathfinder.PathStatus.SUCCESS then
 		draw_projected_path(projected_path_size, projected_path_entry_point, projected_path)
 	end
