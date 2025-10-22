@@ -15,7 +15,7 @@ For detailed function descriptions and usage examples, see the [API Reference](.
 ## Installation
 
 You can use this extension in your own project by adding it as a [Defold library dependency](https://defold.com/manuals/libraries/#setting-up-library-dependencies).  
-Open your `game.project` file, select `Project`, and add a stable version from the [releases](./releases) page to the `Dependencies` field.
+Open your `game.project` file, select `Project`, and add a stable version from the [releases](https://github.com/selimanac/defold-graph-pathfinder/releases) page to the `Dependencies` field.
 
 ## Examples
 
@@ -51,9 +51,9 @@ Currently available smoothing options:
 Responsible for enabling agents to navigate along the path.
 
 🚧 **Path Following** - WIP  
-🚧 **Dynamic Nodes**  
-🚧 **Path Invalidation**  
-🚧 **Group Assignment**  
+🚧 **Dynamic Nodes for Agents**  
+🚧 **Path Invalidation for Agents**  
+🚧 **Group Assignment for Agents**  
 🚧 **Group Formation Patterns**  
 🚧 **Collision Avoidance** — Not planned, maybe in the future
 
@@ -89,10 +89,11 @@ I’d also love to hear about your games or apps that use these extensions, shar
 
 ---
 
+
 ### License Summary (not legally binding)
 
 - ✅ Free for personal, educational, and **completely free** games or apps.  
-- 💲 Commercial use (any monetized game/app) requires a **one-time payment of at least $10 via GitHub Sponsors**.  
+- 💲 Commercial use (any monetized game/app) requires  **at least a one-time payment of $10 USD (monthly sponsorships are also welcome) via [GitHub Sponsors](https://github.com/sponsors/selimanac)**.  
 - 📩 Free releases are welcome to share project info (name, genre, date, links).  
 - 🔒 The Software is **closed-source**; source access may be granted **upon request**.
 
