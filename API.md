@@ -24,15 +24,25 @@ Initialize the pathfinding system. Must be called before any other pathfinding o
 
 **Syntax:**
 ```lua
-pathfinder.init(max_nodes, max_gameobject_nodes, max_edges_per_node, heap_pool_block_size, max_cache_path_length)
+pathfinder.init(max_nodes, [max_gameobject_nodes], max_edges_per_node, heap_pool_block_size, max_cache_path_length)
 ```
 
 **Parameters:**
-- `max_nodes` (number): Maximum number of nodes in the graph
-- `max_gameobject_nodes` (number|nil): Maximum number of game object nodes (optional, default: 0)
+- `max_nodes` (number): Maximum number of nodes in the graph. Minimum value is 32. 
+- `max_gameobject_nodes` (number|nil) [optional, default: 0]: Maximum number of game object nodes
 - `max_edges_per_node` (number): Maximum edges per node
 - `heap_pool_block_size` (number): Size of heap pool blocks for A* algorithm
 - `max_cache_path_length` (number): Maximum length of cached paths
+
+> [!IMPORTANT]
+>The heap pool capacity equals `max_nodes`. If `heap_pool_block_size` > `max_nodes`, it will be automatically clamped to `max_nodes` to prevent heap allocation failures.
+>Recommended: Use `heap_pool_block_size = 32` (default) and ensure `max_nodes >= 32`. 
+
+> [!IMPORTANT]
+>If you are going to use projected path finding, you'll consider to add extra nodes to `max_nodes`. Every entry point is considered as a new node. 
+>Example: if you have 100 nodes on graph and 100 agents are constanty finding projected paths then you'll have max 100 new entry point in total 200 nodes.
+
+(More info and QA about)[./API.md#] `heap_pool_block_size` and  `max_nodes`
 
 **Example:**
 ```lua
@@ -760,6 +770,195 @@ end
 4. **Choose Appropriate Smoothing**: `BEZIER_QUADRATIC` offers good balance between quality and performance
 5. **Monitor Cache Hit Rates**: Use `get_cache_stats()` to optimize cache sizes
 6. **Update Frequency**: Set appropriate update frequency for game object nodes to balance accuracy and performance
+
+
+## Understanding pool_block_size (Deep Dive)
+
+### What pool_block_size Actually Represents
+
+The `pool_block_size` parameter defines **the maximum size of the A* algorithm's open set (priority queue)** during a single pathfinding operation.
+
+#### A* Algorithm Open Set
+
+During pathfinding, A* maintains an "open set" of nodes to explore:
+
+1. **Start**: Open set contains only the start node
+2. **Expansion**: Pop lowest-cost node, add its unexplored neighbors to open set
+3. **Growth**: Open set grows as the search expands outward through the graph
+4. **Peak**: Maximum size reached when search is widest (before finding goal)
+5. **Goal Found**: Open set collapses as path is reconstructed
+
+**The open set size depends on:**
+- Graph density (more edges = larger open set)
+- Path length (longer paths = wider search)
+- Graph topology (grid vs. random graph)
+- Heuristic quality (better heuristic = smaller open set)
+
+### How to Determine Proper pool_block_size
+
+#### Method 1: Use Default (Recommended)
+
+For 90% of use cases, **pool_block_size = 32** is sufficient:
+
+```cpp
+pathfinder::path::init(
+    graph_nodes,  // Your graph size (e.g., 150)
+    max_edges,    // Your max edges (e.g., 10)
+    32,           // Default - works for most graphs
+    8             // Cache length
+);
+```
+
+**Works well for:**
+- Small to medium graphs (< 500 nodes)
+- Sparse graphs (average degree < 6)
+- Short to medium paths (< 20 hops)
+- Grid-based maps with obstacles
+
+#### Method 2: Calculate Based on Graph Properties
+
+For dense graphs or long paths, estimate based on graph characteristics:
+
+```cpp
+// Formula: pool_block_size ≈ sqrt(nodes_likely_to_explore)
+
+// Sparse graph (grid, few connections):
+pool_block_size = 32;  // Open set rarely exceeds 32 nodes
+
+// Medium density (navigation graph):
+pool_block_size = sqrt(total_nodes) / 2;  // e.g., sqrt(1000) / 2 ≈ 16
+
+// Dense graph (many connections):
+pool_block_size = sqrt(total_nodes);  // e.g., sqrt(1000) ≈ 32
+
+// Worst case (might explore entire graph):
+pool_block_size = total_nodes;  // Maximum possible
+```
+
+
+### Why pool_block_size Cannot Exceed max_nodes
+
+#### The Memory Pool Architecture
+
+The library uses a **single-buffer pooling strategy** for performance:
+
+**At Init Time:**
+```cpp
+// Allocate ONE contiguous buffer
+heap_pool_buffer = malloc(max_nodes * sizeof(HeapNode));
+heap_pool_capacity = max_nodes;  // Total capacity
+```
+
+**During find_path():**
+```cpp
+// Each pathfinding operation requests a slice
+heap_slice_start = heap_pool_buffer[current_offset];
+heap_slice_size = pool_block_size;
+
+// Check if slice fits in pool
+if (current_offset + pool_block_size > heap_pool_capacity) {
+    return ERROR_HEAP_FULL;  // Not enough space!
+}
+
+current_offset += pool_block_size;  // Reserve this slice
+```
+
+**The Constraint:**
+- Pool capacity = `max_nodes`
+- Request size = `pool_block_size`
+- **If `pool_block_size > max_nodes`**: The first allocation fails because you're requesting more than the entire pool
+
+**Why This Design?**
+
+1. **Performance**: Single allocation at init time (no runtime malloc)
+2. **Predictability**: Memory usage known upfront
+3. **Cache-friendly**: Contiguous buffer, good memory locality
+4. **Zero-copy**: Slices are just pointers into the buffer
+
+**Trade-off**: `max_nodes` must be large enough to accommodate `pool_block_size`
+
+
+#### Why It SHOULDN'T Work (By Design)
+
+This behavior is **intentional** and **correct**:
+
+1. **Memory Safety**: Prevents buffer overruns
+2. **Resource Limits**: Enforces declared capacity limits
+3. **Predictability**: Fails fast rather than corrupting memory
+
+**The fix (automatic clamping)** is a **user convenience** to handle misconfiguration, not a workaround for a bug.
+
+## Recommendations for Users
+
+### Safe Parameters
+
+```cpp
+// Recommended: Use default pool_block_size of 32
+pathfinder::path::init(
+    120,    // max_nodes >= max(graph_nodes, 32)
+    6,      // max_edge_per_node (based on graph)
+    32,     // pool_block_size (default works for most cases)
+    8       // max_cache_path_length
+);
+```
+
+### Formula for max_nodes
+
+```cpp
+max_nodes = max(
+    graph_nodes + virtual_nodes,  // Actual graph size + buffer
+    pool_block_size               // Must be >= pool_block_size
+)
+```
+
+For graphs with `find_path_projected()` usage:
+```cpp
+max_nodes = max(graph_nodes + 1, 32);  // +1 for virtual node
+```
+
+### Real-World Examples
+
+#### Example 1: Small Grid (20×20 = 400 nodes)
+```cpp
+pathfinder::path::init(
+    400,    // Graph has 400 nodes
+    4,      // Grid: each node has max 4 neighbors
+    32,     // Default: sufficient for grid searches
+    8       // Typical path length on grid
+);
+```
+
+#### Example 2: Navigation Mesh (150 nodes, dense)
+```cpp
+pathfinder::path::init(
+    150,    // Graph has 150 nodes
+    10,     // Dense: up to 10 connections per node
+    32,     // Default: works for most nav mesh queries
+    10      // Nav mesh paths can be longer
+);
+```
+
+#### Example 3: Large World Graph (5000 nodes)
+```cpp
+pathfinder::path::init(
+    5000,   // Graph has 5000 nodes
+    8,      // Moderate connectivity
+    64,     // Larger: anticipating complex searches
+    12      // Longer paths in large world
+);
+```
+
+#### Example 4: User's Original Issue
+```cpp
+// BEFORE (failed):
+pathfinder::path::init(150, 10, 151, 8);  // pool_block_size > max_nodes
+
+// AFTER (auto-clamped, works):
+pathfinder::path::init(150, 10, 151, 8);  // Clamped to 150 internally
+
+// BETTER (explicit):
+pathfinder::path::init(150, 10, 32, 8);   // Use default pool_block_size
+```
 
 ---
 

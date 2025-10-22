@@ -109,7 +109,17 @@ static int pathfinder_init(lua_State* L)
      * it will be automatically clamped to max_nodes to prevent heap allocation failures.
      * Recommended: Use pool_block_size = 32 (default) and ensure max_nodes >= 32.
      */
-    pathfinder::path::init(max_nodes + 32, max_edge_per_node, pool_block_size, max_cache_path_length);
+
+    // Clamp minimum values
+    if (max_nodes < 32)
+    {
+        max_nodes = 32;
+    }
+    if (pool_block_size < 32)
+    {
+        pool_block_size = 32;
+    }
+    pathfinder::path::init(max_nodes, max_edge_per_node, pool_block_size, max_cache_path_length);
 
     if (max_gameobject_nodes > 0)
     {

@@ -68,7 +68,7 @@ Responsible for enabling agents to navigate along the path.
 ## Technical Features
 
 - **High Performance**: Optimized for real-time pathfinding with hundreds to thousands of moving objects  
-- **A* Algorithm**: Classic A* with heuristics for optimal and efficient pathfinding  
+- **A* Algorithm **: Classic A* with heuristics for optimal and efficient pathfinding  
 - **Flat Array Architecture**: Cache-friendly memory layout using `dmArray<T>` from the Defold SDK  
 - **Path Caching**: LRU cache with version-based invalidation for frequently reused paths  
 - **Projected Pathfinding**: Supports pathfinding from arbitrary positions, not limited to graph nodes  
