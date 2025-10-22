@@ -12,6 +12,51 @@ https://github.com/selimanac/defold-graph-pathfinder/discussions
 
 For full function details and usage examples, see the [API Reference](./API.md).  
 
+
+## Status
+
+This library has 3 parts:
+
+#### Pathfinder
+
+Core library. Responsible for managing nodes, edges, and pathfinding.
+
+✅ **Projected Pathfinding**  
+✅ **Min-Heap Priority Queue**  
+✅ **Path Caching**  
+✅ **Distance Caching**  
+🚧 **Smoothed Path Caching** - Not planned, maybe in the future
+
+#### Path Smoothing
+
+Responsible for existing path smoothing.  
+Currently available path smoothing options:  
+
+✅ **Bézier Quadratic**  
+✅ **Bézier Adaptive**  
+✅ **Catmull–Rom**  
+✅ **Bézier Cubic**  
+✅ **Circular Arc**
+
+#### Navigation
+
+Responsible for enabling agents to navigate along the path.
+
+🚧 **Path Following** - WIP  
+🚧 **Dynamic Nodes**  
+🚧 **Path Invalidation**  
+🚧 **Group Assignment**  
+🚧 **Group Formation Patterns**  
+🚧 **Collision Avoidance** — Not planned, maybe in the future
+
+
+
+### Supported Platforms
+
+- **Desktop**: Linux (x86_64, arm64), macOS (x86_64, arm64), Windows (x86_64)
+- **Mobile**: iOS (arm64, x86_64), Android (armv7, arm64)
+- **Web**: JavaScript, WebAssembly (via Emscripten)
+
 ## Technical Features
 
 - **High Performance**: Optimized for real-time pathfinding with hundreds to thousands of moving objects  
@@ -25,13 +70,6 @@ For full function details and usage examples, see the [API Reference](./API.md).
 - **No STL Containers**: Uses `dmArray<T>` and `dmHashTable<T>` for all data structures  
 - **Memory Pre-allocation**: All arrays are pre-allocated at initialization; pathfinding uses only pre-allocated memory  
 - **No Exceptions**: Uses explicit error codes instead of C++ exceptions
-
-### Available Platforms
-
-- **Desktop**: Linux (x86_64, arm64), macOS (x86_64, arm64), Windows (x86_64)
-- **Mobile**: iOS (arm64, x86_64), Android (armv7, arm64)
-- **Web**: JavaScript, WebAssembly (via Emscripten)
-
 
 
 ---
