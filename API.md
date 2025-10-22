@@ -783,20 +783,22 @@ During pathfinding, A* maintains an "open set" of nodes to explore:
 
 For 90% of use cases, **pool_block_size = 32** is sufficient:
 
-```cpp
-pathfinder::path::init(
-    graph_nodes,  // Your graph size (e.g., 150)
-    max_edges,    // Your max edges (e.g., 10)
-    32,           // Default - works for most graphs
-    8             // Cache length
+```lua
+pathfinder.init(
+    max_nodes,          -- Your graph size (e.g., 150)
+    nil,    
+    max_edges_per_node, -- Your max edges (e.g., 10)
+    32,                 --Default - works for most graphs
+    8                   -- Cache length
 );
 ```
+
 
 **Works well for:**
 - Small to medium graphs (< 500 nodes)
 - Sparse graphs (average degree < 6)
 - Short to medium paths (< 20 hops)
-``
+
 
 #### Method 2: Calculate Based on Graph Properties
 
@@ -819,7 +821,7 @@ heap_pool_block_size = total_nodes;  // Maximum possible
 ```
 
 
-### Why pool_block_size Cannot Exceed max_nodes
+### Why `heap_pool_block_size` Cannot Exceed max_nodes
 
 #### The Memory Pool Architecture
 
@@ -860,7 +862,6 @@ current_offset += pool_block_size;  // Reserve this slice
 
 **Trade-off**: `max_nodes` must be large enough to accommodate `pool_block_size`
 
-#### Why It SHOULDN'T Work (By Design)
 
 This behavior is **intentional**:
 
@@ -874,30 +875,33 @@ This behavior is **intentional**:
 #### Example 1: Small Grid (20×20 = 400 nodes)
 ```lua
 pathfinder.init(
-    400,    // Graph has 400 nodes
-    4,      // Grid: each node has max 4 neighbors
-    32,     // Default: sufficient for grid searches
-    8       // Typical path length on grid
+    400,    -- Graph has 400 nodes,
+    nil,
+    4,      -- Each node has max 4 edges
+    32,     -- Default: sufficient for grid searches
+    8       -- Typical path length on grid
 );
 ```
 
 #### Example 2: Navigation Mesh (150 nodes, dense)
 ```lua
 pathfinder.init(
-    150,    // Graph has 150 nodes
-    10,     // Dense: up to 10 connections per node
-    32,     // Default: works for most nav mesh queries
-    10      // Nav mesh paths can be longer
+    150,    -- Graph has 150 nodes,
+    nil,
+    10,     -- Dense: up to 10 connected edges per node
+    32,     -- Default: works for most nav mesh queries
+    10      -- Nav mesh paths can be longer
 );
 ```
 
 #### Example 3: Large World Graph (5000 nodes)
 ```lua
 pathfinder.init(
-    5000,   // Graph has 5000 nodes
-    8,      // Moderate connectivity
-    64,     // Larger: anticipating complex searches
-    12      // Longer paths in large world
+    5000,   -- Graph has 5000 nodes,
+    nil,
+    8,      -- Moderate connectivity
+    64,     -- Larger: anticipating complex searches
+    12      -- Longer paths in large world
 );
 ```
 
