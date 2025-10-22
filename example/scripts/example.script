@@ -1,24 +1,54 @@
+-- Advanced Pathfinder Example
+-- This script demonstrates:
+-- - Loading graph data from JSON files
+-- - Interactive pathfinding with mouse input
+-- - Visualizing paths and edges
+-- - Game object node integration with automatic position updates
+-- - Real-time pathfinding in the update loop
+
+-- Graph data storage
 local nodes = {}
 local edges = {}
 
+-- Visual representation of nodes
 local node_instances = {}
+
+-- Number of extra nodes reserved for projected pathfinding entry points
 local projected_count = 1
+
+-- Current mouse position for projected pathfinding
 local mouse_position = vmath.vector3()
+
+-- Path smoothing configuration ID
 local path_smoothing_id = 0
-local smooting_config = {
+
+-- Path smoothing configuration using Bezier quadratic curves
+-- Includes parameters for different smoothing styles (commented styles are not active)
+local smoothing_config = {
 	style                               = pathfinder.PathSmoothStyle.BEZIER_QUADRATIC,
-	bezier_sample_segment               = 8,
-	bezier_control_point_offset         = 0.4, -- bezier_cubic
-	bezier_curve_radius                 = 0.8, -- bezier_quadratic
-	bezier_adaptive_tightness           = 0.5, -- bezier_adaptive
-	bezier_adaptive_roundness           = 0.5, -- bezier_adaptive
-	bezier_adaptive_max_corner_distance = 50.0, -- bezier_adaptive
-	bezier_arc_radius                   = 40.0 -- circular_arc
+	bezier_sample_segment               = 8,      -- Number of segments per curve
+	bezier_control_point_offset         = 0.4,    -- For bezier_cubic style
+	bezier_curve_radius                 = 0.8,    -- For bezier_quadratic style (active)
+	bezier_adaptive_tightness           = 0.5,    -- For bezier_adaptive style
+	bezier_adaptive_roundness           = 0.5,    -- For bezier_adaptive style
+	bezier_adaptive_max_corner_distance = 50.0,   -- For bezier_adaptive style
+	bezier_arc_radius                   = 40.0    -- For circular_arc style
 }
 
+-- Load graph data from JSON files
+-- Returns a table with nodes and edges arrays
 local function load_data()
 	local edges_json, error = sys.load_resource("/data/edges_1.json")
+	if error then
+		print("Error loading edges:", error)
+		return nil
+	end
+	
 	local nodes_json, error = sys.load_resource("/data/nodes_1.json")
+	if error then
+		print("Error loading nodes:", error)
+		return nil
+	end
 
 	local nodes_data = json.decode(nodes_json)
 	local edges_data = json.decode(edges_json)
@@ -27,6 +57,8 @@ local function load_data()
 end
 
 
+-- Create visual game object instances for each node in the graph
+-- Each node is represented by a factory-created game object with a label showing its ID
 local function add_nodes()
 	for _, node_id in ipairs(nodes) do
 		local pos_v2 = pathfinder.get_node_position(node_id)
@@ -38,12 +70,16 @@ local function add_nodes()
 	end
 end
 
+-- Get the positions of two nodes connected by an edge
+-- Returns two vector3 positions for the start and end of the edge
 local function get_edge_positions(from_node_id, to_node_id)
 	local from_v2 = pathfinder.get_node_position(from_node_id)
 	local to_v2 = pathfinder.get_node_position(to_node_id)
 	return vmath.vector3(from_v2.x, from_v2.y, 0), vmath.vector3(to_v2.x, to_v2.y, 0)
 end
 
+-- Create visual direction indicators for unidirectional edges
+-- Bidirectional edges don't need direction indicators
 local function add_edge_directions()
 	for _, edge in ipairs(edges) do
 		if edge.bidirectional == false then
@@ -57,6 +93,7 @@ local function add_edge_directions()
 	end
 end
 
+-- Draw all edges in the graph as green lines
 local function draw_edges()
 	for _, edge in ipairs(edges) do
 		local from, to = get_edge_positions(edge.from_node_id, edge.to_node_id)
@@ -64,6 +101,7 @@ local function draw_edges()
 	end
 end
 
+-- Draw a path as red lines connecting waypoints
 local function draw_path(path_size, path)
 	for i = 1, path_size - 1, 1 do
 		local from_node = path[i]
@@ -73,13 +111,17 @@ local function draw_path(path_size, path)
 	end
 end
 
+-- Draw a projected path from the mouse position to the goal
+-- Shows the connection from mouse -> entry point -> first waypoint -> remaining path
 local function draw_projected_path(projected_path_size, projected_path_entry_point, projected_path)
+	-- Draw line from mouse position to entry point
 	msg.post("@render:", "draw_line", { start_point = mouse_position, end_point = projected_path_entry_point, color = vmath.vector4(1, 0, 0, 1) })
 
+	-- Draw line from entry point to first waypoint
 	local first_node = projected_path[1]
-
 	msg.post("@render:", "draw_line", { start_point = projected_path_entry_point, end_point = vmath.vector3(first_node.x, first_node.y, 0), color = vmath.vector4(1, 0, 0, 1) })
 
+	-- Draw lines between remaining waypoints
 	for i = 1, projected_path_size - 1, 1 do
 		local from_node = projected_path[i]
 		local to_node = projected_path[i + 1]
@@ -89,28 +131,44 @@ local function draw_projected_path(projected_path_size, projected_path_entry_poi
 end
 
 function init(self)
+	-- Enable input handling and profiler
 	msg.post(".", "acquire_input_focus")
 	profiler.enable_ui(true)
 	profiler.set_ui_view_mode(profiler.VIEW_MODE_MINIMIZED)
 
+	-- Load graph data from JSON files
 	local data = load_data()
-	pprint(#data.nodes)
-	local max_nodes = #data.nodes + projected_count -- For extra enrty point
+	if not data then
+		print("Failed to load graph data")
+		return
+	end
+	
+	print("Loaded", #data.nodes, "nodes")
+	
+	-- Calculate total nodes needed (graph nodes + extra for projected pathfinding)
+	local max_nodes = #data.nodes + projected_count
 	local max_gameobject_nodes = 10
 	local max_edges_per_node = 6
 	local heap_pool_block_size = 32
 	local max_cache_path_length = 32
 
+	-- Initialize the pathfinder system
 	pathfinder.init(max_nodes, max_gameobject_nodes, max_edges_per_node, heap_pool_block_size, max_cache_path_length)
-	path_smoothing_id = pathfinder.add_path_smoothing(smooting_config)
+	
+	-- Create path smoothing configuration
+	path_smoothing_id = pathfinder.add_path_smoothing(smoothing_config)
 
+	-- Create nodes and edges from loaded data
 	nodes = pathfinder.add_nodes(data.nodes)
 	edges = data.edges
 	pathfinder.add_edges(edges)
 
+	-- Create visual representations
 	add_nodes()
 	add_edge_directions()
 
+	-- Convert node 56 to a game object node and animate it
+	-- This demonstrates automatic position tracking
 	pathfinder.convert_gameobject_node(56, node_instances[56])
 
 	local instance_position = pathfinder.get_node_position(56)
@@ -118,22 +176,28 @@ function init(self)
 end
 
 function update(self, dt)
+	-- Draw all edges in green
 	draw_edges()
 
-	local path_size, status, status_text, path = pathfinder.find_path(0, 66, 32, path_smoothing_id);
+	-- Example 1: Static pathfinding between two fixed nodes
+	-- Find and draw a smoothed path from node 0 to node 66
+	local path_size, status, status_text, path = pathfinder.find_path(0, 66, 32, path_smoothing_id)
 
 	if status == pathfinder.PathStatus.SUCCESS then
 		draw_path(path_size, path)
 	end
 
+	-- Example 2: Dynamic projected pathfinding following mouse cursor
+	-- Find and draw a path from mouse position to node 85
 	local projected_path_size, projected_path_status, projected_path_status_text, projected_path_entry_point, projected_path = pathfinder.find_projected_path(mouse_position.x, mouse_position.y, 85, 32, path_smoothing_id)
-	pprint(projected_path_status_text)
+	
 	if projected_path_status == pathfinder.PathStatus.SUCCESS then
 		draw_projected_path(projected_path_size, projected_path_entry_point, projected_path)
 	end
 end
 
 function on_input(self, action_id, action)
+	-- Track mouse position for projected pathfinding
 	mouse_position.x = action.x
 	mouse_position.y = action.y
 	go.set_position(mouse_position, "/mouse")
