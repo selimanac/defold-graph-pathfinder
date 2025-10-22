@@ -1,21 +1,24 @@
 local nodes = {}
 local edges = {}
 
-local projected_count = 20
-
+local node_instances = {}
+local projected_count = 1
 local mouse_position = vmath.vector3()
-
 local path_smoothing_id = 0
 local smooting_config = {
-	style                 = pathfinder.PathSmoothStyle.BEZIER_QUADRATIC,
-	bezier_sample_segment = 8,
-	bezier_curve_radius   = 0.8, -- bezier_quadratic
+	style                               = pathfinder.PathSmoothStyle.BEZIER_QUADRATIC,
+	bezier_sample_segment               = 8,
+	bezier_control_point_offset         = 0.4, -- bezier_cubic
+	bezier_curve_radius                 = 0.8, -- bezier_quadratic
+	bezier_adaptive_tightness           = 0.5, -- bezier_adaptive
+	bezier_adaptive_roundness           = 0.5, -- bezier_adaptive
+	bezier_adaptive_max_corner_distance = 50.0, -- bezier_adaptive
+	bezier_arc_radius                   = 40.0 -- circular_arc
 }
 
 local function load_data()
 	local edges_json, error = sys.load_resource("/data/edges_1.json")
 	local nodes_json, error = sys.load_resource("/data/nodes_1.json")
-
 
 	local nodes_data = json.decode(nodes_json)
 	local edges_data = json.decode(edges_json)
@@ -25,12 +28,12 @@ end
 
 
 local function add_nodes()
-	for i, node_id in ipairs(nodes) do
+	for _, node_id in ipairs(nodes) do
 		local pos_v2 = pathfinder.get_node_position(node_id)
 		local node_url = factory.create("/factories#node", vmath.vector3(pos_v2.x, pos_v2.y, 0))
+		table.insert(node_instances, node_id, msg.url(node_url))
 		node_url = msg.url(node_url)
 		node_url.fragment = "node_id"
-
 		label.set_text(node_url, node_id)
 	end
 end
@@ -85,18 +88,18 @@ local function draw_projected_path(projected_path_size, projected_path_entry_poi
 	end
 end
 
-
 function init(self)
 	msg.post(".", "acquire_input_focus")
-	--profiler.enable_ui(true)
+	profiler.enable_ui(true)
 	profiler.set_ui_view_mode(profiler.VIEW_MODE_MINIMIZED)
 
 	local data = load_data()
-	local max_nodes = #data.nodes * projected_count -- For extra enrty point
+	pprint(#data.nodes)
+	local max_nodes = #data.nodes + projected_count -- For extra enrty point
 	local max_gameobject_nodes = 10
 	local max_edges_per_node = 6
 	local heap_pool_block_size = 32
-	local max_cache_path_length = 64
+	local max_cache_path_length = 32
 
 	pathfinder.init(max_nodes, max_gameobject_nodes, max_edges_per_node, heap_pool_block_size, max_cache_path_length)
 	path_smoothing_id = pathfinder.add_path_smoothing(smooting_config)
@@ -107,6 +110,11 @@ function init(self)
 
 	add_nodes()
 	add_edge_directions()
+
+	pathfinder.convert_gameobject_node(56, node_instances[56])
+
+	local instance_position = pathfinder.get_node_position(56)
+	go.animate(node_instances[56], "position.y", go.PLAYBACK_LOOP_PINGPONG, instance_position.y + 150, go.EASING_INOUTSINE, 1)
 end
 
 function update(self, dt)
@@ -118,7 +126,8 @@ function update(self, dt)
 		draw_path(path_size, path)
 	end
 
-	local projected_path_size, projected_path_status, projected_path_status_text, projected_path_entry_point, projected_path = pathfinder.find_projected_path(mouse_position.x, mouse_position.y, 95, 32, path_smoothing_id)
+	local projected_path_size, projected_path_status, projected_path_status_text, projected_path_entry_point, projected_path = pathfinder.find_projected_path(mouse_position.x, mouse_position.y, 85, 32, path_smoothing_id)
+	pprint(projected_path_status_text)
 	if projected_path_status == pathfinder.PathStatus.SUCCESS then
 		draw_projected_path(projected_path_size, projected_path_entry_point, projected_path)
 	end

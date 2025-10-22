@@ -40,7 +40,7 @@ pathfinder.init(max_nodes, [max_gameobject_nodes], max_edges_per_node, heap_pool
 
 > [!IMPORTANT]
 > If you plan to use projected pathfinding, consider increasing the value of `max_nodes`. Each entry point is treated as a new node.  
-> **Example:** If your graph has 100 nodes and 100 agents are constantly finding projected paths, you'll have up to 100 additional entry points — resulting in a total of 200 nodes.
+> **Example:** If your graph has 100 nodes and 10 agents are constantly finding projected paths, you'll have up to 100 additional entry points — resulting in a total of 110 nodes.
 
 [More info and QA about](./API.md#understanding-heap_pool_block_size-deep-dive) `heap_pool_block_size` and  `max_nodes`
 
@@ -540,7 +540,7 @@ pathfinder.set_update_frequency(60)  -- Update at 60 Hz
 
 ### pathfinder.get_cache_stats()
 
-Get caching statistics for pathfinding operations. Returns detailed statistics about path caching and distance caching performance.
+Get caching statistics for pathfinding operations. Returns detailed statistics about path caching and distance caching performance. 
 
 **Syntax:**
 ```lua

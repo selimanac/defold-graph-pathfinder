@@ -12,8 +12,8 @@
 ---@class PathEdge
 ---@field from_node_id number Source node ID
 ---@field to_node_id number Target node ID
----@field bidirectional boolean Whether the edge is bidirectional
----@field cost (number|nil): Optional edge cost (default: Euclidean distance between nodes)
+---@field bidirectional? boolean [optional]Whether the edge is bidirectional
+---@field cost? (number|nil): Optional edge cost (default: Euclidean distance between nodes)
 
 ---@class PathSmoothConfig
 ---@field style number Path smoothing style (use pathfinder.PathSmoothStyle constants)
@@ -93,7 +93,7 @@ function pathfinder.get_node_position(node_id) end
 ---Add a single edge between two nodes.
 ---@param from_node_id number Source node ID
 ---@param to_node_id number Target node ID
----@param bidirectional boolean If true, creates edges in both directions
+---@param bidirectional? boolean If true, creates edges in both directions
 function pathfinder.add_edge(from_node_id, to_node_id, bidirectional) end
 
 ---Add multiple edges to the pathfinding graph in batch.
@@ -103,14 +103,14 @@ function pathfinder.add_edges(edges) end
 ---Remove an edge between two nodes.
 ---@param from_node_id number Source node ID
 ---@param to_node_id number Target node ID
----@param bidirectional boolean If true, removes edges in both directions
+---@param bidirectional? boolean If true, removes edges in both directions
 function pathfinder.remove_edge(from_node_id, to_node_id, bidirectional) end
 
 ---Find a path between two nodes using A* algorithm.
 ---@param start_node_id number Starting node ID
 ---@param goal_node_id number Goal node ID
 ---@param max_path_length number Maximum path length to search
----@param smooth_id number|nil Optional smoothing configuration ID (default: 0 = no smoothing)
+---@param smooth_id? number|nil Optional smoothing configuration ID (default: 0 = no smoothing)
 ---@return number path_length Number of waypoints in the path
 ---@return number status PathStatus code indicating success or error
 ---@return string status_text Human-readable status message
@@ -123,7 +123,7 @@ function pathfinder.find_path(start_node_id, goal_node_id, max_path_length, smoo
 ---@param y number Y coordinate of start position
 ---@param goal_node_id number Goal node ID
 ---@param max_path_length number Maximum path length to search
----@param smooth_id number|nil Optional smoothing configuration ID (default: 0 = no smoothing)
+---@param smooth_id? number|nil Optional smoothing configuration ID (default: 0 = no smoothing)
 ---@return number path_length Number of waypoints in the path
 ---@return number status PathStatus code indicating success or error
 ---@return string status_text Human-readable status message
@@ -145,7 +145,7 @@ function pathfinder.add_path_smoothing(config) end
 
 ---Add a game object node that automatically tracks the game object's position.
 ---@param game_object_instance userdata Game object instance
----@param use_world_position boolean Whether to use world or local position
+---@param use_world_position? boolean Whether to use world or local position
 ---@return number node_id Unique identifier for the created node
 function pathfinder.add_gameobject_node(game_object_instance, use_world_position) end
 
@@ -161,7 +161,7 @@ function pathfinder.add_gameobject_nodes(game_object_nodes) end
 ---Convert an existing node to a game object node.
 ---@param node_id number Existing node ID to convert
 ---@param game_object_instance userdata Game object instance to track
----@param use_world_position boolean Whether to use world or local position
+---@param use_world_position? boolean Whether to use world or local position
 function pathfinder.convert_gameobject_node(node_id, game_object_instance, use_world_position) end
 
 ---Remove a game object node from tracking and the pathfinding graph.
