@@ -322,7 +322,7 @@ end
 
 ### pathfinder.add_path_smoothing()
 
-Create a path smoothing configuration.
+Create a path smoothing configuration. A maximum of 64 configurations is allowed.
 
 **Syntax:**
 ```lua
