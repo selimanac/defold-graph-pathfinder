@@ -10,33 +10,41 @@ https://github.com/selimanac/defold-graph-pathfinder/discussions
 
 ## Documentation
 
-For full function details and usage examples, see the [API Reference](./API.md).  
+For detailed function descriptions and usage examples, see the [API Reference](./API.md).
 
+## Installation
 
-## Status
+You can use this extension in your own project by adding it as a [Defold library dependency](https://defold.com/manuals/libraries/#setting-up-library-dependencies).  
+Open your `game.project` file, select `Project`, and add a stable version from the [releases](./releases) page to the `Dependencies` field.
 
-This library has 3 parts:
+## Examples
+
+WIP
+
+### Status
+
+This library consists of three parts:
 
 #### Pathfinder
 
-Core library. Responsible for managing nodes, edges, and pathfinding.
+The core library. Responsible for managing nodes, edges, and performing pathfinding.
 
-✅ **Projected Pathfinding**  
-✅ **Min-Heap Priority Queue**  
-✅ **Path Caching**  
-✅ **Distance Caching**  
-🚧 **Smoothed Path Caching** - Not planned, maybe in the future
+✅ Projected Pathfinding  
+✅ Min-Heap Priority Queue  
+✅ Path Caching  
+✅ Distance Caching  
+🚧 Smoothed Path Caching — not planned, maybe in the future  
 
 #### Path Smoothing
 
 Responsible for existing path smoothing.  
-Currently available path smoothing options:  
+Currently available smoothing options:  
 
-✅ **Bézier Quadratic**  
-✅ **Bézier Adaptive**  
-✅ **Catmull–Rom**  
-✅ **Bézier Cubic**  
-✅ **Circular Arc**
+✅ Quadratic Bézier  
+✅ Adaptive Bézier  
+✅ Catmull–Rom  
+✅ Cubic Bézier  
+✅ Circular Arc
 
 #### Navigation
 

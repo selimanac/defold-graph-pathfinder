@@ -13,7 +13,7 @@ title = defold-graph-pathfinder
 custom_resources = data
 
 [library]
-include_dirs = myextension
+include_dirs = graph_pathfinder
 
 [render]
 clear_color_red = 0.5
