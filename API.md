@@ -755,11 +755,11 @@ end
 
 ---
 
-## Understanding pool_block_size (Deep Dive)
+## Understanding `heap_pool_block_size` (Deep Dive)
 
-### What pool_block_size Actually Represents
+### What `heap_pool_block_size` Actually Represents
 
-The `pool_block_size` parameter defines **the maximum size of the A* algorithm's open set (priority queue)** during a single pathfinding operation.
+The `heap_pool_block_size` parameter defines **the maximum size of the A* algorithm's open set (priority queue)** during a single pathfinding operation.
 
 #### A* Algorithm Open Set
 
@@ -777,7 +777,7 @@ During pathfinding, A* maintains an "open set" of nodes to explore:
 - Graph topology (grid vs. random graph)
 - Heuristic quality (better heuristic = smaller open set)
 
-### How to Determine Proper pool_block_size
+### How to Determine Proper `heap_pool_block_size`
 
 #### Method 1: Use Default (Recommended)
 
@@ -796,26 +796,26 @@ pathfinder::path::init(
 - Small to medium graphs (< 500 nodes)
 - Sparse graphs (average degree < 6)
 - Short to medium paths (< 20 hops)
-- Grid-based maps with obstacles
+``
 
 #### Method 2: Calculate Based on Graph Properties
 
 For dense graphs or long paths, estimate based on graph characteristics:
 
-```cpp
-// Formula: pool_block_size ≈ sqrt(nodes_likely_to_explore)
+```
+// Formula: heap_pool_block_size ≈ sqrt(nodes_likely_to_explore)
 
 // Sparse graph (grid, few connections):
-pool_block_size = 32;  // Open set rarely exceeds 32 nodes
+heap_pool_block_size = 32;  // Open set rarely exceeds 32 nodes
 
 // Medium density (navigation graph):
-pool_block_size = sqrt(total_nodes) / 2;  // e.g., sqrt(1000) / 2 ≈ 16
+heap_pool_block_size = sqrt(total_nodes) / 2;  // e.g., sqrt(1000) / 2 ≈ 16
 
 // Dense graph (many connections):
-pool_block_size = sqrt(total_nodes);  // e.g., sqrt(1000) ≈ 32
+heap_pool_block_size = sqrt(total_nodes);  // e.g., sqrt(1000) ≈ 32
 
 // Worst case (might explore entire graph):
-pool_block_size = total_nodes;  // Maximum possible
+heap_pool_block_size = total_nodes;  // Maximum possible
 ```
 
 
@@ -860,50 +860,20 @@ current_offset += pool_block_size;  // Reserve this slice
 
 **Trade-off**: `max_nodes` must be large enough to accommodate `pool_block_size`
 
-
 #### Why It SHOULDN'T Work (By Design)
 
-This behavior is **intentional** and **correct**:
+This behavior is **intentional**:
 
 1. **Memory Safety**: Prevents buffer overruns
 2. **Resource Limits**: Enforces declared capacity limits
 3. **Predictability**: Fails fast rather than corrupting memory
 
-**The fix (automatic clamping)** is a **user convenience** to handle misconfiguration, not a workaround for a bug.
-
-## Recommendations for Users
-
-### Safe Parameters
-
-```cpp
-// Recommended: Use default pool_block_size of 32
-pathfinder::path::init(
-    120,    // max_nodes >= max(graph_nodes, 32)
-    6,      // max_edge_per_node (based on graph)
-    32,     // pool_block_size (default works for most cases)
-    8       // max_cache_path_length
-);
-```
-
-### Formula for max_nodes
-
-```cpp
-max_nodes = max(
-    graph_nodes + virtual_nodes,  // Actual graph size + buffer
-    pool_block_size               // Must be >= pool_block_size
-)
-```
-
-For graphs with `find_path_projected()` usage:
-```cpp
-max_nodes = max(graph_nodes + 1, 32);  // +1 for virtual node
-```
 
 ### Real-World Examples
 
 #### Example 1: Small Grid (20×20 = 400 nodes)
-```cpp
-pathfinder::path::init(
+```lua
+pathfinder.init(
     400,    // Graph has 400 nodes
     4,      // Grid: each node has max 4 neighbors
     32,     // Default: sufficient for grid searches
@@ -912,8 +882,8 @@ pathfinder::path::init(
 ```
 
 #### Example 2: Navigation Mesh (150 nodes, dense)
-```cpp
-pathfinder::path::init(
+```lua
+pathfinder.init(
     150,    // Graph has 150 nodes
     10,     // Dense: up to 10 connections per node
     32,     // Default: works for most nav mesh queries
@@ -922,8 +892,8 @@ pathfinder::path::init(
 ```
 
 #### Example 3: Large World Graph (5000 nodes)
-```cpp
-pathfinder::path::init(
+```lua
+pathfinder.init(
     5000,   // Graph has 5000 nodes
     8,      // Moderate connectivity
     64,     // Larger: anticipating complex searches
@@ -931,22 +901,4 @@ pathfinder::path::init(
 );
 ```
 
-#### Example 4: User's Original Issue
-```cpp
-// BEFORE (failed):
-pathfinder::path::init(150, 10, 151, 8);  // pool_block_size > max_nodes
-
-// AFTER (auto-clamped, works):
-pathfinder::path::init(150, 10, 151, 8);  // Clamped to 150 internally
-
-// BETTER (explicit):
-pathfinder::path::init(150, 10, 32, 8);   // Use default pool_block_size
-```
-
 ---
-
-## See Also
-
-- [README.md](../README.md) - Library overview and features
-- [annotations.lua](annotations.lua) - Lua type annotations for IDE support
-- [Example Scripts](../example/) - Working examples and demos
