@@ -81,15 +81,51 @@ jobs:
         run: |
           echo "Remove after we've fixed the headless build for plugins"
           sudo apt-get update
-          sudo apt-get install -y libopenal-dev freeglut3-dev libgl-dev libglx-dev libegl-dev
+          sudo apt-get install -y libopenal-dev freeglut3-dev libgl-dev libglx-dev libegl-dev zip unzip file
 
       - name: Resolve libraries
         run: java -jar bob.jar resolve
+
       - name: Build
-        run: java -jar bob.jar --platform=${{ matrix.platform }} --architectures ${{ matrix.platform }} build --build-server=${{ inputs.build_server }} ${{ inputs.additonal_build_options }}
+        run: |
+          # For Android targets, disable strip during build to avoid strip-related failures
+          if [[ "${{ matrix.platform }}" == "armv7-android" || "${{ matrix.platform }}" == "arm64-android" ]]; then
+            echo "Building (no strip) for ${{ matrix.platform }}"
+            java -jar bob.jar --platform=${{ matrix.platform }} --architectures ${{ matrix.platform }} build --build-server=${{ inputs.build_server }} ${{ inputs.additonal_build_options }} --strip-executable false
+          else
+            echo "Building for ${{ matrix.platform }}"
+            java -jar bob.jar --platform=${{ matrix.platform }} --architectures ${{ matrix.platform }} build --build-server=${{ inputs.build_server }} ${{ inputs.additonal_build_options }}
+          fi
+        shell: bash
+
+      - name: Inspect build output (debug)
+        run: |
+          set -euo pipefail
+          BUILD_DIR="build/default/defoldgraphpathfinder/aab/base"
+          echo "=== Inspecting build output ==="
+          if [ -d "$BUILD_DIR" ]; then
+            echo "Listing $BUILD_DIR (recursive):"
+            find "$BUILD_DIR" -ls || true
+            echo
+            echo "Sizes and permissions (first 200 entries):"
+            find "$BUILD_DIR" -type f -print0 | xargs -0 -n1 ls -lh | head -n 200 || true
+            echo
+            echo "File types for first 20 files:"
+            find "$BUILD_DIR" -type f | head -n 20 | xargs -r file || true
+            echo
+            echo "Sample .so checks:"
+            find "$BUILD_DIR" -name '*.so' -ls || true
+          else
+            echo "$BUILD_DIR does not exist. Listing build/default:"
+            ls -la build/default || true
+          fi
+        shell: bash
+
       - name: Bundle
         run: |
           echo "PLATFORM: ${{ matrix.platform }}"
+          echo "Contents to be bundled (top-level):"
+          find build/default -maxdepth 5 -ls || true
           if [[ "${{ matrix.platform }}" == "armv7-android" || "${{ matrix.platform }}" == "arm64-android" ]]; then
             echo "CMD: java -jar bob.jar --platform=${{ matrix.platform }} --architectures ${{ matrix.platform }} bundle ${{ inputs.additonal_bundle_options }} --strip-executable false"
             java -jar bob.jar --platform=${{ matrix.platform }} --architectures ${{ matrix.platform }} bundle ${{ inputs.additonal_bundle_options }} --strip-executable false
