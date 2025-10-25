@@ -723,6 +723,41 @@ static int pathfinder_set_update_frequency(lua_State* L)
     return 0;
 }
 
+/*
+
+## Cache Statistics
+
+### pathfinder.get_cache_stats()
+
+Get caching statistics for pathfinding operations. Returns detailed statistics about path caching and distance caching performance.
+
+**Syntax:**
+```lua
+local stats = pathfinder.get_cache_stats()
+```
+
+**Returns:**
+- `stats` (CacheStats): Cache statistics with path_cache and distance_cache fields
+
+**Example:**
+```lua
+local stats = pathfinder.get_cache_stats()
+
+print("Path Cache:")
+print("  Current Entries:", stats.path_cache.current_entries)
+print("  Max Capacity:", stats.path_cache.max_capacity)
+print("  Hit Rate:", stats.path_cache.hit_rate .. "%")
+
+print("Distance Cache:")
+print("  Current Size:", stats.distance_cache.current_size)
+print("  Hit Count:", stats.distance_cache.hit_count)
+print("  Miss Count:", stats.distance_cache.miss_count)
+print("  Hit Rate:", stats.distance_cache.hit_rate .. "%")
+```
+
+---
+*/
+
 static int pathfinder_cache_stats(lua_State* L)
 {
     DM_LUA_STACK_CHECK(L, 1);

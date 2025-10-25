@@ -43,11 +43,3 @@ embedded_instances {
   "}\n"
   ""
 }
-embedded_instances {
-  id: "gui"
-  data: "components {\n"
-  "  id: \"pathfinder\"\n"
-  "  component: \"/example/pathfinder.gui\"\n"
-  "}\n"
-  ""
-}

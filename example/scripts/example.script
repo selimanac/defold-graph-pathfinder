@@ -25,14 +25,15 @@ local path_smoothing_id = 0
 -- Path smoothing configuration using Bezier quadratic curves
 -- Includes parameters for different smoothing styles (commented styles are not active)
 local smoothing_config = {
-	style                               = pathfinder.PathSmoothStyle.BEZIER_QUADRATIC,
-	bezier_sample_segment               = 8, -- Number of segments per curve
-	bezier_control_point_offset         = 0.4, -- For bezier_cubic style
-	bezier_curve_radius                 = 0.8, -- For bezier_quadratic style (active)
-	bezier_adaptive_tightness           = 0.5, -- For bezier_adaptive style
-	bezier_adaptive_roundness           = 0.5, -- For bezier_adaptive style
-	bezier_adaptive_max_corner_distance = 50.0, -- For bezier_adaptive style
-	bezier_arc_radius                   = 40.0 -- For circular_arc style
+	style                 = pathfinder.PathSmoothStyle.BEZIER_QUADRATIC,
+	bezier_sample_segment = 8, -- Number of segments per curve
+	bezier_curve_radius   = 0.8, -- For bezier_quadratic style
+
+	--	bezier_control_point_offset         = 0.4, -- For bezier_cubic style
+	--	bezier_adaptive_tightness           = 0.5, -- For bezier_adaptive style
+	--	bezier_adaptive_roundness           = 0.5, -- For bezier_adaptive style
+	--	bezier_adaptive_max_corner_distance = 50.0, -- For bezier_adaptive style
+	--	bezier_arc_radius                   = 40.0 -- For circular_arc style
 }
 
 -- Load graph data from JSON files
@@ -55,7 +56,6 @@ local function load_data()
 
 	return { nodes = nodes_data, edges = edges_data }
 end
-
 
 -- Create visual game object instances for each node in the graph
 -- Each node is represented by a factory-created game object with a label showing its ID
@@ -133,8 +133,8 @@ end
 function init(self)
 	-- Enable input handling and profiler
 	msg.post(".", "acquire_input_focus")
-	profiler.enable_ui(true)
-	profiler.set_ui_view_mode(profiler.VIEW_MODE_MINIMIZED)
+	--	profiler.enable_ui(true)
+	--	profiler.set_ui_view_mode(profiler.VIEW_MODE_MINIMIZED)
 
 	-- Load graph data from JSON files
 	local data = load_data()
@@ -146,10 +146,10 @@ function init(self)
 	print("Loaded", #data.nodes, "nodes")
 
 	-- Calculate total nodes needed (graph nodes + extra for projected pathfinding)
-	local max_nodes = #data.nodes + projected_count
-	local max_gameobject_nodes = 10
-	local max_edges_per_node = 6
-	local heap_pool_block_size = 32
+	local max_nodes = #data.nodes + projected_count -- min 32
+	local max_gameobject_nodes = 2
+	local max_edges_per_node = 5
+	local heap_pool_block_size = 32 -- min 32
 	local max_cache_path_length = 32
 
 	-- Initialize the pathfinder system

@@ -184,24 +184,4 @@ function pathfinder.gameobject_update(enabled) end
 ---@param frequency number Update frequency in Hz
 function pathfinder.set_update_frequency(frequency) end
 
----@class PathCacheStats
----@field current_entries number Current number of cached paths
----@field max_capacity number Maximum cache capacity
----@field hit_rate number Cache hit rate percentage (0-100)
-
----@class DistanceCacheStats
----@field current_size number Current number of cached distance calculations
----@field hit_count number Number of cache hits
----@field miss_count number Number of cache misses
----@field hit_rate number Cache hit rate percentage (0-100)
-
----@class CacheStats
----@field path_cache PathCacheStats Path cache statistics
----@field distance_cache DistanceCacheStats Distance cache statistics
-
----Get caching statistics for pathfinding operations.
----Returns detailed statistics about path caching and distance caching performance.
----@return CacheStats stats Cache statistics with path_cache and distance_cache fields
-function pathfinder.get_cache_stats() end
-
 return pathfinder

@@ -20,8 +20,14 @@ local goal_id = 0
 -- Path smoothing configuration using Bezier quadratic curves
 local smooth_config = {
 	style = pathfinder.PathSmoothStyle.BEZIER_QUADRATIC,
-	bezier_sample_segment = 8,      -- Number of segments per curve
-	bezier_curve_radius = 0.8        -- Radius factor for curve smoothness
+	bezier_sample_segment = 8, -- Number of segments per curve
+	bezier_curve_radius = 0.8 -- Radius factor for curve smoothness
+
+	--	bezier_control_point_offset         = 0.4, -- For bezier_cubic style
+	--	bezier_adaptive_tightness           = 0.5, -- For bezier_adaptive style
+	--	bezier_adaptive_roundness           = 0.5, -- For bezier_adaptive style
+	--	bezier_adaptive_max_corner_distance = 50.0, -- For bezier_adaptive style
+	--	bezier_arc_radius                   = 40.0 -- For circular_arc style
 }
 
 function init(self)

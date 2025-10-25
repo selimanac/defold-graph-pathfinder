@@ -10,7 +10,6 @@ Defold Graph Pathfinder Extension - High-performance A* pathfinding library for 
 - [Pathfinding](#pathfinding)
 - [Path Smoothing](#path-smoothing)
 - [Game Object Nodes](#game-object-nodes)
-- [Cache Statistics](#cache-statistics)
 - [Enumerations](#enumerations)
 - [Data Types](#data-types)
 
@@ -536,37 +535,6 @@ pathfinder.set_update_frequency(60)  -- Update at 60 Hz
 
 ---
 
-## Cache Statistics
-
-### pathfinder.get_cache_stats()
-
-Get caching statistics for pathfinding operations. Returns detailed statistics about path caching and distance caching performance. 
-
-**Syntax:**
-```lua
-local stats = pathfinder.get_cache_stats()
-```
-
-**Returns:**
-- `stats` (CacheStats): Cache statistics with path_cache and distance_cache fields
-
-**Example:**
-```lua
-local stats = pathfinder.get_cache_stats()
-
-print("Path Cache:")
-print("  Current Entries:", stats.path_cache.current_entries)
-print("  Max Capacity:", stats.path_cache.max_capacity)
-print("  Hit Rate:", stats.path_cache.hit_rate .. "%")
-
-print("Distance Cache:")
-print("  Current Size:", stats.distance_cache.current_size)
-print("  Hit Count:", stats.distance_cache.hit_count)
-print("  Miss Count:", stats.distance_cache.miss_count)
-print("  Hit Rate:", stats.distance_cache.hit_rate .. "%")
-```
-
----
 
 ## Enumerations
 
@@ -668,33 +636,6 @@ Configuration for a game object node (used in add_gameobject_nodes).
 **Fields:**
 - `[1]` (msg.url): Game object instance
 - `[2]` (boolean|nil)[optional, default: false if omitted]:  Whether to use world position 
-
-### CacheStats
-
-Cache statistics returned by get_cache_stats().
-
-**Fields:**
-- `path_cache` (PathCacheStats): Path cache statistics
-- `distance_cache` (DistanceCacheStats): Distance cache statistics
-
-### PathCacheStats
-
-Path cache statistics.
-
-**Fields:**
-- `current_entries` (number): Current number of cached paths
-- `max_capacity` (number): Maximum cache capacity
-- `hit_rate` (number): Cache hit rate percentage (0-100)
-
-### DistanceCacheStats
-
-Distance cache statistics.
-
-**Fields:**
-- `current_size` (number): Current number of cached distance calculations
-- `hit_count` (number): Number of cache hits
-- `miss_count` (number): Number of cache misses
-- `hit_rate` (number): Cache hit rate percentage (0-100)
 
 ---
 
