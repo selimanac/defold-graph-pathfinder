@@ -4,4 +4,4 @@ on: [push, pull_request]
 
 jobs:
   build:
-    uses: selimanac/github-actions-common/blob/master/.github/workflows/bob.yml
+    uses: selimanac/github-actions-common/.github/workflows/bob.yml@master
