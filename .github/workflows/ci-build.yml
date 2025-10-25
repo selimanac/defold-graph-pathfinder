@@ -1,0 +1,19 @@
+name: CI - Build (call bob)
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  call-bob:
+    uses: ./.github/workflows/bob.yml
+    with:
+      ubuntu_runner: ubuntu-latest
+      macos_runner: macOS-latest
+      windows_runner: windows-latest
+      # other inputs can be omitted to use the defaults
+    secrets: inherit
