@@ -348,6 +348,46 @@ local smooth_id = pathfinder.add_path_smoothing(smooth_config)
 local path_length, status, status_text, path = pathfinder.find_path(start_id, goal_id, 128, smooth_id)
 ```
 
+
+### pathfinder.update_path_smoothing()
+
+Update a path smoothing configuration.
+
+**Syntax:**
+```lua
+ pathfinder.update_path_smoothing(smooth_id, config)
+```
+
+**Parameters:**
+- `smooth_id` (number): Unique identifier for the smoothing configuration
+- `config` (PathSmoothConfig): Smoothing configuration table
+
+
+
+**Example:**
+```lua
+local smooth_config = {
+    style = pathfinder.PathSmoothStyle.BEZIER_QUADRATIC,
+    bezier_sample_segment = 8,
+    bezier_curve_radius = 0.8
+}
+
+local smooth_id = pathfinder.add_path_smoothing(smooth_config)
+
+smooth_config = {
+    style = pathfinder.PathSmoothStyle.BEZIER_QUADRATIC,
+    bezier_sample_segment = 4,
+    bezier_curve_radius = 0.3
+}
+
+ pathfinder.update_path_smoothing(smooth_id, smooth_config)
+
+-- Use in pathfinding
+local path_length, status, status_text, path = pathfinder.find_path(start_id, goal_id, 128, smooth_id)
+```
+
+
+
 ### pathfinder.smooth_path()
 
 Apply path smoothing to a set of waypoints.

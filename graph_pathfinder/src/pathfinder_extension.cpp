@@ -257,6 +257,19 @@ namespace pathfinder
             return m_SmoothId;
         }
 
+        void update_smooth_config(uint32_t smooth_id, uint32_t path_style, const navigation::AgentPathSmoothConfig path_smooth_config)
+        {
+            SmoothConfig* smooth_config = m_SmoothConfigs.Get(smooth_id);
+            if (smooth_config == 0x0)
+            {
+                dmLogError("Invalid smooth_id %u: config not found", smooth_id);
+                return;
+            }
+
+            smooth_config->m_PathSmoothStyle = (pathfinder::PathSmoothStyle)path_style;
+            smooth_config->m_PathSmoothConfig = path_smooth_config;
+        }
+
         uint32_t get_smooth_sample_segment(uint32_t smooth_id)
         {
             SmoothConfig* smooth_config = m_SmoothConfigs.Get(smooth_id);

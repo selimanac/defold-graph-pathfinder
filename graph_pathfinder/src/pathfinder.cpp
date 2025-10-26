@@ -595,6 +595,49 @@ static int pathfinder_move_node(lua_State* L)
     return 0;
 }
 
+static inline void setup_smooth_config(lua_State* L, int index, navigation::AgentPathSmoothConfig& path_smooth_config, uint32_t& smooth_style)
+{
+    // Get "style"
+    lua_getfield(L, index, "style");
+    smooth_style = luaL_checkinteger(L, -1);
+    lua_pop(L, 1);
+
+    // Get "bezier_sample_segment"
+    lua_getfield(L, index, "bezier_sample_segment");
+    path_smooth_config.m_SampleSegment = luaL_optinteger(L, -1, 0);
+    lua_pop(L, 1);
+
+    // Get "bezier_control_point_offset"
+    lua_getfield(L, index, "bezier_control_point_offset");
+    path_smooth_config.m_ControlPointOffset = (float)luaL_optnumber(L, -1, 0.0);
+    lua_pop(L, 1);
+
+    // Get "bezier_curve_radius"
+    lua_getfield(L, index, "bezier_curve_radius");
+    path_smooth_config.m_CurveRadius = (float)luaL_optnumber(L, -1, 0.0);
+    lua_pop(L, 1);
+
+    // Get "bezier_adaptive_tightness"
+    lua_getfield(L, index, "bezier_adaptive_tightness");
+    path_smooth_config.m_BezierAdaptiveTightness = (float)luaL_optnumber(L, -1, 0.0);
+    lua_pop(L, 1);
+
+    // Get "bezier_adaptive_roundness"
+    lua_getfield(L, index, "bezier_adaptive_roundness");
+    path_smooth_config.m_BezierAdaptiveRoundness = (float)luaL_optnumber(L, -1, 0.0);
+    lua_pop(L, 1);
+
+    // Get "bezier_adaptive_max_corner_distance"
+    lua_getfield(L, index, "bezier_adaptive_max_corner_distance");
+    path_smooth_config.m_BezierAdaptiveMaxCornerDist = (float)luaL_optnumber(L, -1, 0.0);
+    lua_pop(L, 1);
+
+    // Get "bezier_arc_radius"
+    lua_getfield(L, index, "bezier_arc_radius");
+    path_smooth_config.m_ArcRadius = (float)luaL_optnumber(L, -1, 0.0);
+    lua_pop(L, 1);
+}
+
 static int pathfinder_add_path_smoothing(lua_State* L)
 {
     DM_LUA_STACK_CHECK(L, 1);
@@ -603,51 +646,31 @@ static int pathfinder_add_path_smoothing(lua_State* L)
     luaL_checktype(L, 1, LUA_TTABLE);
 
     navigation::AgentPathSmoothConfig path_smooth_config;
+    uint32_t                          smooth_style = 0;
 
-    // Get "style"
-    lua_getfield(L, 1, "style");
-    uint32_t smooth_style = luaL_checkinteger(L, -1);
-    lua_pop(L, 1);
-
-    // Get "bezier_sample_segment"
-    lua_getfield(L, 1, "bezier_sample_segment");
-    path_smooth_config.m_SampleSegment = luaL_optinteger(L, -1, 0);
-    lua_pop(L, 1);
-
-    // Get "bezier_control_point_offset"
-    lua_getfield(L, 1, "bezier_control_point_offset");
-    path_smooth_config.m_ControlPointOffset = (float)luaL_optnumber(L, -1, 0.0);
-    lua_pop(L, 1);
-
-    // Get "bezier_curve_radius"
-    lua_getfield(L, 1, "bezier_curve_radius");
-    path_smooth_config.m_CurveRadius = (float)luaL_optnumber(L, -1, 0.0);
-    lua_pop(L, 1);
-
-    // Get "bezier_adaptive_tightness"
-    lua_getfield(L, 1, "bezier_adaptive_tightness");
-    path_smooth_config.m_BezierAdaptiveTightness = (float)luaL_optnumber(L, -1, 0.0);
-    lua_pop(L, 1);
-
-    // Get "bezier_adaptive_roundness"
-    lua_getfield(L, 1, "bezier_adaptive_roundness");
-    path_smooth_config.m_BezierAdaptiveRoundness = (float)luaL_optnumber(L, -1, 0.0);
-    lua_pop(L, 1);
-
-    // Get "bezier_adaptive_max_corner_distance"
-    lua_getfield(L, 1, "bezier_adaptive_max_corner_distance");
-    path_smooth_config.m_BezierAdaptiveMaxCornerDist = (float)luaL_optnumber(L, -1, 0.0);
-    lua_pop(L, 1);
-
-    // Get "bezier_arc_radius"
-    lua_getfield(L, 1, "bezier_arc_radius");
-    path_smooth_config.m_ArcRadius = (float)luaL_optnumber(L, -1, 0.0);
-    lua_pop(L, 1);
+    setup_smooth_config(L, 1, path_smooth_config, smooth_style);
 
     // OUT ->
     uint32_t smooth_id = pathfinder::extension::add_smooth_config(smooth_style, path_smooth_config);
     lua_pushinteger(L, smooth_id);
     return 1;
+}
+
+static int pathfinder_update_path_smoothing(lua_State* L)
+{
+    DM_LUA_STACK_CHECK(L, 0);
+
+    // IN <-
+    uint32_t smooth_id = luaL_checkinteger(L, 1);
+    luaL_checktype(L, 2, LUA_TTABLE);
+
+    navigation::AgentPathSmoothConfig path_smooth_config;
+    uint32_t                          smooth_style = 0;
+
+    setup_smooth_config(L, 2, path_smooth_config, smooth_style);
+
+    pathfinder::extension::update_smooth_config(smooth_id, smooth_style, path_smooth_config);
+    return 0;
 }
 
 static int pathfinder_smooth_path(lua_State* L)
@@ -836,6 +859,7 @@ static const luaL_reg Module_methods[] = {
     // Smooth
     { "smooth_path", pathfinder_smooth_path },
     { "add_path_smoothing", pathfinder_add_path_smoothing },
+    { "update_path_smoothing", pathfinder_update_path_smoothing },
 
     // Gameobjects
     { "add_gameobject_node", pathfinder_add_gameobject_node },

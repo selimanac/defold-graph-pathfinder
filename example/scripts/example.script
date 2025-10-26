@@ -158,6 +158,22 @@ function init(self)
 	-- Create path smoothing configuration
 	path_smoothing_id = pathfinder.add_path_smoothing(smoothing_config)
 
+	smoothing_config = {
+		style                 = pathfinder.PathSmoothStyle.BEZIER_QUADRATIC,
+		bezier_sample_segment = 8, -- Number of segments per curve
+		bezier_curve_radius   = 0.9, -- For bezier_quadratic style
+
+		--	bezier_control_point_offset         = 0.4, -- For bezier_cubic style
+		--	bezier_adaptive_tightness           = 0.5, -- For bezier_adaptive style
+		--	bezier_adaptive_roundness           = 0.5, -- For bezier_adaptive style
+		--	bezier_adaptive_max_corner_distance = 50.0, -- For bezier_adaptive style
+		--	bezier_arc_radius                   = 40.0 -- For circular_arc style
+	}
+
+
+	pathfinder.update_path_smoothing(path_smoothing_id, smoothing_config)
+
+
 	-- Create nodes and edges from loaded data
 	nodes = pathfinder.add_nodes(data.nodes)
 	edges = data.edges
