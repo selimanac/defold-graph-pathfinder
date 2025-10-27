@@ -143,6 +143,11 @@ function pathfinder.smooth_path(smooth_id, waypoints) end
 ---@return number smooth_id Unique identifier for the smoothing configuration
 function pathfinder.add_path_smoothing(config) end
 
+---Update a path smoothing configuration.
+---@param smooth_id number Smoothing configuration ID (from add_path_smoothing)
+---@param config PathSmoothConfig Smoothing configuration table
+function pathfinder.update_path_smoothing(smooth_id, config) end
+
 ---Add a game object node that automatically tracks the game object's position.
 ---@param game_object_instance userdata Game object instance
 ---@param use_world_position? boolean Whether to use world or local position
