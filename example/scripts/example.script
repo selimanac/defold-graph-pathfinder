@@ -199,6 +199,7 @@ function update(self, dt)
 	-- Find and draw a smoothed path from node 0 to node 66
 	local path_size, status, status_text, path = pathfinder.find_path(0, 66, 32, path_smoothing_id)
 
+
 	if status == pathfinder.PathStatus.SUCCESS then
 		draw_path(path_size, path)
 	end

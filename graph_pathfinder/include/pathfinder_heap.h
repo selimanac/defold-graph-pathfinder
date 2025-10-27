@@ -1,5 +1,3 @@
-
-
 #ifndef PATHFINDER_HEAP_H
 #define PATHFINDER_HEAP_H
 
@@ -76,11 +74,11 @@ namespace pathfinder
          * Represents a single entry in the heap, storing the node index
          * and its priority value (f-score in A* pathfinding).
          */
-        struct HeapNode
+        typedef struct HeapNode
         {
             uint32_t m_Index;  // Index/ID of the node in the graph
             float    m_FScore; // Priority value (lower = higher priority)
-        };
+        } HeapNode;
 
         /**
          * @brief Tracks graph structure changes for cache invalidation

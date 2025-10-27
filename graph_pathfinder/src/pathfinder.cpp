@@ -21,7 +21,9 @@ static inline const char* path_status_to_string(enum pathfinder::PathStatus stat
         case pathfinder::SUCCESS:
             return "Success";
         case pathfinder::ERROR_NO_PATH:
-            return "No valid path found between start and goal nodes";
+            return "No valid path found between to goal node";
+        case pathfinder::ERROR_START_GOAL_NODE_SAME:
+            return "Start node ID and goal node ID are the same";
         case pathfinder::ERROR_START_NODE_INVALID:
             return "Invalid or inactive start node ID";
         case pathfinder::ERROR_GOAL_NODE_INVALID:
@@ -894,6 +896,7 @@ static void LuaInit(lua_State* L)
 
     SET_CONSTANT(pathStatusTable, SUCCESS);
     SET_CONSTANT(pathStatusTable, ERROR_NO_PATH);
+    SET_CONSTANT(pathStatusTable, ERROR_START_GOAL_NODE_SAME);
     SET_CONSTANT(pathStatusTable, ERROR_START_NODE_INVALID);
     SET_CONSTANT(pathStatusTable, ERROR_GOAL_NODE_INVALID);
     SET_CONSTANT(pathStatusTable, ERROR_NODE_FULL);
