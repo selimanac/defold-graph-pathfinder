@@ -245,13 +245,13 @@ pathfinder.remove_edge(node1, node2, true)
 
 ## Pathfinding
 
-### pathfinder.find_path()
+### pathfinder.find_node_to_node()
 
 Find a path between two nodes using A* algorithm.
 
 **Syntax:**
 ```lua
-local path_length, status, status_text, path = pathfinder.find_path(start_node_id, goal_node_id, max_path_length, [smooth_id])
+local path_length, status, status_text, path = pathfinder.find_node_to_node(start_node_id, goal_node_id, max_path_length, [smooth_id])
 ```
 
 **Parameters:**
@@ -268,7 +268,7 @@ local path_length, status, status_text, path = pathfinder.find_path(start_node_i
 
 **Example:**
 ```lua
-local path_length, status, status_text, path = pathfinder.find_path(start_id, goal_id, 128)
+local path_length, status, status_text, path = pathfinder.find_node_to_node(start_id, goal_id, 128)
 
 if status == pathfinder.PathStatus.SUCCESS then
     print("Path found with", path_length, "waypoints")
@@ -280,13 +280,13 @@ else
 end
 ```
 
-### pathfinder.find_projected_path()
+### pathfinder.find_projected_to_node()
 
 Find a path from an arbitrary position (not on graph) to a goal node. Projects the start position onto the nearest graph edge and pathfinds from there.
 
 **Syntax:**
 ```lua
-local path_length, status, status_text, entry_point, path = pathfinder.find_projected_path(x, y, goal_node_id, max_path_length, [smooth_id])
+local path_length, status, status_text, entry_point, path = pathfinder.find_projected_to_node(x, y, goal_node_id, max_path_length, [smooth_id])
 ```
 
 **Parameters:**
@@ -306,7 +306,78 @@ local path_length, status, status_text, entry_point, path = pathfinder.find_proj
 **Example:**
 ```lua
 local mouse_x, mouse_y = 150, 250
-local path_length, status, status_text, entry_point, path = pathfinder.find_projected_path(mouse_x, mouse_y, goal_id, 128)
+local path_length, status, status_text, entry_point, path = pathfinder.find_projected_to_node(mouse_x, mouse_y, goal_id, 128)
+
+if status == pathfinder.PathStatus.SUCCESS then
+    print("Entry point:", entry_point.x, entry_point.y)
+    -- Draw line from mouse position to entry point
+    -- Then follow the path
+end
+```
+
+
+### pathfinder.find_node_to_projected() WIP
+
+Find a path from an arbitrary position (not on graph) to a goal node. Projects the start position onto the nearest graph edge and pathfinds from there.
+
+**Syntax:**
+```lua
+local path_length, status, status_text, entry_point, path = pathfinder.find_node_to_projected(x, y, goal_node_id, max_path_length, [smooth_id])
+```
+
+**Parameters:**
+- `x` (number): X coordinate of start position
+- `y` (number): Y coordinate of start position
+- `goal_node_id` (number): Goal node ID
+- `max_path_length` (number): Maximum path length to search
+- `smooth_id` (number|nil)[optionla, default: 0 = no smoothing]: Optional smoothing configuration ID 
+
+**Returns:**
+- `path_length` (number): Number of waypoints in the path
+- `status` (number): PathStatus code indicating success or error
+- `status_text` (string): Human-readable status message
+- `entry_point` (vector3): Position where the path enters the graph
+- `path` (PathNode[]): Array of waypoints (positions with optional node IDs)
+
+**Example:**
+```lua
+local mouse_x, mouse_y = 150, 250
+local path_length, status, status_text, entry_point, path = pathfinder.find_node_to_projected(mouse_x, mouse_y, goal_id, 128)
+
+if status == pathfinder.PathStatus.SUCCESS then
+    print("Entry point:", entry_point.x, entry_point.y)
+    -- Draw line from mouse position to entry point
+    -- Then follow the path
+end
+```
+
+### pathfinder.find_projected_to_projected() WIP
+
+Find a path from an arbitrary position (not on graph) to a goal node. Projects the start position onto the nearest graph edge and pathfinds from there.
+
+**Syntax:**
+```lua
+local path_length, status, status_text, entry_point, path = pathfinder.find_projected_to_projected(x, y, goal_node_id, max_path_length, [smooth_id])
+```
+
+**Parameters:**
+- `x` (number): X coordinate of start position
+- `y` (number): Y coordinate of start position
+- `goal_node_id` (number): Goal node ID
+- `max_path_length` (number): Maximum path length to search
+- `smooth_id` (number|nil)[optionla, default: 0 = no smoothing]: Optional smoothing configuration ID 
+
+**Returns:**
+- `path_length` (number): Number of waypoints in the path
+- `status` (number): PathStatus code indicating success or error
+- `status_text` (string): Human-readable status message
+- `entry_point` (vector3): Position where the path enters the graph
+- `path` (PathNode[]): Array of waypoints (positions with optional node IDs)
+
+**Example:**
+```lua
+local mouse_x, mouse_y = 150, 250
+local path_length, status, status_text, entry_point, path = pathfinder.find_projected_to_projected(mouse_x, mouse_y, goal_id, 128)
 
 if status == pathfinder.PathStatus.SUCCESS then
     print("Entry point:", entry_point.x, entry_point.y)
@@ -345,7 +416,7 @@ local smooth_config = {
 local smooth_id = pathfinder.add_path_smoothing(smooth_config)
 
 -- Use in pathfinding
-local path_length, status, status_text, path = pathfinder.find_path(start_id, goal_id, 128, smooth_id)
+local path_length, status, status_text, path = pathfinder.find_node_to_node(start_id, goal_id, 128, smooth_id)
 ```
 
 
@@ -383,7 +454,7 @@ smooth_config = {
 pathfinder.update_path_smoothing(smooth_id, smooth_config)
 
 -- Use in pathfinding
-local path_length, status, status_text, path = pathfinder.find_path(start_id, goal_id, 128, smooth_id)
+local path_length, status, status_text, path = pathfinder.find_node_to_node(start_id, goal_id, 128, smooth_id)
 ```
 
 
@@ -713,7 +784,7 @@ function init(self)
     -- Find path with smoothing
     local start_id = nodes[1]
     local goal_id = nodes[4]
-    local path_length, status, status_text, path = pathfinder.find_path(start_id, goal_id, 128, smooth_id)
+    local path_length, status, status_text, path = pathfinder.find_node_to_node(start_id, goal_id, 128, smooth_id)
 
     if status == pathfinder.PathStatus.SUCCESS then
         print("Path found with", path_length, "waypoints")
@@ -897,10 +968,25 @@ Responsible for caching the distances between nodes to speed up calculations.
 
 #### Cache Breaking
 
-- Moving or removing nodes breaks the cache, but only for paths that include the moved or removed node and related edges — not the entire cache.  
-- Removing edges breaks the cache, but only for paths that include the removed edge, related nodes, and related edges — not the entire cache.  
-- Projected paths are cached only if the start point is exactly the same.  
-- If a path includes a moved node (and its edges), it cannot be retrieved from the cache.  
+- Moving or removing nodes breaks the cache, but only for paths that include the moved or removed node and its related edges — not the entire cache.  
+- Removing edges breaks the cache, but only for paths that include the removed edge, related nodes, and edges — not the entire cache.  
+- Projected paths are cached only if the start point and/or end point are exactly the same.  
+- If a path includes a moving node (and its edges), it cannot be retrieved from the cache.  
 - Smoothed paths are **not** cached.
+
+## Spatial Index
+
+**Key Features:**
+- **Automatic activation**: Enabled automatically for graphs with >100 nodes
+- **Fast queries**: O(k) complexity where k = edges in nearby cells (typically 10-50)
+- **Auto-tuning**: Cell size automatically calculated from average edge length
+- **Dynamic updates**: Incrementally updates when nodes move
+- **Version tracking**: Integrates with cache invalidation system
+
+**When to Use:**
+- ✅ Large graphs (>500 nodes)
+- ✅ Frequent projected pathfinding queries (>20 projections/frame)
+- ✅ Real-time games with many AI agents
+- ⚠️ Not needed for small graphs (<100 nodes) - overhead not worth it
 
 ---

@@ -33,7 +33,7 @@ The core library. Responsible for managing nodes, edges, and performing pathfind
 ✅ Min-Heap Priority Queue  
 ✅ Path Caching  
 ✅ Distance Caching  
-🚧 Smoothed Path Caching — not planned, maybe in the future  
+❌ Smoothed Path Caching — not planned, maybe in the future  
 
 ### Path Smoothing
 
@@ -55,7 +55,7 @@ Responsible for enabling agents to navigate along the path.
 🚧 **Path Invalidation for Agents**  
 🚧 **Group Assignment for Agents**  
 🚧 **Group Formation Patterns**  
-🚧 **Collision Avoidance** — Not planned, maybe in the future
+❌ **Collision Avoidance** — Not planned, maybe in the future
 
 
 
@@ -65,6 +65,8 @@ Responsible for enabling agents to navigate along the path.
 - **Mobile**: iOS (arm64, x86_64), Android (armv7, arm64)
 - **Web**: JavaScript, WebAssembly (via Emscripten)
 
+x86-win32 is not supported.
+
 ## Technical Features
 
 - **High Performance**: Optimized for real-time pathfinding with hundreds to thousands of moving objects  
@@ -72,7 +74,7 @@ Responsible for enabling agents to navigate along the path.
 - **Flat Array Architecture**: Cache-friendly memory layout using `dmArray<T>` from the Defold SDK  
 - **Path Caching**: LRU cache with version-based invalidation for frequently reused paths  
 - **Projected Pathfinding**: Supports pathfinding from arbitrary positions, not limited to graph nodes  
-- **Spatial Index for Large Graphs: Grid-based spatial indexing for 10-100× speedup in large graphs (>500 nodes)  
+- **Spatial Index for Large Graphs**: Grid-based spatial indexing for 10-100× speedup in large graphs (>500 nodes)  
 - **Dynamic Graph Updates**: Add or remove nodes and edges at runtime with automatic cache invalidation  
 - **Min-Heap Priority Queue**: Custom implementation with zero-copy memory pooling and bulk operations  
 - **Distance Caching**: Spatial hashing for fast approximate distance lookups  

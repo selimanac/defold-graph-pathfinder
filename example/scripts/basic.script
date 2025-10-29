@@ -7,15 +7,16 @@
 -- - Projected pathfinding
 
 -- Variables for pathfinding results
-local path_length = 0
-local status = 0
-local status_text = ""
-local entry_point = vmath.vector3()
-local path = {}
+local path_length   = 0
+local status        = 0
+local status_text   = ""
+local entry_point   = vmath.vector3()
+local exit_point    = vmath.vector3()
+local path          = {}
 
 -- Node identifiers for pathfinding
-local start_id = 0
-local goal_id = 0
+local start_id      = 0
+local goal_id       = 0
 
 -- Path smoothing configuration using Bezier quadratic curves
 local smooth_config = {
@@ -56,7 +57,7 @@ function init(self)
 	-- Find a path from the first node to the last node
 	start_id = nodes[1]
 	goal_id = nodes[4]
-	path_length, status, status_text, path = pathfinder.find_path(start_id, goal_id, 8)
+	path_length, status, status_text, path = pathfinder.find_node_to_node(start_id, goal_id, 8)
 
 	if status == pathfinder.PathStatus.SUCCESS then
 		print("Path found with", path_length, "waypoints")
@@ -81,7 +82,7 @@ function init(self)
 
 	-- Example 3: Automatic path smoothing
 	-- Pass the smooth_id to find_path to get a smoothed path directly
-	path_length, status, status_text, path = pathfinder.find_path(start_id, goal_id, 32, smooth_id)
+	path_length, status, status_text, path = pathfinder.find_node_to_node(start_id, goal_id, 32, smooth_id)
 
 	if status == pathfinder.PathStatus.SUCCESS then
 		print("Smoothed path found with", path_length, "waypoints")
@@ -95,7 +96,7 @@ function init(self)
 	-- Example 4: Projected pathfinding without smoothing
 	-- Find a path from an arbitrary point (55, 45) to the goal node
 	-- The pathfinder will create a temporary entry point on the graph
-	path_length, status, status_text, entry_point, path = pathfinder.find_projected_path(55, 45, goal_id, 8)
+	path_length, status, status_text, entry_point, path = pathfinder.find_projected_to_node(55, 45, goal_id, 8)
 
 	if status == pathfinder.PathStatus.SUCCESS then
 		print("Entry point:", entry_point)
@@ -109,10 +110,41 @@ function init(self)
 
 	-- Example 5: Projected pathfinding with smoothing
 	-- Combine projected pathfinding with automatic smoothing
-	path_length, status, status_text, entry_point, path = pathfinder.find_projected_path(0, 0, goal_id, 64, smooth_id)
+	path_length, status, status_text, entry_point, path = pathfinder.find_projected_to_node(0, 0, goal_id, 64, smooth_id)
 
 	if status == pathfinder.PathStatus.SUCCESS then
 		print("Entry point:", entry_point)
+		print("Smoothed projected path found with", path_length, "waypoints")
+		for i, waypoint in ipairs(path) do
+			print(string.format("Waypoint %d: (%.1f, %.1f)", i, waypoint.x, waypoint.y))
+		end
+	else
+		print("Pathfinding failed:", status_text)
+	end
+
+
+	-- Example 5: Projected pathfinding with smoothing
+	-- Combine projected pathfinding with automatic smoothing
+	path_length, status, status_text, exit_point, path = pathfinder.find_node_to_projected(start_id, 55, 45, 32, smooth_id)
+
+	if status == pathfinder.PathStatus.SUCCESS then
+		print("Exit point:", exit_point)
+		print("Smoothed projected path found with", path_length, "waypoints")
+		for i, waypoint in ipairs(path) do
+			print(string.format("Waypoint %d: (%.1f, %.1f)", i, waypoint.x, waypoint.y))
+		end
+	else
+		print("Pathfinding failed:", status_text)
+	end
+
+
+	-- Example 5: Projected pathfinding with smoothing
+	-- Combine projected pathfinding with automatic smoothing
+	path_length, status, status_text, entry_point, exit_point, path = pathfinder.find_projected_to_projected(55, 45, 355, 345, 32, smooth_id)
+
+	if status == pathfinder.PathStatus.SUCCESS then
+		print("Entry point:", entry_point)
+		print("Exit point:", exit_point)
 		print("Smoothed projected path found with", path_length, "waypoints")
 		for i, waypoint in ipairs(path) do
 			print(string.format("Waypoint %d: (%.1f, %.1f)", i, waypoint.x, waypoint.y))

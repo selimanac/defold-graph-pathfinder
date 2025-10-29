@@ -2,6 +2,7 @@
 // Extension lib defines
 
 #include "dmsdk/dlib/log.h"
+#include "pathfinder_constants.h"
 #define LIB_NAME "GraphPathfinder"
 #define MODULE_NAME "pathfinder"
 #include <dmsdk/sdk.h>
@@ -102,7 +103,7 @@ static int pathfinder_init(lua_State* L)
 
     uint32_t max_nodes = luaL_checkint(L, 1);
     uint32_t max_gameobject_nodes = (uint32_t)luaL_optinteger(L, 2, 0);
-    uint32_t max_edge_per_node = luaL_checkint(L, 3);
+    uint32_t max_edges_per_node = luaL_checkint(L, 3);
     uint32_t pool_block_size = luaL_checkint(L, 4);
     uint32_t max_cache_path_length = luaL_checkint(L, 5);
 
@@ -121,7 +122,7 @@ static int pathfinder_init(lua_State* L)
     {
         pool_block_size = 32;
     }
-    pathfinder::path::init(max_nodes, max_edge_per_node, pool_block_size, max_cache_path_length);
+    pathfinder::path::init(max_nodes, max_edges_per_node, pool_block_size, max_cache_path_length);
 
     if (max_gameobject_nodes > 0)
     {
@@ -403,7 +404,7 @@ static int pathfinder_add_edge(lua_State* L)
     return 0;
 }
 
-static int pathfinder_find_path(lua_State* L)
+static int pathfinder_find_node_to_node_path(lua_State* L)
 {
     DM_LUA_STACK_CHECK(L, 4);
 
@@ -455,7 +456,7 @@ static int pathfinder_find_path(lua_State* L)
     return 4;
 }
 
-static int pathfinder_find_projected_path(lua_State* L)
+static int pathfinder_find_projected_to_node_path(lua_State* L)
 {
     DM_LUA_STACK_CHECK(L, 5);
 
@@ -523,6 +524,157 @@ static int pathfinder_find_projected_path(lua_State* L)
     return 5;
 }
 
+static int pathfinder_find_node_to_projected_path(lua_State* L)
+{
+    DM_LUA_STACK_CHECK(L, 5);
+
+    // IN <-
+    uint32_t         start_node_id = luaL_checkint(L, 1);
+
+    float            target_x = luaL_checknumber(L, 2);
+    float            target_y = luaL_checknumber(L, 3);
+    pathfinder::Vec2 target_position = pathfinder::Vec2(target_x, target_y);
+
+    uint32_t         max_path = luaL_checkint(L, 4);
+    uint32_t         smooth_id = (uint32_t)luaL_optinteger(L, 5, 0);
+
+    // OUT ->
+    dmArray<uint32_t>      path;
+    pathfinder::PathStatus status;
+    pathfinder::Vec2       exit_point;
+    uint32_t               path_length = pathfinder::path::find_path_projected_with_exit(pathfinder::Vec2(0, 0), target_position, start_node_id, &path, max_path, NULL, &exit_point, &status);
+
+    // Smoothing
+    if (smooth_id > 0)
+    {
+        dmArray<pathfinder::Vec2> waypoints;
+        waypoints.SetCapacity(path_length + 2);
+
+        // Add all path nodes
+        for (uint32_t i = 0; i < path_length; i++)
+        {
+            waypoints.Push(pathfinder::path::get_node_position(path[i]));
+        }
+
+        // Exit
+        waypoints.Push(exit_point);      // Exit point on graph
+        waypoints.Push(target_position); // Target position
+
+        dmArray<pathfinder::Vec2> smoothed_path;
+        uint32_t                  samples_per_segment = pathfinder::extension::get_smooth_sample_segment(smooth_id);
+        uint32_t                  capacity = pathfinder::smooth::calculate_smoothed_path_capacity(path, samples_per_segment);
+        smoothed_path.SetCapacity(capacity);
+
+        pathfinder::extension::smooth_path_waypoint(smooth_id, waypoints, smoothed_path);
+
+        lua_pushinteger(L, smoothed_path.Size());
+        lua_pushinteger(L, status);
+        lua_pushstring(L, path_status_to_string(status));
+        dmScript::PushVector3(L, dmVMath::Vector3(exit_point.x, exit_point.y, 0));
+
+        // Result table
+        push_smoothed_path_table(L, smoothed_path);
+    }
+    else
+    {
+        lua_pushinteger(L, path_length);
+        lua_pushinteger(L, status);
+        lua_pushstring(L, path_status_to_string(status));
+        dmScript::PushVector3(L, dmVMath::Vector3(exit_point.x, exit_point.y, 0));
+
+        // Result table
+        lua_createtable(L, path_length, 0);
+        int newTable = lua_gettop(L);
+        for (int i = 0; i < path_length; i++)
+        {
+            pathfinder::Vec2 node_position = pathfinder::path::get_node_position(path[i]);
+            push_path_node_table(L, node_position, path[i], true);
+            lua_rawseti(L, newTable, i + 1);
+        }
+    }
+    return 5;
+}
+
+static int pathfinder_find_projected_to_projected_path(lua_State* L)
+{
+    DM_LUA_STACK_CHECK(L, 6);
+
+    // IN <-
+    float            start_x = luaL_checknumber(L, 1);
+    float            start_y = luaL_checknumber(L, 2);
+    pathfinder::Vec2 start_position = pathfinder::Vec2(start_x, start_y);
+
+    float            target_x = luaL_checknumber(L, 3);
+    float            target_y = luaL_checknumber(L, 4);
+    pathfinder::Vec2 target_position = pathfinder::Vec2(target_x, target_y);
+
+    uint32_t         max_path = luaL_checkint(L, 5);
+    uint32_t         smooth_id = (uint32_t)luaL_optinteger(L, 6, 0);
+
+    // OUT ->
+    dmArray<uint32_t>      path;
+    pathfinder::PathStatus status;
+    pathfinder::Vec2       entry_point;
+    pathfinder::Vec2       exit_point;
+    uint32_t               path_length = pathfinder::path::find_path_projected_with_exit(start_position, target_position, pathfinder::INVALID_ID, &path, max_path, &entry_point, &exit_point, &status);
+
+    // Smoothing
+    if (smooth_id > 0)
+    {
+        dmArray<pathfinder::Vec2> waypoints;
+        waypoints.SetCapacity(path_length + 4);
+
+        // Enter
+        waypoints.Push(start_position); // Start position
+        waypoints.Push(entry_point);    // Entry point on graph
+
+        // Add all path nodes
+        for (uint32_t i = 0; i < path_length; i++)
+        {
+            waypoints.Push(pathfinder::path::get_node_position(path[i]));
+        }
+
+        // Exit
+        waypoints.Push(exit_point);      // Exit point on graph
+        waypoints.Push(target_position); // Target position
+
+        dmArray<pathfinder::Vec2> smoothed_path;
+        uint32_t                  samples_per_segment = pathfinder::extension::get_smooth_sample_segment(smooth_id);
+        uint32_t                  capacity = pathfinder::smooth::calculate_smoothed_path_capacity(path, samples_per_segment);
+        smoothed_path.SetCapacity(capacity);
+
+        pathfinder::extension::smooth_path_waypoint(smooth_id, waypoints, smoothed_path);
+
+        lua_pushinteger(L, smoothed_path.Size());
+        lua_pushinteger(L, status);
+        lua_pushstring(L, path_status_to_string(status));
+        dmScript::PushVector3(L, dmVMath::Vector3(entry_point.x, entry_point.y, 0));
+        dmScript::PushVector3(L, dmVMath::Vector3(exit_point.x, exit_point.y, 0));
+
+        // Result table
+        push_smoothed_path_table(L, smoothed_path);
+    }
+    else
+    {
+        lua_pushinteger(L, path_length);
+        lua_pushinteger(L, status);
+        lua_pushstring(L, path_status_to_string(status));
+        dmScript::PushVector3(L, dmVMath::Vector3(entry_point.x, entry_point.y, 0));
+        dmScript::PushVector3(L, dmVMath::Vector3(exit_point.x, exit_point.y, 0));
+
+        // Result table
+        lua_createtable(L, path_length, 0);
+        int newTable = lua_gettop(L);
+        for (int i = 0; i < path_length; i++)
+        {
+            pathfinder::Vec2 node_position = pathfinder::path::get_node_position(path[i]);
+            push_path_node_table(L, node_position, path[i], true);
+            lua_rawseti(L, newTable, i + 1);
+        }
+    }
+    return 6;
+}
+
 static int pathfinder_shutdown(lua_State* L)
 {
     DM_LUA_STACK_CHECK(L, 0);
@@ -547,6 +699,57 @@ static int pathfinder_remove_gameobject_node(lua_State* L)
     pathfinder::extension::remove_gameobject_node(node_id);
     pathfinder::path::remove_node(node_id);
     return 0;
+}
+
+/*
+
+ Filtering Behavior:
+         * - include_bidirectional=true (default): Returns edges regardless of bidirectionality
+         * - include_bidirectional=false: Returns only unidirectional edges (skips bidirectional ones)
+         * - include_incoming=false (default): Returns only outgoing edges
+         * - include_incoming=true: Returns both outgoing and incoming edges
+
+Time Complexity:
+         * - Outgoing only: O(E1 * E2) where E1 = edges from node, E2 = avg edges per dest
+         * - With incoming: O(N * E * E) where N = total nodes, E = max edges per node
+         * - The nested complexity for incoming comes from:
+         *   - Outer loop: scan all N nodes in graph
+         *   - Inner loop: check E edges per node for matches
+         *   - Bidirectional check: scan E edges of destination node
+         */
+static int pathfinder_get_node_edges(lua_State* L)
+{
+    DM_LUA_STACK_CHECK(L, 1);
+    uint32_t                      node_id = luaL_checkint(L, 1);
+    bool                          bidirectional = lua_toboolean(L, 2);
+    bool                          include_incoming = lua_toboolean(L, 3);
+
+    dmArray<pathfinder::EdgeInfo> edges;
+
+    uint32_t                      count = pathfinder::path::get_node_edges(node_id, &edges, bidirectional, include_incoming);
+
+    lua_createtable(L, edges.Size(), 0);
+    int newTable = lua_gettop(L);
+    for (int i = 0; i < edges.Size(); ++i)
+    {
+        lua_createtable(L, 0, 4);
+
+        lua_pushinteger(L, edges[i].m_From);
+        lua_setfield(L, -2, "from_node_id");
+
+        lua_pushinteger(L, edges[i].m_To);
+        lua_setfield(L, -2, "to_node_id");
+
+        lua_pushnumber(L, edges[i].m_Cost);
+        lua_setfield(L, -2, "cost");
+
+        lua_pushboolean(L, edges[i].m_Bidirectional);
+        lua_setfield(L, -2, "bidirectional");
+
+        lua_rawseti(L, newTable, i + 1);
+    }
+
+    return 1; // the table
 }
 
 static int pathfinder_get_node_position(lua_State* L)
@@ -848,6 +1051,7 @@ static const luaL_reg Module_methods[] = {
     { "remove_node", pathfinder_remove_node },
     { "move_node", pathfinder_move_node },
     { "get_node_position", pathfinder_get_node_position },
+    { "get_node_edges", pathfinder_get_node_edges },
 
     // Edges
     { "add_edge", pathfinder_add_edge },
@@ -855,8 +1059,10 @@ static const luaL_reg Module_methods[] = {
     { "remove_edge", pathfinder_remove_edge },
 
     // Path
-    { "find_path", pathfinder_find_path },
-    { "find_projected_path", pathfinder_find_projected_path },
+    { "find_node_to_node", pathfinder_find_node_to_node_path },
+    { "find_projected_to_node", pathfinder_find_projected_to_node_path },
+    { "find_node_to_projected", pathfinder_find_node_to_projected_path },
+    { "find_projected_to_projected", pathfinder_find_projected_to_projected_path },
 
     // Smooth
     { "smooth_path", pathfinder_smooth_path },

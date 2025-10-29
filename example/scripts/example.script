@@ -197,7 +197,7 @@ function update(self, dt)
 
 	-- Example 1: Static pathfinding between two fixed nodes
 	-- Find and draw a smoothed path from node 0 to node 66
-	local path_size, status, status_text, path = pathfinder.find_path(0, 66, 32, path_smoothing_id)
+	local path_size, status, status_text, path = pathfinder.find_node_to_node(0, 66, 32, path_smoothing_id)
 
 
 	if status == pathfinder.PathStatus.SUCCESS then
@@ -206,7 +206,7 @@ function update(self, dt)
 
 	-- Example 2: Dynamic projected pathfinding following mouse cursor
 	-- Find and draw a path from mouse position to node 85
-	local projected_path_size, projected_path_status, projected_path_status_text, projected_path_entry_point, projected_path = pathfinder.find_projected_path(mouse_position.x, mouse_position.y, 85, 32, path_smoothing_id)
+	local projected_path_size, projected_path_status, projected_path_status_text, projected_path_entry_point, projected_path = pathfinder.find_projected_to_node(mouse_position.x, mouse_position.y, 85, 32, path_smoothing_id)
 
 	if projected_path_status == pathfinder.PathStatus.SUCCESS then
 		draw_projected_path(projected_path_size, projected_path_entry_point, projected_path)

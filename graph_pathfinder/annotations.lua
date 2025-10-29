@@ -115,7 +115,7 @@ function pathfinder.remove_edge(from_node_id, to_node_id, bidirectional) end
 ---@return number status PathStatus code indicating success or error
 ---@return string status_text Human-readable status message
 ---@return PathNode[] path Array of waypoints (positions with optional node IDs)
-function pathfinder.find_path(start_node_id, goal_node_id, max_path_length, smooth_id) end
+function pathfinder.find_node_to_node(start_node_id, goal_node_id, max_path_length, smooth_id) end
 
 ---Find a path from an arbitrary position (not on graph) to a goal node.
 ---Projects the start position onto the nearest graph edge and pathfinds from there.
@@ -129,7 +129,37 @@ function pathfinder.find_path(start_node_id, goal_node_id, max_path_length, smoo
 ---@return string status_text Human-readable status message
 ---@return vector3 entry_point Position where the path enters the graph
 ---@return PathNode[] path Array of waypoints (positions with optional node IDs)
-function pathfinder.find_projected_path(x, y, goal_node_id, max_path_length, smooth_id) end
+function pathfinder.find_projected_to_node(x, y, goal_node_id, max_path_length, smooth_id) end
+
+---Find a path from an start node to a arbitrary position (not on graph).
+---Projects the start position onto the nearest graph edge and pathfinds from there.
+---@param start_node_id number Goal node ID
+---@param x number X coordinate of target position
+---@param y number Y coordinate of target position
+---@param max_path_length number Maximum path length to search
+---@param smooth_id? number|nil Optional smoothing configuration ID (default: 0 = no smoothing)
+---@return number path_length Number of waypoints in the path
+---@return number status PathStatus code indicating success or error
+---@return string status_text Human-readable status message
+---@return vector3 exit_point Position where the path enters the graph
+---@return PathNode[] path Array of waypoints (positions with optional node IDs)
+function pathfinder.find_node_to_projected(start_node_id, x, y, max_path_length, smooth_id) end
+
+---Find a path from an arbitrary position (not on the graph) to another arbitrary position (not on the graph).
+---Projects the start position onto the nearest graph edge and pathfinds from there.
+---@param start_x number X coordinate of start position
+---@param start_y number Y coordinate of start position
+---@param target_x number X coordinate of target position
+---@param target_y number Y coordinate of target position
+---@param max_path_length number Maximum path length to search
+---@param smooth_id? number|nil Optional smoothing configuration ID (default: 0 = no smoothing)
+---@return number path_length Number of waypoints in the path
+---@return number status PathStatus code indicating success or error
+---@return string status_text Human-readable status message
+---@return vector3 entry_point Position where the path enters the graph
+---@return vector3 exit_point Position where the path enters the graph
+---@return PathNode[] path Array of waypoints (positions with optional node IDs)
+function pathfinder.find_projected_to_projected(start_x, start_y, target_x, target_y, max_path_length, smooth_id) end
 
 ---Apply path smoothing to a set of waypoints.
 ---@param smooth_id number Smoothing configuration ID (from add_path_smoothing)
