@@ -173,6 +173,29 @@ local pos = pathfinder.get_node_position(node1)
 print("Node position:", pos.x, pos.y)
 ```
 
+### pathfinder.get_node_edges()
+
+Get edges for a specific node with bidirectionality information.
+
+**Syntax:**
+```lua
+local edges = pathfinder.get_node_edges(node_id)
+```
+
+**Parameters:**
+- `node_id` (number): ID of the node
+- `bidirectional` (boolean): If true (default), returns all edges. If false, returns only unidirectional edges.
+- `include_incoming` (boolean): If true, includes incoming edges. If false (default), includes only outgoing edges.
+
+**Returns:**
+- `edges` (PathEdge[]): Array of edge definitions
+
+**Example:**
+```lua
+local edges = pathfinder.get_node_edges(node1,true,true)
+pprint(edges)
+```
+
 ---
 
 ## Edge Management
