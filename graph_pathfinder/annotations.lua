@@ -12,7 +12,7 @@
 ---@class PathEdge
 ---@field from_node_id number Source node ID
 ---@field to_node_id number Target node ID
----@field bidirectional? boolean [optional]Whether the edge is bidirectional
+---@field bidirectional? boolean [optional] Whether the edge is bidirectional
 ---@field cost? (number|nil): Optional edge cost (default: Euclidean distance between nodes)
 
 ---@class PathSmoothConfig
@@ -30,6 +30,7 @@
 pathfinder.PathStatus = {
     SUCCESS = 0,                         -- Operation completed successfully
     ERROR_NO_PATH = -1,                  -- No valid path found between start and goal nodes
+    ERROR_START_GOAL_NODE_SAME = -12,    -- Start node ID and goal node ID are the same
     ERROR_START_NODE_INVALID = -2,       -- Invalid or inactive start node ID
     ERROR_GOAL_NODE_INVALID = -3,        -- Invalid or inactive goal node ID
     ERROR_NODE_FULL = -4,                -- Node capacity reached, cannot add more nodes
@@ -138,9 +139,9 @@ function pathfinder.find_node_to_node(start_node_id, goal_node_id, max_path_leng
 ---@return PathNode[] path Array of waypoints (positions with optional node IDs)
 function pathfinder.find_projected_to_node(x, y, goal_node_id, max_path_length, smooth_id) end
 
----Find a path from an start node to a arbitrary position (not on graph).
----Projects the start position onto the nearest graph edge and pathfinds from there.
----@param start_node_id number Goal node ID
+---Find a path from a start node to an arbitrary position (not on graph).
+---Projects the target position onto the nearest graph edge and pathfinds to there.
+---@param start_node_id number Starting node ID
 ---@param x number X coordinate of target position
 ---@param y number Y coordinate of target position
 ---@param max_path_length number Maximum path length to search
@@ -148,12 +149,12 @@ function pathfinder.find_projected_to_node(x, y, goal_node_id, max_path_length, 
 ---@return number path_length Number of waypoints in the path
 ---@return number status PathStatus code indicating success or error
 ---@return string status_text Human-readable status message
----@return vector3 exit_point Position where the path enters the graph
+---@return vector3 exit_point Position where the path exits the graph
 ---@return PathNode[] path Array of waypoints (positions with optional node IDs)
 function pathfinder.find_node_to_projected(start_node_id, x, y, max_path_length, smooth_id) end
 
 ---Find a path from an arbitrary position (not on the graph) to another arbitrary position (not on the graph).
----Projects the start position onto the nearest graph edge and pathfinds from there.
+---Projects both start and target positions onto the nearest graph edges and pathfinds between them.
 ---@param start_x number X coordinate of start position
 ---@param start_y number Y coordinate of start position
 ---@param target_x number X coordinate of target position
@@ -164,7 +165,7 @@ function pathfinder.find_node_to_projected(start_node_id, x, y, max_path_length,
 ---@return number status PathStatus code indicating success or error
 ---@return string status_text Human-readable status message
 ---@return vector3 entry_point Position where the path enters the graph
----@return vector3 exit_point Position where the path enters the graph
+---@return vector3 exit_point Position where the path exits the graph
 ---@return PathNode[] path Array of waypoints (positions with optional node IDs)
 function pathfinder.find_projected_to_projected(start_x, start_y, target_x, target_y, max_path_length, smooth_id) end
 

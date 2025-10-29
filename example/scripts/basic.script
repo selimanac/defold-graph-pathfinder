@@ -123,8 +123,8 @@ function init(self)
 	end
 
 
-	-- Example 5: Projected pathfinding with smoothing
-	-- Combine projected pathfinding with automatic smoothing
+	-- Example 6: Node to projected position pathfinding with smoothing
+	-- Find a path from a node to an arbitrary position (not on graph)
 	path_length, status, status_text, exit_point, path = pathfinder.find_node_to_projected(start_id, 55, 45, 32, smooth_id)
 
 	if status == pathfinder.PathStatus.SUCCESS then
@@ -138,8 +138,8 @@ function init(self)
 	end
 
 
-	-- Example 5: Projected pathfinding with smoothing
-	-- Combine projected pathfinding with automatic smoothing
+	-- Example 7: Projected to projected pathfinding with smoothing
+	-- Find a path between two arbitrary positions (both not on graph)
 	path_length, status, status_text, entry_point, exit_point, path = pathfinder.find_projected_to_projected(55, 45, 355, 345, 32, smooth_id)
 
 	if status == pathfinder.PathStatus.SUCCESS then
