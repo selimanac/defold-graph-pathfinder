@@ -380,7 +380,7 @@ smooth_config = {
     bezier_curve_radius = 0.3
 }
 
- pathfinder.update_path_smoothing(smooth_id, smooth_config)
+pathfinder.update_path_smoothing(smooth_id, smooth_config)
 
 -- Use in pathfinding
 local path_length, status, status_text, path = pathfinder.find_path(start_id, goal_id, 128, smooth_id)

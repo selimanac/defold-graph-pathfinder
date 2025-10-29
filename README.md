@@ -72,6 +72,7 @@ Responsible for enabling agents to navigate along the path.
 - **Flat Array Architecture**: Cache-friendly memory layout using `dmArray<T>` from the Defold SDK  
 - **Path Caching**: LRU cache with version-based invalidation for frequently reused paths  
 - **Projected Pathfinding**: Supports pathfinding from arbitrary positions, not limited to graph nodes  
+- **Spatial Index for Large Graphs: Grid-based spatial indexing for 10-100× speedup in large graphs (>500 nodes)  
 - **Dynamic Graph Updates**: Add or remove nodes and edges at runtime with automatic cache invalidation  
 - **Min-Heap Priority Queue**: Custom implementation with zero-copy memory pooling and bulk operations  
 - **Distance Caching**: Spatial hashing for fast approximate distance lookups  

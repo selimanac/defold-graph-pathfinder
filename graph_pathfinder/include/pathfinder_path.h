@@ -162,6 +162,92 @@ namespace pathfinder
          */
         void remove_edge(const uint32_t from, const uint32_t to);
 
+        /**
+         * @brief Get edges for a specific node with bidirectionality information
+         * @param node_id Node ID to query edges for
+         * @param out_edges Output array to store EdgeInfo structures
+         * @param include_bidirectional If true (default), returns all edges. If false, returns only unidirectional edges.
+         * @param include_incoming If true, includes incoming edges. If false (default), includes only outgoing edges.
+         *
+         * Retrieves edges from/to the specified node and populates the output array
+         * with complete edge information including whether each edge is bidirectional.
+         *
+         * EdgeInfo Structure:
+         * - m_From: Source node ID (may differ from node_id if incoming edges included)
+         * - m_To: Destination node ID (may equal node_id if incoming edges included)
+         * - m_Cost: Edge traversal cost
+         * - m_Bidirectional: True if reverse edge exists
+         *
+         * Edge Types:
+         * - Outgoing: Edges where m_From equals node_id (A->B where A is node_id)
+         * - Incoming: Edges where m_To equals node_id (C->A where A is node_id)
+         *
+         * Bidirectionality Detection:
+         * - Checks if reverse edge exists by scanning destination node's edges
+         * - Two edges may have different costs but still be considered bidirectional
+         * - Only checks existence, not cost symmetry
+         *
+         * Filtering Behavior:
+         * - include_bidirectional=true (default): Returns edges regardless of bidirectionality
+         * - include_bidirectional=false: Returns only unidirectional edges (skips bidirectional ones)
+         * - include_incoming=false (default): Returns only outgoing edges
+         * - include_incoming=true: Returns both outgoing and incoming edges
+         *
+         * Time Complexity:
+         * - Outgoing only: O(E1 * E2) where E1 = edges from node, E2 = avg edges per dest
+         * - With incoming: O(N * E * E) where N = total nodes, E = max edges per node
+         * - The nested complexity for incoming comes from:
+         *   - Outer loop: scan all N nodes in graph
+         *   - Inner loop: check E edges per node for matches
+         *   - Bidirectional check: scan E edges of destination node
+         *
+         * Memory:
+         * - Caller must pre-allocate out_edges array with sufficient capacity
+         * - Recommended capacity: max_edges_per_node (outgoing only) or 2*max_edges_per_node (with incoming)
+         * - Array is cleared before populating (SetSize(0))
+         *
+         * Success Cases:
+         * - Returns number of edges found (0 to graph capacity)
+         * - out_edges populated with EdgeInfo structures
+         * - Array size matches return value
+         *
+         * Failure Cases:
+         * - Returns 0 if node_id is invalid or inactive
+         * - Returns 0 if node has no edges (outgoing and/or incoming based on parameters)
+         * - out_edges array cleared (size = 0)
+         *
+         * Example Usage:
+         * @code
+         * dmArray<EdgeInfo> edges;
+         * edges.SetCapacity(max_edges_per_node * 2); // Account for incoming edges
+         *
+         * // Get outgoing edges only (default)
+         * uint32_t count = get_node_edges(node_id, &edges);
+         *
+         * // Get only unidirectional outgoing edges
+         * uint32_t count = get_node_edges(node_id, &edges, false);
+         *
+         * // Get both outgoing and incoming edges
+         * uint32_t count = get_node_edges(node_id, &edges, true, true);
+         *
+         * // Get only unidirectional edges (both directions)
+         * uint32_t count = get_node_edges(node_id, &edges, false, true);
+         *
+         * for (uint32_t i = 0; i < count; i++) {
+         *     printf("Edge %u->%u, cost=%.2f, bidirectional=%s\n",
+         *            edges[i].m_From, edges[i].m_To, edges[i].m_Cost,
+         *            edges[i].m_Bidirectional ? "true" : "false");
+         * }
+         * @endcode
+         *
+         * Notes:
+         * - Does not modify graph state (read-only operation)
+         * - Thread-safe for concurrent reads (if graph not modified)
+         * - Bidirectionality is computed dynamically (not cached)
+         * - Including incoming edges requires scanning all nodes (slower)
+         */
+        uint32_t get_node_edges(const uint32_t node_id, dmArray<EdgeInfo>* out_edges, const bool include_bidirectional = true, const bool include_incoming = false);
+
         /*******************************************/
         // PATHFINDING OPERATIONS
         /*******************************************/
@@ -255,6 +341,74 @@ namespace pathfinder
          * - virtual_max_path limits search depth from virtual node (defaults to 64)
          */
         uint32_t find_path_projected(const Vec2 position, const uint32_t goal_id, dmArray<uint32_t>* out_path, const uint32_t max_path, Vec2* out_entry_point, PathStatus* status, const uint32_t virtual_max_path = 64);
+
+        /**
+         * @brief Find path with exit point projection to arbitrary end position
+         * @param start_position Starting position (optional, can be zero Vec2 if using start_node_id)
+         * @param end_position Ending position (arbitrary position, not necessarily a node)
+         * @param start_node_id Starting node ID (optional, set to INVALID_ID if using start_position)
+         * @param out_path Output array to store path node IDs
+         * @param max_path Maximum allowed path length for output
+         * @param out_entry_point Output: projection point on graph edge from start (optional, can be NULL)
+         * @param out_exit_point Output: projection point on graph edge to reach end_position
+         * @param status Output parameter for operation status (optional)
+         * @param virtual_max_path Maximum path length for virtual node search (default: 64)
+         * @return Length of path (number of nodes), 0 if no path found
+         *
+         * Projected Pathfinding with Exit Point Algorithm:
+         * Mode 1 (start_node_id provided, start_position ignored):
+         *   1. Find nearest edge to end_position by projecting onto all graph edges
+         *   2. Create temporary "virtual exit" node at projection point
+         *   3. Connect virtual exit node to edge endpoints with distance-based costs
+         *   4. Run A* from start_node_id to virtual exit node
+         *   5. Remove virtual exit node and return path (excluding virtual node)
+         *   6. out_exit_point contains projection on graph, out_entry_point will be zero
+         *
+         * Mode 2 (start_node_id = INVALID_ID, start_position provided):
+         *   1. Find nearest edge to start_position (entry point projection)
+         *   2. Find nearest edge to end_position (exit point projection)
+         *   3. Create temporary "virtual entry" node at entry projection
+         *   4. Create temporary "virtual exit" node at exit projection
+         *   5. Connect both virtual nodes to their respective edge endpoints
+         *   6. Run A* from virtual entry to virtual exit
+         *   7. Remove both virtual nodes and return path (excluding virtual nodes)
+         *   8. out_entry_point and out_exit_point contain both projections
+         *
+         * Time Complexity: O(V * E_avg * 2 + A*) where:
+         * - V * E_avg for entry projection (if Mode 2)
+         * - V * E_avg for exit projection
+         * - A* for pathfinding between projections
+         *
+         * Use Cases:
+         * - Click-to-move to arbitrary positions (not just nodes)
+         * - AI agents moving between dynamic positions
+         * - Projectile path prediction
+         * - Area-of-effect ability targeting
+         *
+         * Success Cases:
+         * - status = SUCCESS, returns path length > 0
+         * - out_path contains node IDs from entry to exit
+         * - out_entry_point contains entry projection (Mode 2) or zero (Mode 1)
+         * - out_exit_point contains exit projection to reach end_position
+         * - Result cached for future queries with same positions
+         *
+         * Failure Cases:
+         * - status = ERROR_START_NODE_INVALID: start_node_id invalid (Mode 1)
+         * - status = ERROR_NO_PROJECTION: no edges in graph to project onto
+         * - status = ERROR_NODE_FULL: couldn't create virtual node(s)
+         * - status = ERROR_EDGE_FULL: couldn't connect virtual node(s)
+         * - status = ERROR_NO_PATH: no path between projections
+         *
+         * Notes:
+         * - Set start_node_id to INVALID_ID for Mode 2 (arbitrary start position)
+         * - Set start_node_id to valid node ID for Mode 1 (start from node)
+         * - Projection considers only active edges between active nodes
+         * - Virtual nodes are always cleaned up (even on failure)
+         * - virtual_max_path limits search depth (defaults to 64)
+         * - out_entry_point can be NULL if not needed
+         * - out_exit_point should not be NULL (required output)
+         */
+        uint32_t find_path_projected_with_exit(const Vec2 start_position, const Vec2 end_position, const uint32_t start_node_id, dmArray<uint32_t>* out_path, const uint32_t max_path, Vec2* out_entry_point, Vec2* out_exit_point, PathStatus* status, const uint32_t virtual_max_path = 64);
 
     } // namespace path
 

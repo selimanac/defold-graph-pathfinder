@@ -79,6 +79,29 @@ namespace pathfinder
         void add_projected_path(const Vec2 start_point, const uint32_t goal_id, const dmArray<uint32_t>* path, const uint32_t length, const Vec2 entry_point);
 
         /**
+         * @brief Search for a cached path with exit point projection
+         * @param start_point Starting 2D position (used for hashing)
+         * @param end_point Ending 2D position (not necessarily a node)
+         * @param out_path Output array to receive the cached path
+         * @param max_path Maximum number of nodes to copy
+         * @param out_entry_point Output: point where agent enters the graph (optional, can be NULL)
+         * @param out_exit_point Output: point where agent exits the graph to reach end_point
+         * @return Number of nodes in path, or INVALID_ID if not found/invalid
+         */
+        uint32_t find_path_with_exit(const Vec2 start_point, const Vec2 end_point, dmArray<uint32_t>* out_path, const uint32_t max_path, Vec2* out_entry_point, Vec2* out_exit_point);
+
+        /**
+         * @brief Add or update a path with exit point in the cache
+         * @param start_point Starting 2D position (can be node position or arbitrary position)
+         * @param end_point Ending 2D position (arbitrary position)
+         * @param path Array containing the path nodes
+         * @param length Number of nodes in the path
+         * @param entry_point Point where the agent enters the graph (if starting from arbitrary position)
+         * @param exit_point Point where the agent exits the graph to reach end_point
+         */
+        void add_path_with_exit(const Vec2 start_point, const Vec2 end_point, const dmArray<uint32_t>* path, const uint32_t length, const Vec2 entry_point, const Vec2 exit_point);
+
+        /**
          * @brief Invalidate all cached paths containing a specific node
          * @param node_id Node ID that has been modified
          */

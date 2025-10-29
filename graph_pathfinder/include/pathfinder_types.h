@@ -53,7 +53,7 @@ namespace pathfinder
      */
     typedef struct Vec2
     {
-        float x, y;  ///< X and Y coordinates in 2D space
+        float x, y; ///< X and Y coordinates in 2D space
 
         /**
          * @brief Default constructor - initializes to zero vector (0, 0)
@@ -97,14 +97,16 @@ namespace pathfinder
      * - Stored as two separate Edge instances (A→B and B→A)
      * - Created automatically when add_edge() called with bidirectional=true
      * - Can have asymmetric costs (uphill vs downhill)
+     * - m_Bidirectional flag set to true on both edges for O(1) detection
      *
-     * Memory Layout: 8 bytes (4-byte uint32_t + 4-byte float)
+     * Memory Layout: 12 bytes (4-byte uint32_t + 4-byte float + 1-byte bool + 3 bytes padding)
      * Alignment: 4-byte aligned
      */
     typedef struct Edge
     {
-        uint32_t m_To;   ///< Destination node ID (index into m_Nodes array)
-        float    m_Cost; ///< Traversal cost (typically distance, but can be weighted)
+        uint32_t m_To;             ///< Destination node ID (index into m_Nodes array)
+        float    m_Cost;           ///< Traversal cost (typically distance, but can be weighted)
+        bool     m_Bidirectional;  ///< True if reverse edge exists (eliminates O(E) has_edge() scan)
     } Edge;
 
     /**
@@ -143,6 +145,37 @@ namespace pathfinder
         Vec2     m_Position; ///< 2D spatial position in world coordinates
         uint32_t m_Version;  ///< Per-node version counter (increments on position change)
     } Node;
+
+    /**
+     * @brief Extended edge information including bidirectionality status
+     *
+     * This structure provides complete edge information for a specific node,
+     * including source, destination, cost, and whether the edge is part of
+     * a bidirectional connection.
+     *
+     * Usage:
+     * - Returned by get_node_edges() helper function
+     * - m_From: Always equals the queried node_id
+     * - m_To: Destination node ID
+     * - m_Cost: Edge traversal cost (same as in Edge struct)
+     * - m_Bidirectional: true if reverse edge (m_To -> m_From) also exists
+     *
+     * Bidirectionality Detection:
+     * - Determined by checking if reverse edge exists at query time
+     * - Not stored persistently (computed on demand)
+     * - Two edges A->B and B->A may have different costs
+     * - m_Bidirectional is true if both directions exist (regardless of cost)
+     *
+     * Memory Layout: 16 bytes (3 * 4-byte fields + 1-byte bool + 3 bytes padding)
+     * Alignment: 4-byte aligned
+     */
+    typedef struct EdgeInfo
+    {
+        uint32_t m_From;          ///< Source node ID (same as queried node_id)
+        uint32_t m_To;            ///< Destination node ID
+        float    m_Cost;          ///< Edge traversal cost
+        bool     m_Bidirectional; ///< True if reverse edge exists (m_To -> m_From)
+    } EdgeInfo;
 
 } // namespace pathfinder
 #endif
