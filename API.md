@@ -684,7 +684,7 @@ Status codes for pathfinding operations.
 |----------|-------|-------------|
 | `SUCCESS` | 0 | Operation completed successfully |
 | `ERROR_NO_PATH` | -1 | No valid path found between start and goal nodes |
-| `ERROR_NO_PATH` | -12 | Start node ID and goal node ID are the same |
+| `ERROR_START_GOAL_NODE_SAME` | -12 | Start node ID and goal node ID are the same |
 | `ERROR_START_NODE_INVALID` | -2 | Invalid or inactive start node ID |
 | `ERROR_GOAL_NODE_INVALID` | -3 | Invalid or inactive goal node ID |
 | `ERROR_NODE_FULL` | -4 | Node capacity reached, cannot add more nodes |
