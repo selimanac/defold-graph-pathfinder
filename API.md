@@ -179,13 +179,13 @@ Get edges for a specific node with bidirectionality information.
 
 **Syntax:**
 ```lua
-local edges = pathfinder.get_node_edges(node_id)
+local edges = pathfinder.get_node_edges(node_id, [bidirectional], [include_incoming])
 ```
 
 **Parameters:**
 - `node_id` (number): ID of the node
-- `bidirectional` (boolean): If true (default), returns all edges. If false, returns only unidirectional edges.
-- `include_incoming` (boolean): If true, includes incoming edges. If false (default), includes only outgoing edges.
+- `bidirectional` (boolean) [optional, default: true]: If true, returns all edges. If false, returns only unidirectional edges.
+- `include_incoming` (boolean) [optional, default: false]: If true, includes incoming edges. If false, includes only outgoing edges.
 
 **Returns:**
 - `edges` (PathEdge[]): Array of edge definitions
@@ -317,7 +317,7 @@ local path_length, status, status_text, entry_point, path = pathfinder.find_proj
 - `y` (number): Y coordinate of start position
 - `goal_node_id` (number): Goal node ID
 - `max_path_length` (number): Maximum path length to search
-- `smooth_id` (number|nil)[optionla, default: 0 = no smoothing]: Optional smoothing configuration ID 
+- `smooth_id` (number|nil) [optional, default: 0 = no smoothing]: Optional smoothing configuration ID 
 
 **Returns:**
 - `path_length` (number): Number of waypoints in the path
@@ -339,73 +339,77 @@ end
 ```
 
 
-### pathfinder.find_node_to_projected() WIP
+### pathfinder.find_node_to_projected()
 
-Find a path from an arbitrary position (not on graph) to a goal node. Projects the start position onto the nearest graph edge and pathfinds from there.
+Find a path from a start node to an arbitrary position (not on graph). Projects the target position onto the nearest graph edge and pathfinds to there.
 
 **Syntax:**
 ```lua
-local path_length, status, status_text, entry_point, path = pathfinder.find_node_to_projected(x, y, goal_node_id, max_path_length, [smooth_id])
+local path_length, status, status_text, exit_point, path = pathfinder.find_node_to_projected(start_node_id, x, y, max_path_length, [smooth_id])
 ```
 
 **Parameters:**
-- `x` (number): X coordinate of start position
-- `y` (number): Y coordinate of start position
-- `goal_node_id` (number): Goal node ID
+- `start_node_id` (number): Starting node ID
+- `x` (number): X coordinate of target position
+- `y` (number): Y coordinate of target position
 - `max_path_length` (number): Maximum path length to search
-- `smooth_id` (number|nil)[optionla, default: 0 = no smoothing]: Optional smoothing configuration ID 
+- `smooth_id` (number|nil) [optional, default: 0 = no smoothing]: Optional smoothing configuration ID
 
 **Returns:**
 - `path_length` (number): Number of waypoints in the path
 - `status` (number): PathStatus code indicating success or error
 - `status_text` (string): Human-readable status message
-- `entry_point` (vector3): Position where the path enters the graph
+- `exit_point` (vector3): Position where the path exits the graph
 - `path` (PathNode[]): Array of waypoints (positions with optional node IDs)
 
 **Example:**
 ```lua
-local mouse_x, mouse_y = 150, 250
-local path_length, status, status_text, entry_point, path = pathfinder.find_node_to_projected(mouse_x, mouse_y, goal_id, 128)
+local target_x, target_y = 150, 250
+local path_length, status, status_text, exit_point, path = pathfinder.find_node_to_projected(start_id, target_x, target_y, 128)
 
 if status == pathfinder.PathStatus.SUCCESS then
-    print("Entry point:", entry_point.x, entry_point.y)
-    -- Draw line from mouse position to entry point
-    -- Then follow the path
+    print("Exit point:", exit_point.x, exit_point.y)
+    -- Follow the path, then draw line from exit point to target position
 end
 ```
 
-### pathfinder.find_projected_to_projected() WIP
+### pathfinder.find_projected_to_projected()
 
-Find a path from an arbitrary position (not on graph) to a goal node. Projects the start position onto the nearest graph edge and pathfinds from there.
+Find a path from an arbitrary position (not on graph) to another arbitrary position (not on graph). Projects both start and target positions onto the nearest graph edges and pathfinds between them.
 
 **Syntax:**
 ```lua
-local path_length, status, status_text, entry_point, path = pathfinder.find_projected_to_projected(x, y, goal_node_id, max_path_length, [smooth_id])
+local path_length, status, status_text, entry_point, exit_point, path = pathfinder.find_projected_to_projected(start_x, start_y, target_x, target_y, max_path_length, [smooth_id])
 ```
 
 **Parameters:**
-- `x` (number): X coordinate of start position
-- `y` (number): Y coordinate of start position
-- `goal_node_id` (number): Goal node ID
+- `start_x` (number): X coordinate of start position
+- `start_y` (number): Y coordinate of start position
+- `target_x` (number): X coordinate of target position
+- `target_y` (number): Y coordinate of target position
 - `max_path_length` (number): Maximum path length to search
-- `smooth_id` (number|nil)[optionla, default: 0 = no smoothing]: Optional smoothing configuration ID 
+- `smooth_id` (number|nil) [optional, default: 0 = no smoothing]: Optional smoothing configuration ID
 
 **Returns:**
 - `path_length` (number): Number of waypoints in the path
 - `status` (number): PathStatus code indicating success or error
 - `status_text` (string): Human-readable status message
 - `entry_point` (vector3): Position where the path enters the graph
+- `exit_point` (vector3): Position where the path exits the graph
 - `path` (PathNode[]): Array of waypoints (positions with optional node IDs)
 
 **Example:**
 ```lua
-local mouse_x, mouse_y = 150, 250
-local path_length, status, status_text, entry_point, path = pathfinder.find_projected_to_projected(mouse_x, mouse_y, goal_id, 128)
+local start_x, start_y = 50, 50
+local target_x, target_y = 350, 350
+local path_length, status, status_text, entry_point, exit_point, path = pathfinder.find_projected_to_projected(start_x, start_y, target_x, target_y, 128)
 
 if status == pathfinder.PathStatus.SUCCESS then
     print("Entry point:", entry_point.x, entry_point.y)
-    -- Draw line from mouse position to entry point
-    -- Then follow the path
+    print("Exit point:", exit_point.x, exit_point.y)
+    -- Draw line from start position to entry point
+    -- Follow the path
+    -- Draw line from exit point to target position
 end
 ```
 
