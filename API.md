@@ -10,6 +10,7 @@ Defold Graph Pathfinder Extension - High-performance A* pathfinding library for 
 - [Pathfinding](#pathfinding)
 - [Path Smoothing](#path-smoothing)
 - [Game Object Nodes](#game-object-nodes)
+- [Statistics](#statistics)
 - [Enumerations](#enumerations)
 - [Data Types](#data-types)
 
@@ -669,6 +670,72 @@ pathfinder.set_update_frequency(60)  -- Update at 60 Hz
 
 ---
 
+## Statistics
+
+### pathfinder.get_cache_stats()
+
+Get statistics for path cache, distance cache, and spatial index. Useful for performance monitoring and tuning.
+
+**Syntax:**
+```lua
+local stats = pathfinder.get_cache_stats()
+```
+
+**Returns:**
+- `stats` (CacheStats): Table containing cache statistics with three sub-tables
+
+**Return Structure:**
+```lua
+{
+    path_cache = {
+        current_entries = number,  -- Current number of cached paths
+        max_capacity = number,     -- Maximum cache capacity
+        hit_rate = number          -- Cache hit rate percentage (0-100)
+    },
+    distance_cache = {
+        current_size = number,     -- Current number of cached distances
+        hit_count = number,        -- Number of cache hits
+        miss_count = number,       -- Number of cache misses
+        hit_rate = number          -- Cache hit rate percentage (0-100)
+    },
+    spatial_index = {
+        cell_count = number,       -- Number of cells in the spatial index
+        edge_count = number,       -- Total number of edges indexed
+        avg_edges_per_cell = number, -- Average edges per cell
+        max_edges_per_cell = number  -- Maximum edges in any cell
+    }
+}
+```
+
+**Example:**
+```lua
+local stats = pathfinder.get_cache_stats()
+
+-- Path cache info
+print("Path cache usage:", stats.path_cache.current_entries, "/", stats.path_cache.max_capacity)
+print("Path cache hit rate:", stats.path_cache.hit_rate .. "%")
+
+-- Distance cache info
+print("Distance cache size:", stats.distance_cache.current_size)
+print("Distance cache hits:", stats.distance_cache.hit_count)
+print("Distance cache misses:", stats.distance_cache.miss_count)
+print("Distance cache hit rate:", stats.distance_cache.hit_rate .. "%")
+
+-- Spatial index info (for large graphs > 100 nodes)
+print("Spatial index cells:", stats.spatial_index.cell_count)
+print("Spatial index edges:", stats.spatial_index.edge_count)
+print("Avg edges per cell:", stats.spatial_index.avg_edges_per_cell)
+print("Max edges per cell:", stats.spatial_index.max_edges_per_cell)
+```
+
+**Performance Notes:**
+- High path cache hit rates (>80%) indicate good cache utilization
+- High distance cache hit rates improve heuristic calculation performance
+- Spatial index is automatically enabled for graphs with >100 nodes
+- Monitor these stats to tune cache sizes and understand performance characteristics
+
+---
+
 
 ## Enumerations
 
@@ -771,6 +838,44 @@ Configuration for a game object node (used in add_gameobject_nodes).
 **Fields:**
 - `[1]` (msg.url): Game object instance
 - `[2]` (boolean|nil)[optional, default: false if omitted]:  Whether to use world position 
+
+### CacheStats
+
+Statistics for cache and spatial index performance (returned by get_cache_stats).
+
+**Fields:**
+- `path_cache` (PathCacheStats): Path cache statistics
+- `distance_cache` (DistanceCacheStats): Distance cache statistics
+- `spatial_index` (SpatialIndexStats): Spatial index statistics
+
+### PathCacheStats
+
+Path cache performance metrics.
+
+**Fields:**
+- `current_entries` (number): Current number of cached paths
+- `max_capacity` (number): Maximum cache capacity
+- `hit_rate` (number): Cache hit rate percentage (0-100)
+
+### DistanceCacheStats
+
+Distance cache performance metrics.
+
+**Fields:**
+- `current_size` (number): Current number of cached distances
+- `hit_count` (number): Number of cache hits
+- `miss_count` (number): Number of cache misses
+- `hit_rate` (number): Cache hit rate percentage (0-100)
+
+### SpatialIndexStats
+
+Spatial index performance metrics (active for graphs >100 nodes).
+
+**Fields:**
+- `cell_count` (number): Number of cells in the spatial index
+- `edge_count` (number): Total number of edges indexed
+- `avg_edges_per_cell` (number): Average edges per cell
+- `max_edges_per_cell` (number): Maximum edges in any cell
 
 ---
 

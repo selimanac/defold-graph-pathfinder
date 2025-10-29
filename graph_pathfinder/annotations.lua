@@ -195,6 +195,28 @@ function pathfinder.add_gameobject_node(game_object_instance, use_world_position
 ---@field [1] userdata Game object instance (msg.url)
 ---@field [2] boolean|nil Optional: Whether to use world position (default: false if omitted)
 
+---@class CacheStats
+---@field path_cache PathCacheStats Path cache statistics
+---@field distance_cache DistanceCacheStats Distance cache statistics
+---@field spatial_index SpatialIndexStats Spatial index statistics
+
+---@class PathCacheStats
+---@field current_entries number Current number of cached paths
+---@field max_capacity number Maximum cache capacity
+---@field hit_rate number Cache hit rate percentage (0-100)
+
+---@class DistanceCacheStats
+---@field current_size number Current number of cached distances
+---@field hit_count number Number of cache hits
+---@field miss_count number Number of cache misses
+---@field hit_rate number Cache hit rate percentage (0-100)
+
+---@class SpatialIndexStats
+---@field cell_count number Number of cells in the spatial index
+---@field edge_count number Total number of edges indexed
+---@field avg_edges_per_cell number Average edges per cell
+---@field max_edges_per_cell number Maximum edges in any cell
+
 ---Add multiple game object nodes that automatically track their game objects' positions.
 ---@param game_object_nodes GameObjectNodeConfig[] Array of game object node configurations
 ---@return number[] node_ids Array of created node IDs
@@ -225,5 +247,9 @@ function pathfinder.gameobject_update(enabled) end
 ---Set the update frequency for game object node position updates.
 ---@param frequency number Update frequency in Hz
 function pathfinder.set_update_frequency(frequency) end
+
+---Get cache statistics for path cache, distance cache, and spatial index.
+---@return CacheStats stats Cache statistics
+function pathfinder.get_cache_stats() end
 
 return pathfinder
