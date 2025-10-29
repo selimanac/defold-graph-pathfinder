@@ -11,6 +11,7 @@
 
 #include "pathfinder_cache.h"
 #include "pathfinder_distance_cache.h"
+#include "pathfinder_spatial_index.h"
 
 namespace pathfinder
 {
@@ -145,10 +146,15 @@ namespace pathfinder
                              uint32_t& dist_cache_size,
                              uint32_t& dist_cache_hits,
                              uint32_t& dist_cache_misses,
-                             uint32_t& dist_cache_hit_rate)
+                             uint32_t& dist_cache_hit_rate,
+                             uint32_t& spatial_index_cell_count,
+                             uint32_t& spatial_index_edge_count,
+                             float&    spatial_index_avg_edges_per_cell,
+                             uint32_t& spatial_index_max_edges_per_cell)
         {
             pathfinder::cache::get_cache_stats(&path_cache_entries, &path_cache_capacity, &path_cache_hit_rate);
             pathfinder::distance_cache::get_stats(&dist_cache_size, &dist_cache_hits, &dist_cache_misses, &dist_cache_hit_rate);
+            pathfinder::spatial_index::get_stats(&spatial_index_cell_count, &spatial_index_edge_count, &spatial_index_avg_edges_per_cell, &spatial_index_max_edges_per_cell);
         }
 
         //==========================================================

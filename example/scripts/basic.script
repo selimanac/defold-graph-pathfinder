@@ -152,4 +152,7 @@ function init(self)
 	else
 		print("Pathfinding failed:", status_text)
 	end
+
+	local result = pathfinder.get_node_edges(start_id, true, true)
+	pprint(result)
 end

@@ -19,7 +19,11 @@ namespace pathfinder
                              uint32_t& dist_cache_size,
                              uint32_t& dist_cache_hits,
                              uint32_t& dist_cache_misses,
-                             uint32_t& dist_cache_hit_rate);
+                             uint32_t& dist_cache_hit_rate,
+                             uint32_t& spatial_index_cell_count,
+                             uint32_t& spatial_index_edge_count,
+                             float&    spatial_index_avg_edges_per_cell,
+                             uint32_t& spatial_index_max_edges_per_cell);
 
         // Gameobjects
         void set_gameobject_capacity(uint32_t gameobject_capacity);

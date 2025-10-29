@@ -1002,11 +1002,16 @@ static int pathfinder_cache_stats(lua_State* L)
     uint32_t dist_cache_misses;   // Distance cache: miss count
     uint32_t dist_cache_hit_rate; // Distance cache: hit rate percentage
 
-    pathfinder::extension::get_cache_stats(path_cache_entries, path_cache_capacity, path_cache_hit_rate, dist_cache_size, dist_cache_hits, dist_cache_misses, dist_cache_hit_rate);
+    uint32_t spatial_index_cell_count;
+    uint32_t spatial_index_edge_count;
+    float    spatial_index_avg_edges_per_cell;
+    uint32_t spatial_index_max_edges_per_cell;
+
+    pathfinder::extension::get_cache_stats(path_cache_entries, path_cache_capacity, path_cache_hit_rate, dist_cache_size, dist_cache_hits, dist_cache_misses, dist_cache_hit_rate, spatial_index_cell_count, spatial_index_edge_count, spatial_index_avg_edges_per_cell, spatial_index_max_edges_per_cell);
     // ============================================================================
     // CREATE RESULT TABLE
     // ============================================================================
-    lua_createtable(L, 0, 2); // main table (2 hash fields: path_cache, distance_cache)
+    lua_createtable(L, 0, 3); // main table (3 hash fields: path_cache, distance_cache, spatial_index)
 
     //  path_cache
     lua_createtable(L, 0, 3);
@@ -1033,6 +1038,20 @@ static int pathfinder_cache_stats(lua_State* L)
 
     // add to main table
     lua_setfield(L, -2, "distance_cache");
+
+    // spatial_index
+    lua_createtable(L, 0, 4);
+    lua_pushinteger(L, spatial_index_cell_count);
+    lua_setfield(L, -2, "cell_count");
+    lua_pushinteger(L, spatial_index_edge_count);
+    lua_setfield(L, -2, "edge_count");
+    lua_pushnumber(L, spatial_index_avg_edges_per_cell);
+    lua_setfield(L, -2, "avg_edges_per_cell");
+    lua_pushinteger(L, spatial_index_max_edges_per_cell);
+    lua_setfield(L, -2, "max_edges_per_cell");
+
+    // add to main table
+    lua_setfield(L, -2, "spatial_index");
 
     return 1; // one table on stack
 }

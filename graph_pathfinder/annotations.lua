@@ -90,6 +90,13 @@ function pathfinder.move_node(node_id, x, y) end
 ---@return PathNode position Table with x and y coordinates
 function pathfinder.get_node_position(node_id) end
 
+---Get the edges of a node.
+---@param node_id number ID of the node
+---@param bidirectional? boolean If true, returns all edges. If false, returns only unidirectional edges. (default: true)
+---@param include_incoming? boolean If true, includes incoming edges. If false, includes only outgoing edges.(default: false)
+---@return PathEdge[]  Array of edge definitions
+function pathfinder.get_node_edges(node_id, bidirectional, include_incoming) end
+
 ---Add a single edge between two nodes.
 ---@param from_node_id number Source node ID
 ---@param to_node_id number Target node ID
