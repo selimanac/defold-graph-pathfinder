@@ -1062,7 +1062,7 @@ static const luaL_reg Module_methods[] = {
     // OPs
     { "init", pathfinder_init },
     { "shutdown", pathfinder_shutdown },
-    { "get_cache_stats", pathfinder_cache_stats },
+    { "get_stats", pathfinder_cache_stats },
 
     // Nodes
     { "add_node", pathfinder_add_node },
