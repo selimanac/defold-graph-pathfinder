@@ -316,6 +316,7 @@ static int pathfinder_add_edges(lua_State* L)
     int edge_count = (int)lua_objlen(L, 1);
     dmLogInfo("Adding %d edges", edge_count);
 
+    bool bidirectional = true;
     for (int i = 1; i <= edge_count; ++i)
     {
         lua_rawgeti(L, 1, i); // push edges[i] onto stack
@@ -331,7 +332,7 @@ static int pathfinder_add_edges(lua_State* L)
             lua_pop(L, 1);
 
             lua_getfield(L, -1, "bidirectional");
-            bool bidirectional = lua_isnil(L, -1) ? true : lua_toboolean(L, -1);
+            bidirectional = lua_isnil(L, -1) ? true : lua_toboolean(L, -1);
             lua_pop(L, 1);
 
             // Optional cost
@@ -376,7 +377,7 @@ static int pathfinder_add_edge(lua_State* L)
 
     uint32_t from_node_id = luaL_checkint(L, 1);
     uint32_t to_node_id = luaL_checkint(L, 2);
-    bool     bidirectional = lua_isnil(L, 3) ? true : lua_toboolean(L, 3);
+    bool     bidirectional = lua_gettop(L) < 3 || lua_isnil(L, 3) ? true : lua_toboolean(L, 3);
 
     float    cost;
 
@@ -530,7 +531,6 @@ static int pathfinder_find_node_to_projected_path(lua_State* L)
 
     // IN <-
     uint32_t         start_node_id = luaL_checkint(L, 1);
-
     float            target_x = luaL_checknumber(L, 2);
     float            target_y = luaL_checknumber(L, 3);
     pathfinder::Vec2 target_position = pathfinder::Vec2(target_x, target_y);

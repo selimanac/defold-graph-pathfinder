@@ -22,17 +22,17 @@ local goal_id       = 0
 local smooth_config = {
 	style = pathfinder.PathSmoothStyle.BEZIER_QUADRATIC,
 	bezier_sample_segment = 8, -- Number of segments per curve
-	bezier_curve_radius = 0.8 -- Radius factor for curve smoothness
+	bezier_curve_radius = 0.8 -- For BEZIER_QUADRATIC style
 
-	--	bezier_control_point_offset         = 0.4, -- For bezier_cubic style
-	--	bezier_adaptive_tightness           = 0.5, -- For bezier_adaptive style
-	--	bezier_adaptive_roundness           = 0.5, -- For bezier_adaptive style
-	--	bezier_adaptive_max_corner_distance = 50.0, -- For bezier_adaptive style
-	--	bezier_arc_radius                   = 40.0 -- For circular_arc style
+	--	bezier_control_point_offset         = 0.4, -- For BEZIER_CUBIC style
+	--	bezier_adaptive_tightness           = 0.5, -- For BEZIER_ADAPTIVE style
+	--	bezier_adaptive_roundness           = 0.5, -- For BEZIER_ADAPTIVE style
+	--	bezier_adaptive_max_corner_distance = 50.0, -- For BEZIER_ADAPTIVE style
+	--	bezier_arc_radius                   = 40.0 -- For CIRCULAR_ARC style
 }
 
 function init(self)
-	-- Initialize the pathfinder system
+	-- Initialize the pathfinder
 	-- Parameters: max_nodes, max_gameobject_nodes, max_edges_per_node, heap_pool_block_size, max_cache_path_length
 	pathfinder.init(32, nil, 4, 32, 4)
 
@@ -121,7 +121,6 @@ function init(self)
 	else
 		print("Pathfinding failed:", status_text)
 	end
-
 
 	-- Example 6: Node to projected position pathfinding with smoothing
 	-- Find a path from a node to an arbitrary position (not on graph)

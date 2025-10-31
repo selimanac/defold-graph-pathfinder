@@ -897,7 +897,7 @@ heap_pool_block_size = total_nodes;  // Maximum possible
 ```
 
 
-### Why `heap_pool_block_size` Cannot Exceed max_nodes
+### Why `heap_pool_block_size` Cannot Exceed `max_nodes`
 
 #### The Memory Pool Architecture
 
@@ -1011,7 +1011,7 @@ Responsible for caching the distances between nodes to speed up calculations.
 - **Version tracking**: Integrates with cache invalidation system
 
 **When to Use:**
-- ✅ Large graphs (>500 nodes)
+- ✅ Large graphs (>100 nodes)
 - ✅ Frequent projected pathfinding queries (>20 projections/frame)
 - ✅ Real-time games with many AI agents
 - ⚠️ Not needed for small graphs (<100 nodes) - overhead not worth it

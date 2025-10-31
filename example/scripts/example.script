@@ -1,4 +1,3 @@
--- Advanced Pathfinder Example
 -- This script demonstrates:
 -- - Loading graph data from JSON files
 -- - Interactive pathfinding with mouse input
@@ -29,11 +28,11 @@ local smoothing_config = {
 	bezier_sample_segment = 8, -- Number of segments per curve
 	bezier_curve_radius   = 0.8, -- For bezier_quadratic style
 
-	--	bezier_control_point_offset         = 0.4, -- For bezier_cubic style
-	--	bezier_adaptive_tightness           = 0.5, -- For bezier_adaptive style
-	--	bezier_adaptive_roundness           = 0.5, -- For bezier_adaptive style
-	--	bezier_adaptive_max_corner_distance = 50.0, -- For bezier_adaptive style
-	--	bezier_arc_radius                   = 40.0 -- For circular_arc style
+	--	bezier_control_point_offset         = 0.4, -- For BEZIER_CUBIC style
+	--	bezier_adaptive_tightness           = 0.5, -- For BEZIER_ADAPTIVE style
+	--	bezier_adaptive_roundness           = 0.5, -- For BEZIER_ADAPTIVE style
+	--	bezier_adaptive_max_corner_distance = 50.0, -- For BEZIER_ADAPTIVE style
+	--	bezier_arc_radius                   = 40.0 -- For CIRCULAR_ARC style
 }
 
 -- Load graph data from JSON files
@@ -137,16 +136,16 @@ function init(self)
 	--	profiler.set_ui_view_mode(profiler.VIEW_MODE_MINIMIZED)
 
 	-- Load graph data from JSON files
-	local data = load_data()
-	if not data then
+	local loaded_data = load_data()
+	if not loaded_data then
 		print("Failed to load graph data")
 		return
 	end
 
-	print("Loaded", #data.nodes, "nodes")
+	print("Loaded", #loaded_data.nodes, "nodes")
 
 	-- Calculate total nodes needed (graph nodes + extra for projected pathfinding)
-	local max_nodes = #data.nodes + projected_count -- min 32
+	local max_nodes = #loaded_data.nodes + projected_count -- min 32
 	local max_gameobject_nodes = 2
 	local max_edges_per_node = 5
 	local heap_pool_block_size = 32 -- min 32
@@ -156,28 +155,26 @@ function init(self)
 	pathfinder.init(max_nodes, max_gameobject_nodes, max_edges_per_node, heap_pool_block_size, max_cache_path_length)
 
 	-- Create path smoothing configuration
-	path_smoothing_id = pathfinder.add_path_smoothing(smoothing_config)
+	path_smoothing_id                    = pathfinder.add_path_smoothing(smoothing_config)
 
-	smoothing_config = {
-		style                 = pathfinder.PathSmoothStyle.BEZIER_QUADRATIC,
-		bezier_sample_segment = 8, -- Number of segments per curve
-		bezier_curve_radius   = 0.9, -- For bezier_quadratic style
+	-- Change smoothing configuration
+	smoothing_config.bezier_curve_radius = 0.9
 
-		--	bezier_control_point_offset         = 0.4, -- For bezier_cubic style
-		--	bezier_adaptive_tightness           = 0.5, -- For bezier_adaptive style
-		--	bezier_adaptive_roundness           = 0.5, -- For bezier_adaptive style
-		--	bezier_adaptive_max_corner_distance = 50.0, -- For bezier_adaptive style
-		--	bezier_arc_radius                   = 40.0 -- For circular_arc style
-	}
-
-
+	-- Update smoothing configuration
 	pathfinder.update_path_smoothing(path_smoothing_id, smoothing_config)
 
-
 	-- Create nodes and edges from loaded data
-	nodes = pathfinder.add_nodes(data.nodes)
-	edges = data.edges
-	pathfinder.add_edges(edges)
+	nodes = pathfinder.add_nodes(loaded_data.nodes)
+	edges = loaded_data.edges
+	pathfinder.add_edges(loaded_data.edges)
+
+	-- Add one more edge
+	pathfinder.add_edge(48, 47, false)
+	table.insert(edges, {
+		from_node_id = 48,
+		to_node_id = 47,
+		bidirectional = false
+	})
 
 	-- Create visual representations
 	add_nodes()
@@ -198,7 +195,6 @@ function update(self, dt)
 	-- Example 1: Static pathfinding between two fixed nodes
 	-- Find and draw a smoothed path from node 0 to node 66
 	local path_size, status, status_text, path = pathfinder.find_node_to_node(0, 66, 32, path_smoothing_id)
-
 
 	if status == pathfinder.PathStatus.SUCCESS then
 		draw_path(path_size, path)
