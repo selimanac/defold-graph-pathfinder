@@ -847,11 +847,6 @@ During pathfinding, A* maintains an "open set" of nodes to explore:
 4. **Peak**: Maximum size reached when search is widest (before finding goal)
 5. **Goal Found**: Open set collapses as path is reconstructed
 
-**The open set size depends on:**
-- Graph density (more edges = larger open set)
-- Path length (longer paths = wider search)
-- Graph topology (grid vs. random graph)
-- Heuristic quality (better heuristic = smaller open set)
 
 ### How to Determine Proper `heap_pool_block_size`
 
