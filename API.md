@@ -995,25 +995,23 @@ Responsible for caching the distances between nodes to speed up calculations.
 
 #### Cache Breaking
 
-- Moving or removing nodes breaks the cache, but only for paths that include the moved or removed node and its related edges — not the entire cache.  
-- Removing edges breaks the cache, but only for paths that include the removed edge, related nodes, and edges — not the entire cache.  
-- Projected paths are cached only if the start point and/or end point are exactly the same.  
-- If a path includes a moving node (and its edges), it cannot be retrieved from the cache.  
+- Moving or removing nodes breaks the cache, but only for paths that include the moved or removed node and its related edges — not the entire cache.
+- Removing edges breaks the cache, but only for paths that include the removed edge, related nodes, and edges — not the entire cache.
+- Projected paths are cached, but they are retrieved from cache only if the start point and/or end point are exactly the same.
+- If a path includes a moving node (and its edges), it cannot be retrieved from the cache.
 - Smoothed paths are **not** cached.
 
 ## Spatial Index
 
-**Key Features:**
-- **Automatic activation**: Enabled automatically for graphs with >100 nodes
-- **Fast queries**: O(k) complexity where k = edges in nearby cells (typically 10-50)
-- **Auto-tuning**: Cell size automatically calculated from average edge length
-- **Dynamic updates**: Incrementally updates when nodes move
-- **Version tracking**: Integrates with cache invalidation system
+A Spatial Index is a grid-based structure used to find the nearest edge from a projected point. It is useful if you have >100 nodes and is activated automatically. You can benefit from it if you have many projected pathfinding queries in a large graph(>500 nodes).  
 
-**When to Use:**
-- ✅ Large graphs (>100 nodes)
-- ✅ Frequent projected pathfinding queries (>20 projections/frame)
-- ✅ Real-time games with many AI agents
-- ⚠️ Not needed for small graphs (<100 nodes) - overhead not worth it
+**Details**
+- Enabled automatically for graphs with >100 nodes
+- Cell size automatically calculated from average edge length
+- Incrementally updates when nodes move
+- Integrates with cache invalidation
+
+
+
 
 ---
