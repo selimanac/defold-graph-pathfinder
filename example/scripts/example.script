@@ -5,6 +5,17 @@
 -- - Game object node integration with automatic position updates
 -- - Real-time pathfinding in the update loop
 
+--==========================================================
+-- VARIABLES
+--==========================================================
+
+-- const
+local COLORS = {
+	RED = vmath.vector4(1, 0, 0, 1),
+	GREEN = vmath.vector4(0, 1, 0, 1),
+	BLUE = vmath.vector4(0, 0, 1, 1)
+}
+
 -- Graph data storage
 local nodes = {}
 local edges = {}
@@ -13,10 +24,11 @@ local edges = {}
 local node_instances = {}
 
 -- Number of extra nodes reserved for projected pathfinding entry points
-local projected_count = 1
+local projected_count = 2
 
--- Current mouse position for projected pathfinding
+-- Current mouse and position for projected pathfinding
 local mouse_position = vmath.vector3()
+local target_position = vmath.vector3()
 
 -- Path smoothing configuration ID
 local path_smoothing_id = 0
@@ -34,6 +46,36 @@ local smoothing_config = {
 	--	bezier_adaptive_max_corner_distance = 50.0, -- For BEZIER_ADAPTIVE style
 	--	bezier_arc_radius                   = 40.0 -- For CIRCULAR_ARC style
 }
+
+local path =
+{
+	node_to_node = {
+		size = 0,
+		status = -1,
+		status_text = "",
+		path = {}
+	},
+	projected_to_node = {
+		path_size = 0,
+		status = -1,
+		status_text = "",
+		entry_point = vmath.vector3(),
+		path = {}
+	},
+	projected_to_projected = {
+		path_size = 0,
+		status = -1,
+		status_text = "",
+		entry_point = vmath.vector3(),
+		exit_point = vmath.vector3(),
+		path = {}
+	}
+
+}
+
+--==========================================================
+-- UTIL FUNCTIONS
+--==========================================================
 
 -- Load graph data from JSON files
 -- Returns a table with nodes and edges arrays
@@ -96,41 +138,52 @@ end
 local function draw_edges()
 	for _, edge in ipairs(edges) do
 		local from, to = get_edge_positions(edge.from_node_id, edge.to_node_id)
-		msg.post("@render:", "draw_line", { start_point = from, end_point = to, color = vmath.vector4(0, 1, 0, 1) })
+		msg.post("@render:", "draw_line", { start_point = from, end_point = to, color = COLORS.GREEN })
 	end
 end
 
 -- Draw a path as red lines connecting waypoints
-local function draw_path(path_size, path)
+local function draw_node_to_node(path_size, path)
 	for i = 1, path_size - 1, 1 do
 		local from_node = path[i]
 		local to_node = path[i + 1]
 
-		msg.post("@render:", "draw_line", { start_point = vmath.vector3(from_node.x, from_node.y, 0), end_point = vmath.vector3(to_node.x, to_node.y, 0), color = vmath.vector4(1, 0, 0, 1) })
+		msg.post("@render:", "draw_line", { start_point = vmath.vector3(from_node.x, from_node.y, 0), end_point = vmath.vector3(to_node.x, to_node.y, 0), color = COLORS.RED })
 	end
 end
 
--- Draw a projected path from the mouse position to the goal
--- Shows the connection from mouse -> entry point -> first waypoint -> remaining path
-local function draw_projected_path(projected_path_size, projected_path_entry_point, projected_path)
+-- Draw a projected path from the mouse position to the goal node or target position
+local function draw_projected(projected_path_size, projected_path_entry_point, projected_path_exit_point, projected_path)
 	-- Draw line from mouse position to entry point
-	msg.post("@render:", "draw_line", { start_point = mouse_position, end_point = projected_path_entry_point, color = vmath.vector4(1, 0, 0, 1) })
+	msg.post("@render:", "draw_line", { start_point = mouse_position, end_point = projected_path_entry_point, color = COLORS.BLUE })
 
 	-- Draw line from entry point to first waypoint
 	local first_node = projected_path[1]
-	msg.post("@render:", "draw_line", { start_point = projected_path_entry_point, end_point = vmath.vector3(first_node.x, first_node.y, 0), color = vmath.vector4(1, 0, 0, 1) })
+	msg.post("@render:", "draw_line", { start_point = projected_path_entry_point, end_point = vmath.vector3(first_node.x, first_node.y, 0), color = COLORS.BLUE })
 
 	-- Draw lines between remaining waypoints
 	for i = 1, projected_path_size - 1, 1 do
 		local from_node = projected_path[i]
 		local to_node = projected_path[i + 1]
 
-		msg.post("@render:", "draw_line", { start_point = vmath.vector3(from_node.x, from_node.y, 0), end_point = vmath.vector3(to_node.x, to_node.y, 0), color = vmath.vector4(1, 0, 0, 1) })
+		msg.post("@render:", "draw_line", { start_point = vmath.vector3(from_node.x, from_node.y, 0), end_point = vmath.vector3(to_node.x, to_node.y, 0), color = COLORS.BLUE })
+	end
+
+	-- If projected to projected
+	if projected_path_exit_point then
+		-- Draw line from last node to exit point
+		local last_node = projected_path[projected_path_size]
+		msg.post("@render:", "draw_line", { start_point = vmath.vector3(last_node.x, last_node.y, 0), end_point = projected_path_exit_point, color = COLORS.BLUE })
+
+		-- Draw line from exit point to target position
+		msg.post("@render:", "draw_line", { start_point = projected_path_exit_point, end_point = target_position, color = COLORS.BLUE })
 	end
 end
 
+--==========================================================
+-- FUNCTIONS
+--==========================================================
 function init(self)
-	-- Enable input handling and profiler
 	msg.post(".", "acquire_input_focus")
 	--	profiler.enable_ui(true)
 	--	profiler.set_ui_view_mode(profiler.VIEW_MODE_MINIMIZED)
@@ -147,7 +200,7 @@ function init(self)
 	-- Calculate total nodes needed (graph nodes + extra for projected pathfinding)
 	local max_nodes = #loaded_data.nodes + projected_count -- min 32
 	local max_gameobject_nodes = 2
-	local max_edges_per_node = 5
+	local max_edges_per_node = 8
 	local heap_pool_block_size = 32 -- min 32
 	local max_cache_path_length = 32
 
@@ -155,7 +208,7 @@ function init(self)
 	pathfinder.init(max_nodes, max_gameobject_nodes, max_edges_per_node, heap_pool_block_size, max_cache_path_length)
 
 	-- Create path smoothing configuration
-	path_smoothing_id                    = pathfinder.add_path_smoothing(smoothing_config)
+	path_smoothing_id = pathfinder.add_path_smoothing(smoothing_config)
 
 	-- Change smoothing configuration
 	smoothing_config.bezier_curve_radius = 0.9
@@ -186,26 +239,65 @@ function init(self)
 
 	local instance_position = pathfinder.get_node_position(56)
 	go.animate(node_instances[56], "position.y", go.PLAYBACK_LOOP_PINGPONG, instance_position.y + 150, go.EASING_INOUTSINE, 1)
+
+	-- target
+	target_position = go.get_position("/target")
+	go.animate("/target", "position.y", go.PLAYBACK_LOOP_PINGPONG, target_position.y + 190, go.EASING_INOUTSINE, 3)
+	go.animate("/target", "position.x", go.PLAYBACK_LOOP_PINGPONG, target_position.x + 50, go.EASING_INOUTSINE, 3)
 end
 
 function update(self, dt)
-	-- Draw all edges in green
+	-- Draw all edges
 	draw_edges()
 
+	--==========================================================
 	-- Example 1: Static pathfinding between two fixed nodes
 	-- Find and draw a smoothed path from node 0 to node 66
-	local path_size, status, status_text, path = pathfinder.find_node_to_node(0, 66, 32, path_smoothing_id)
+	--==========================================================
+	path.node_to_node.size,
+	path.node_to_node.status,
+	path.node_to_node.status_text,
+	path.node_to_node.path = pathfinder.find_node_to_node(0, 66, 32, path_smoothing_id)
 
-	if status == pathfinder.PathStatus.SUCCESS then
-		draw_path(path_size, path)
+	if path.node_to_node.status == pathfinder.PathStatus.SUCCESS then
+		draw_node_to_node(path.node_to_node.size, path.node_to_node.path)
 	end
 
+	--==========================================================
 	-- Example 2: Dynamic projected pathfinding following mouse cursor
-	-- Find and draw a path from mouse position to node 85
-	local projected_path_size, projected_path_status, projected_path_status_text, projected_path_entry_point, projected_path = pathfinder.find_projected_to_node(mouse_position.x, mouse_position.y, 85, 32, path_smoothing_id)
+	-- Find and draw a path from mouse position to node 95
+	--==========================================================
+	path.projected_to_node.size,
+	path.projected_to_node.status,
+	path.projected_to_node.status_text,
+	path.projected_to_node.entry_point,
+	path.projected_to_node.path = pathfinder.find_projected_to_node(mouse_position.x, mouse_position.y, 95, 32, path_smoothing_id)
 
-	if projected_path_status == pathfinder.PathStatus.SUCCESS then
-		draw_projected_path(projected_path_size, projected_path_entry_point, projected_path)
+	if path.projected_to_node.status == pathfinder.PathStatus.SUCCESS then
+		draw_projected(path.projected_to_node.size, path.projected_to_node.entry_point, nil, path.projected_to_node.path)
+	end
+
+	--==========================================================
+	-- Example 3: Dynamic projected pathfinding from mouse cursor to target position
+	--==========================================================
+	target_position = go.get_position("/target")
+
+	path.projected_to_projected.size,
+	path.projected_to_projected.status,
+	path.projected_to_projected.status_text,
+	path.projected_to_projected.entry_point,
+	path.projected_to_projected.exit_point,
+	path.projected_to_projected.path = pathfinder.find_projected_to_projected(
+		mouse_position.x,
+		mouse_position.y,
+		target_position.x,
+		target_position.y,
+		32,
+		path_smoothing_id)
+
+
+	if path.projected_to_projected.status == pathfinder.PathStatus.SUCCESS then
+		draw_projected(path.projected_to_projected.size, path.projected_to_projected.entry_point, path.projected_to_projected.exit_point, path.projected_to_projected.path)
 	end
 end
 
