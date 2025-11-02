@@ -85,13 +85,6 @@ x86-win32 is not supported.
 
 ---
 
-## Toss a Coin to Your Witcher
-
-If you find my [Defold extensions](https://github.com/selimanac) useful in your projects, please consider [supporting me](https://github.com/sponsors/selimanac) on GitHub Sponsors.  
-I’d also love to hear about your games or apps that use these extensions, sharing your released projects really motivates me to keep building more tools for the community!
-
----
-
 
 ### License Summary (not legally binding)
 
