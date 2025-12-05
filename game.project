@@ -21,5 +21,8 @@ clear_color_green = 0.7
 clear_color_blue = 0.7
 
 [label]
-max_count = 128
+max_count = 255
+
+[sprite]
+max_count = 1024
 

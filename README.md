@@ -1,3 +1,4 @@
+![Defold Graph Pathfinder](/.github/gp.png?raw=true)
 
 # A* Graph Pathfinding Defold Native Extension
 
@@ -92,6 +93,8 @@ x86-win32 is not supported.
 - 💲 Commercial use (any monetized game/app) requires  **at least a one-time payment of $10 USD (monthly sponsorships are also welcome) via [GitHub Sponsors](https://github.com/sponsors/selimanac)**.  
 - 📩 Free releases are welcome to share project info (name, genre, date, links).  
 - 🔒 The Software is **closed-source**; source access may be granted **upon request**.
+
+So basically, if your released project is completely free and non-monetized, no payment or permission is required.
 
 See  [License](./LICENSE.md)
 
