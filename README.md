@@ -20,7 +20,7 @@ Open your `game.project` file, select `Project`, and add a stable version from t
 
 ## Examples
 
-WIP
+- Tiny City: https://github.com/selimanac/defold-tiny-city
 
 ## Status
 
