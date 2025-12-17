@@ -1,5 +1,6 @@
 
 #include <cstdint>
+#include <cstdio>
 #include <pathfinder_extension.h>
 #include <dmsdk/dlib/hashtable.h>
 #include "dmsdk/dlib/log.h"
@@ -9,10 +10,10 @@
 #include "pathfinder_path.h"
 #include "pathfinder_smooth.h"
 
-#include "pathfinder_cache.h"
-#include "pathfinder_distance_cache.h"
-#include "pathfinder_spatial_index.h"
-
+// #include "pathfinder_cache.h"
+// #include "pathfinder_distance_cache.h"
+// #include "pathfinder_spatial_index.h"
+#include <pathfinder_navmesh.h>
 namespace pathfinder
 {
     namespace extension
@@ -152,9 +153,11 @@ namespace pathfinder
                              float&    spatial_index_avg_edges_per_cell,
                              uint32_t& spatial_index_max_edges_per_cell)
         {
-            pathfinder::cache::get_cache_stats(&path_cache_entries, &path_cache_capacity, &path_cache_hit_rate);
-            pathfinder::distance_cache::get_stats(&dist_cache_size, &dist_cache_hits, &dist_cache_misses, &dist_cache_hit_rate);
-            pathfinder::spatial_index::get_stats(&spatial_index_cell_count, &spatial_index_edge_count, &spatial_index_avg_edges_per_cell, &spatial_index_max_edges_per_cell);
+            pathfinder::path::get_cache_stats(&path_cache_entries, &path_cache_capacity, &path_cache_hit_rate);
+
+            pathfinder::path::get_distance_cache_stats(&dist_cache_size, &dist_cache_hits, &dist_cache_misses, &dist_cache_hit_rate);
+
+            pathfinder::path::get_spatial_index_stats(&spatial_index_cell_count, &spatial_index_edge_count, &spatial_index_avg_edges_per_cell, &spatial_index_max_edges_per_cell);
         }
 
         //==========================================================
@@ -347,6 +350,69 @@ namespace pathfinder
                     pathfinder::smooth::circular_arc_waypoints(waypoints, smoothed_path, smooth_config->m_PathSmoothConfig.m_SampleSegment, smooth_config->m_PathSmoothConfig.m_ArcRadius);
                     break;
             }
+        }
+
+        void navmesh_set_buffer(dmBuffer::HBuffer& buffer)
+        {
+            void*            data = 0;
+            uint32_t         count = 0;
+            uint32_t         components = 0;
+            uint32_t         stride = 0;
+            dmBuffer::Result r = dmBuffer::GetStream(buffer, dmHashString64("position"), &data, &count, &components, &stride);
+
+            if (r != dmBuffer::RESULT_OK)
+            {
+                dmLogError("No position stream");
+                return;
+            }
+
+            dmLogInfo("Position stream: vertices=%u components=%u stride=%u\n", count, components, stride);
+
+            if (count % 3 != 0)
+            {
+                dmLogError("Vertex count must be multiple of 3 for triangles");
+                return;
+            }
+
+            uint32_t tri_count = count / 3;
+            if (tri_count == 0)
+            {
+                dmLogWarning("No triangles in buffer");
+                return;
+            }
+
+            uint32_t vertex_stride = stride;
+            if (stride < components * sizeof(float))
+            {
+                vertex_stride = components * sizeof(float);
+            }
+
+            uint32_t               z_component = (components == 3) ? 2 : 1;
+            uint8_t*               bytes = (uint8_t*)data;
+            pathfinder::PathStatus status;
+
+            for (uint32_t t = 0; t < tri_count; ++t)
+            {
+                pathfinder::Vec2 vertices[3];
+
+                for (uint32_t v = 0; v < 3; ++v)
+                {
+                    float* floats = (float*)(bytes + ((t * 3 + v) * vertex_stride));
+                    vertices[v] = pathfinder::Vec2(floats[0], floats[z_component]);
+                    //    dmLogInfo("t: %u - x %f -  y: % f", t, vertices[v].x, vertices[v].y);
+                }
+
+                // We are not doing anything with cell_id yet
+                uint32_t cell_id = pathfinder::navmesh::add_cell(vertices, 3, &status);
+                if (status != pathfinder::SUCCESS)
+                {
+                    dmLogError("Failed to add cell %u (status: %d)", t, status);
+                    return;
+                }
+            }
+            pathfinder::navmesh::build_adjacency();
+
+            dmLogInfo("Successfully built navmesh with %u triangles", tri_count);
         }
 
     } // namespace extension

@@ -134,22 +134,79 @@ namespace pathfinder
             bool     m_AffectsPaths; // Does this node affect any cached paths?
         } NodeVersion;
 
-        // Global state for version tracking
+        /**
+         * @brief Heap context - encapsulates all heap state
+         *
+         * Context-based architecture allows multiple independent heap instances
+         * to coexist without interference. Supports both system-managed (default)
+         * and user-managed contexts.
+         *
+         * Features:
+         * - Independent memory pools per context
+         * - Separate version tracking per context
+         * - No global state interference
+         * - Allows simultaneous pathfinding operations
+         */
+        typedef struct HeapContext
+        {
+            HeapPool              m_Pool;           // Memory pool for this context
+            GraphVersion          m_CurrentVersion; // Current graph version for this context
+            dmArray<NodeVersion>  m_NodeVersions;   // Per-node version tracking
+            uint32_t              m_PoolBlockSize;  // Default block size for allocations
+        } HeapContext;
+
+        // Global state for version tracking (DEPRECATED - use context instead)
         extern GraphVersion         m_CurrentVersion; // Current graph version
         extern dmArray<NodeVersion> m_NodeVersions;   // Per-node version tracking
 
+        /*******************************************/
+        // CONTEXT MANAGEMENT
+        /*******************************************/
+
         /**
-         * @brief Initialize the heap pool system
+         * @brief Create a new heap context
+         * @param heap_pool_size Total capacity of the pool (max concurrent heap nodes)
+         * @param pool_block_size Default size for each heap block allocation
+         * @return Pointer to newly created context, or NULL on failure
+         *
+         * Creates a user-managed context with its own independent state.
+         * User is responsible for calling destroy_context() when done.
+         */
+        HeapContext* create_context(const uint32_t heap_pool_size, const uint32_t pool_block_size);
+
+        /**
+         * @brief Destroy a heap context and free all resources
+         * @param ctx Context to destroy
+         *
+         * Releases all memory associated with the context.
+         * Do NOT destroy the default context obtained from get_default_context().
+         */
+        void destroy_context(HeapContext* ctx);
+
+        /**
+         * @brief Get the default (system-managed) context
+         * @return Pointer to default context
+         *
+         * Returns the global context used when no context is specified.
+         * This context is automatically initialized on first use.
+         */
+        HeapContext* get_default_context();
+
+        /*******************************************/
+        // LEGACY API (uses default context)
+        /*******************************************/
+
+        /**
+         * @brief Initialize the heap pool system (LEGACY - uses default context)
          * @param heap_pool_size Total capacity of the pool (max concurrent heap nodes)
          * @param pool_block_size Default size for each heap block allocation
          *
-         * Initializes global state and pre-allocates tracking structures.
-         * Note: Current implementation doesn't actually pool memory.
+         * Initializes the default context. For new code, prefer create_context().
          */
         void pool_init(const uint32_t heap_pool_size, const uint32_t pool_block_size);
 
         /**
-         * @brief Clear the heap pool and reset version tracking
+         * @brief Clear the heap pool and reset version tracking (LEGACY - uses default context)
          *
          * Releases all memory and resets version counters. Called during shutdown.
          */
@@ -158,29 +215,32 @@ namespace pathfinder
         /**
          * @brief Initialize a heap block for use
          * @param heap Heap block to initialize
+         * @param ctx Optional context (NULL = use default context)
          *
          * Allocates memory for the heap block from the pool (or directly).
          * If allocation fails, sets heap capacity to 0.
          */
-        void init(HeapBlock* heap);
+        void init(HeapBlock* heap, HeapContext* ctx = NULL);
 
         /**
          * @brief Reset a heap block and return it to the pool
          * @param heap Heap block to reset
+         * @param ctx Optional context (NULL = use default context)
          *
          * WARNING: Current implementation doesn't actually return memory to pool.
          * It only updates bookkeeping counters.
          */
-        void reset(HeapBlock* heap);
+        void reset(HeapBlock* heap, HeapContext* ctx = NULL);
 
         /**
          * @brief Reset version tracking for a specific node
          * @param node_id Node ID to reset
+         * @param ctx Optional context (NULL = use default context)
          *
          * Clears the m_AffectsPaths flag for the given node, indicating
          * no cached paths depend on this node anymore.
          */
-        void reset_node_version(uint32_t node_id);
+        void reset_node_version(uint32_t node_id, HeapContext* ctx = NULL);
 
         /**
          * @brief Swap two elements in the heap
@@ -304,6 +364,7 @@ namespace pathfinder
          * @param heap Heap block to build
          * @param nodes Array of HeapNode elements to insert
          * @param count Number of nodes in the array
+         * @param ctx Optional context (NULL = use default context)
          * @return PathStatus SUCCESS or ERROR_HEAP_FULL if count exceeds capacity
          *
          * Builds a min-heap from an unsorted array in O(n) time, which is more
@@ -314,13 +375,14 @@ namespace pathfinder
          *
          * Time complexity: O(n) where n is the number of nodes
          */
-        PathStatus build(HeapBlock* heap, const HeapNode* nodes, uint32_t count);
+        PathStatus build(HeapBlock* heap, const HeapNode* nodes, uint32_t count, HeapContext* ctx = NULL);
 
         /**
          * @brief Insert multiple elements efficiently
          * @param heap Heap block to insert into
          * @param nodes Array of HeapNode elements to insert
          * @param count Number of nodes to insert
+         * @param ctx Optional context (NULL = use default context)
          * @return PathStatus SUCCESS or ERROR_HEAP_FULL if any insertion fails
          *
          * More efficient than calling push() multiple times when the heap
@@ -329,7 +391,7 @@ namespace pathfinder
          * Time complexity: O(n + k log n) where n is initial heap size,
          * k is number of elements to insert
          */
-        PathStatus push_many(HeapBlock* heap, const HeapNode* nodes, uint32_t count);
+        PathStatus push_many(HeapBlock* heap, const HeapNode* nodes, uint32_t count, HeapContext* ctx = NULL);
 
         /**
          * @brief Extract the minimum element from the heap

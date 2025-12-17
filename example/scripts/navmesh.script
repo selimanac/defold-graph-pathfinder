@@ -1,0 +1,23 @@
+go.property("arc_buffer", resource.buffer("/example/assets/arc_1_navmesh.buffer"))
+
+function init(self)
+	msg.post(".", "acquire_input_focus")
+
+	pathfinder.navmesh_init(600, 6, 32, 16, 256, 5, 10, 1000)
+
+	--	pprint(self.arc_buffer) --  hash: [/example/assets/arc_1_navmesh.bufferc]
+
+	local arc_buffer = resource.get_buffer(self.arc_buffer)
+	pprint(arc_buffer) -- buffer.buffer(count = 744, version = 0, handle = 65536, { hash("position"), buffer.VALUE_TYPE_FLOAT32, 3 })
+	--	local stream_positions = buffer.get_stream(arc_buffer, "position")
+	--	print(stream_positions) --  buffer.bufferstream({ hash("position"), buffer.VALUE_TYPE_FLOAT32, 3 })
+	pathfinder.navmesh_set_buffer(arc_buffer)
+end
+
+function update(self, dt)
+
+end
+
+function on_input(self, action_id, action)
+
+end

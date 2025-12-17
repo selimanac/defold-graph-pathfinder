@@ -12,6 +12,7 @@
 #include "navigation_types.h"
 #include "pathfinder_types.h"
 #include <pathfinder_path.h>
+#include <pathfinder_navmesh.h>
 #include <pathfinder_math.h>
 #include "pathfinder_smooth.h"
 
@@ -95,6 +96,42 @@ static inline void push_smoothed_path_table(lua_State* L, const dmArray<pathfind
         push_path_node_table(L, smoothed_path[i]);
         lua_rawseti(L, newTable, i + 1);
     }
+}
+
+// Navmesh
+static int pathfinder_navmesh_init(lua_State* L)
+{
+    DM_LUA_STACK_CHECK(L, 0);
+
+    uint32_t max_cells = luaL_checkint(L, 1);
+    uint32_t max_edges_per_cell = luaL_checkint(L, 2);
+    uint32_t pool_block_size = luaL_checkint(L, 3);
+    uint32_t cache_size = luaL_checkint(L, 4);
+    uint32_t max_cache_path_length = luaL_checkint(L, 5);
+    float    min_cell_size = (float)luaL_optnumber(L, 6, 5);
+    float    max_cell_size = (float)luaL_optnumber(L, 7, 10);
+    uint32_t max_grid_dim = (uint32_t)luaL_optinteger(L, 8, 1000);
+
+    pathfinder::navmesh::init(max_cells, max_edges_per_cell, pool_block_size, min_cell_size, max_cell_size, max_grid_dim, cache_size, max_cache_path_length);
+
+    return 0;
+}
+
+static int pathfinder_navmesh_set_buffer(lua_State* L)
+{
+    DM_LUA_STACK_CHECK(L, 0);
+    dmBuffer::HBuffer buffer = dmScript::CheckBufferUnpack(L, 1);
+    pathfinder::extension::navmesh_set_buffer(buffer);
+
+    return 0;
+}
+
+static int pathfinder_navmesh_find_smoothed(lua_State* L)
+{
+}
+
+static int pathfinder_navmesh_find_raw(lua_State* L)
+{
 }
 
 static int pathfinder_init(lua_State* L)
@@ -1059,10 +1096,16 @@ static int pathfinder_cache_stats(lua_State* L)
 // Functions exposed to Lua
 static const luaL_reg Module_methods[] = {
 
-    // OPs
+    // Path OPs
     { "init", pathfinder_init },
     { "shutdown", pathfinder_shutdown },
     { "get_stats", pathfinder_cache_stats },
+
+    // Navmesh
+    { "navmesh_init", pathfinder_navmesh_init },
+    { "navmesh_set_buffer", pathfinder_navmesh_set_buffer },
+    { "navmesh_find_smoothed", pathfinder_navmesh_find_smoothed },
+    { "navmesh_find_raw", pathfinder_navmesh_find_raw },
 
     // Nodes
     { "add_node", pathfinder_add_node },

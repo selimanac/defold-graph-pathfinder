@@ -261,6 +261,30 @@ namespace pathfinder
             return v;
         }
 
+        // Cross product for 2D (returns z-component)
+        /*  static inline float cross_2d(Vec2 a, Vec2 b)
+          {
+              return a.x * b.y - a.y * b.x;
+          }*/
+
+        // Twice the signed triangle area (cross product)
+        static inline float orient_2d(Vec2 a, Vec2 b, Vec2 c)
+        {
+            float ax = b.x - a.x;
+            float ay = b.y - a.y;
+            float bx = c.x - a.x;
+            float by = c.y - a.y;
+            return bx * ay - ax * by;
+        }
+
+        // Check if two vectors are equal within tolerance
+        static inline bool vec2_equal(Vec2 a, Vec2 b, float tolerance)
+        {
+            float dx = a.x - b.x;
+            float dy = a.y - b.y;
+            return (dx * dx + dy * dy) < (tolerance * tolerance);
+        }
+
         /**
          * @brief Check if two vectors are approximately equal (within epsilon)
          * @param a First vector

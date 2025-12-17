@@ -104,9 +104,9 @@ namespace pathfinder
      */
     typedef struct Edge
     {
-        uint32_t m_To;             ///< Destination node ID (index into m_Nodes array)
-        float    m_Cost;           ///< Traversal cost (typically distance, but can be weighted)
-        bool     m_Bidirectional;  ///< True if reverse edge exists (eliminates O(E) has_edge() scan)
+        uint32_t m_To;            ///< Destination node ID (index into m_Nodes array)
+        float    m_Cost;          ///< Traversal cost (typically distance, but can be weighted)
+        bool     m_Bidirectional; ///< True if reverse edge exists (eliminates O(E) has_edge() scan)
     } Edge;
 
     /**

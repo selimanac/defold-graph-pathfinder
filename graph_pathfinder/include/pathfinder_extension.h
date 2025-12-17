@@ -2,6 +2,7 @@
 #define PATHFINDER_EXTENSION_H
 
 #include <dmsdk/dlib/array.h>
+#include "dmsdk/dlib/buffer.h"
 #include "navigation_types.h"
 #include "dmsdk/dlib/vmath.h"
 #include "dmsdk/gameobject/gameobject.h"
@@ -43,6 +44,8 @@ namespace pathfinder
         uint32_t get_smooth_sample_segment(uint32_t smooth_id);
         void     smooth_path(uint32_t smooth_id, dmArray<uint32_t>& path, dmArray<Vec2>& smoothed_path);
         void     smooth_path_waypoint(uint32_t smooth_id, dmArray<Vec2>& waypoints, dmArray<Vec2>& smoothed_path);
+
+        void     navmesh_set_buffer(dmBuffer::HBuffer& buffer);
 
     } // namespace extension
 } // namespace pathfinder
