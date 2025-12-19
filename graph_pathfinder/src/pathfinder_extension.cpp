@@ -358,9 +358,9 @@ namespace pathfinder
             uint32_t         count = 0;
             uint32_t         components = 0;
             uint32_t         stride = 0;
-            dmBuffer::Result r = dmBuffer::GetStream(buffer, dmHashString64("position"), &data, &count, &components, &stride);
+            dmBuffer::Result buffer_result = dmBuffer::GetStream(buffer, dmHashString64("position"), &data, &count, &components, &stride);
 
-            if (r != dmBuffer::RESULT_OK)
+            if (buffer_result != dmBuffer::RESULT_OK)
             {
                 dmLogError("No position stream");
                 return;
@@ -402,7 +402,7 @@ namespace pathfinder
                     //    dmLogInfo("t: %u - x %f -  y: % f", t, vertices[v].x, vertices[v].y);
                 }
 
-                // We are not doing anything with cell_id yet
+                // I'm are not doing anything with cell_id yet
                 uint32_t cell_id = pathfinder::navmesh::add_cell(vertices, 3, &status);
                 if (status != pathfinder::SUCCESS)
                 {

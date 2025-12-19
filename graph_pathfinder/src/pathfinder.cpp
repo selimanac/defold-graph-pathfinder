@@ -128,6 +128,33 @@ static int pathfinder_navmesh_set_buffer(lua_State* L)
 
 static int pathfinder_navmesh_find_smoothed(lua_State* L)
 {
+    DM_LUA_STACK_CHECK(L, 4);
+
+    // IN <-
+    float                     start_x = luaL_checknumber(L, 1);
+    float                     start_y = luaL_checknumber(L, 2);
+    float                     target_x = luaL_checknumber(L, 3);
+    float                     target_y = luaL_checknumber(L, 4);
+    uint32_t                  max_path = luaL_checkint(L, 5);
+    float                     agent_radius = (float)luaL_optnumber(L, 6, 0.0f);
+
+    pathfinder::Vec2          start_position = { start_x, start_y };
+    pathfinder::Vec2          goal_position = { target_x, target_y };
+    uint32_t                  start_cell = pathfinder::navmesh::find_cell_at_position(start_position);
+    uint32_t                  goal_cell = pathfinder::navmesh::find_cell_at_position(goal_position);
+
+    pathfinder::PathStatus    status;
+    dmArray<pathfinder::Vec2> smooth_path;
+    smooth_path.SetCapacity(max_path);
+
+    uint32_t path_length = pathfinder::navmesh::find_path_smoothed(start_cell, goal_cell, start_position, goal_position, &smooth_path, max_path, agent_radius, &status);
+
+    lua_pushinteger(L, path_length);
+    lua_pushinteger(L, status);
+    lua_pushstring(L, path_status_to_string(status));
+    push_smoothed_path_table(L, smooth_path);
+
+    return 4;
 }
 
 static int pathfinder_navmesh_find_raw(lua_State* L)
@@ -1104,8 +1131,8 @@ static const luaL_reg Module_methods[] = {
     // Navmesh
     { "navmesh_init", pathfinder_navmesh_init },
     { "navmesh_set_buffer", pathfinder_navmesh_set_buffer },
-    { "navmesh_find_smoothed", pathfinder_navmesh_find_smoothed },
-    { "navmesh_find_raw", pathfinder_navmesh_find_raw },
+    { "navmesh_find_path", pathfinder_navmesh_find_smoothed },
+    { "navmesh_find_path_raw", pathfinder_navmesh_find_raw },
 
     // Nodes
     { "add_node", pathfinder_add_node },

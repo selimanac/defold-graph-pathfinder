@@ -26,6 +26,3 @@ max_count = 255
 [sprite]
 max_count = 1024
 
-[native_extension]
-app_manifest = /vulkan.appmanifest
-
