@@ -103,6 +103,37 @@ namespace pathfinder
         /*******************************************/
 
         /**
+         * @brief Configuration for spatial index grid sizing
+         *
+         * Controls how the spatial grid is sized when building the index.
+         * These values are used to clamp the computed grid cell size.
+         *
+         * Default Values:
+         * - m_MinCellSize: 1.0 (minimum grid cell size in world units)
+         * - m_MaxCellSize: 2.0 (maximum grid cell size in world units)
+         * - m_MaxGridDim: 1000 (maximum grid dimension to prevent excessive memory)
+         *
+         * Customization Guidelines:
+         * - m_MinCellSize: Should be ~= average NavMesh cell size
+         * - m_MaxCellSize: Should be ~= 2-3× average NavMesh cell size
+         * - m_MaxGridDim: Prevents excessive memory for large worlds (1000×1000 = 1M cells)
+         */
+        typedef struct SpatialConfig
+        {
+            // Minimum grid cell size in world units
+            // Default: 1.0f
+            float m_MinCellSize;
+
+            // Maximum grid cell size in world units
+            // Default: 2.0f
+            float m_MaxCellSize;
+
+            // Maximum grid dimension in either axis
+            // Default: 1000
+            uint32_t m_MaxGridDim;
+        } SpatialConfig;
+
+        /**
          * @brief Single cell in spatial grid index
          *
          * Each grid cell stores indices of all NavMesh cells whose bounding
@@ -132,6 +163,7 @@ namespace pathfinder
             Vec2             m_GridMax;     // Top-right corner of grid
             uint32_t         m_GridWidth;   // Grid width (number of columns)
             uint32_t         m_GridHeight;  // Grid height (number of rows)
+            SpatialConfig    m_Config;      // Configuration used to build this index
             bool             m_Initialized; // Is initialized?
         } NavMeshSpatialIndex;
 
@@ -188,6 +220,7 @@ namespace pathfinder
          * - Spatial index for fast point-in-cell queries
          * - Cached polygon graph for A* pathfinding
          * - NodeId to Cell index mapping for ID-based lookups
+         * - Configuration for spatial index and funnel algorithm
          *
          * Memory Ownership:
          * - All pointers are owned by the NavMesh and must be freed on shutdown
@@ -198,11 +231,12 @@ namespace pathfinder
          */
         typedef struct PolygonNavMesh
         {
-            Cell*                            m_Cells;        // Array of cells (pre-allocated, size = max_cells)
-            uint32_t                         m_CellCount;    // Number of active cells (0 to max_cells)
-            NavMeshSpatialIndex*             m_SpatialIndex; // Spatial index for fast lookups (built on demand)
-            dmHashTable<uint32_t, uint32_t>* m_NodeToCell;   // Fast node_id → cell_index lookup (O(1) hash table)
-            dmArray<PolygonNode>*            m_PolygonGraph; // Cached polygon graph (built once, reused)
+            Cell*                            m_Cells;         // Array of cells (pre-allocated, size = max_cells)
+            uint32_t                         m_CellCount;     // Number of active cells (0 to max_cells)
+            NavMeshSpatialIndex*             m_SpatialIndex;  // Spatial index for fast lookups (built on demand)
+            dmHashTable<uint32_t, uint32_t>* m_NodeToCell;    // Fast node_id → cell_index lookup (O(1) hash table)
+            dmArray<PolygonNode>*            m_PolygonGraph;  // Cached polygon graph (built once, reused)
+            SpatialConfig                    m_SpatialConfig; // Configuration for spatial index grid sizing
         } PolygonNavMesh;
 
     } // namespace navmesh

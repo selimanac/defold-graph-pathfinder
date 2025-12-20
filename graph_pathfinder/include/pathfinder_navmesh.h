@@ -52,6 +52,7 @@ namespace pathfinder
          * @param max_grid_dim Maximum spatial index grid dimension (default: 1000)
          * @param cache_size Number of paths to cache (default: 32, set to 0 to disable caching)
          * @param max_cache_path_length Maximum length of cached paths in cells (default: 64)
+         * @param debug Enable debug output (default: false, only works if NAVMESH_DEBUG is enabled at compile time)
          *
          * Allocates all memory upfront for cells, adjacency, spatial index, and pathfinding state.
          * Also initializes heap pool, path cache, and distance cache subsystems.
@@ -66,6 +67,10 @@ namespace pathfinder
          * - Recommended cache_size=32-128 for typical games
          * - Paths invalidated automatically on NavMesh changes (via version tracking)
          *
+         * DEBUG: Set debug=true to enable diagnostic output (requires NAVMESH_DEBUG=1 at compile time).
+         * - When NAVMESH_DEBUG=0: debug parameter is ignored, no overhead
+         * - When NAVMESH_DEBUG=1: debug parameter controls runtime output
+         *
          * Time Complexity: O(max_cells + spatial_grid_size)
          * Memory: O(max_cells * (vertices + neighbors) + spatial_grid_size)
          *
@@ -78,7 +83,8 @@ namespace pathfinder
                   float    max_cell_size = 2.0f,
                   uint32_t max_grid_dim = 1000,
                   uint32_t cache_size = 32,
-                  uint32_t max_cache_path_length = 64);
+                  uint32_t max_cache_path_length = 64,
+                  bool     debug = false);
 
         /**
          * @brief Shutdown and cleanup the NavMesh system
@@ -274,15 +280,92 @@ namespace pathfinder
         /**
          * @brief Find cell containing a given position using spatial index
          * @param position Position to query
-         * @return Cell ID containing position, ERROR (UINT32_MAX) if not found
+         * @param enable_fallback If true, find nearest cell when position not in any cell (default: true)
+         * @param out_used_fallback Output parameter indicating if fallback was used (optional, can be NULL)
+         * @return Cell ID containing position, INVALID_ID if not found or fallback disabled
          *
          * Uses spatial grid index for O(1) grid cell lookup, then performs
-         * point-in-polygon tests on candidate cells.
+         * point-in-polygon tests on candidate cells. If position not in any cell
+         * and enable_fallback=true, returns nearest cell by center distance.
          *
          * Time Complexity: O(cells_per_grid_cell) typically O(1) with good spatial distribution
-         * Returns ERROR if position not inside any walkable cell.
+         * Fallback: O(N) when position not in any cell
+         *
+         * Fallback Behavior:
+         * - enable_fallback=true (default): Returns nearest cell, sets *out_used_fallback=true
+         * - enable_fallback=false: Returns INVALID_ID, sets *out_used_fallback=false
+         *
+         * Use Cases:
+         * 1. enable_fallback=true: User can click anywhere, always get a path (original behavior)
+         * 2. enable_fallback=false: Reject clicks on walls/obstacles (prevent invalid paths)
+         * 3. Check out_used_fallback: Know if agent should move to nearest cell vs target position
          */
-        uint32_t find_cell_at_position(Vec2 position);
+        uint32_t find_cell_at_position(Vec2 position, bool enable_fallback = true, bool* out_used_fallback = NULL);
+
+        /**
+         * @brief Find smoothed path from arbitrary positions (convenience wrapper)
+         * @param start_pos Starting position (any world position)
+         * @param goal_pos Goal position (any world position)
+         * @param out_smooth_path Output array for smoothed waypoints (Vec2 positions)
+         * @param max_length Maximum allowed path length in waypoints
+         * @param agent_radius Radius of agent for collision avoidance (0 = no offset, >0 = offset portals inward)
+         * @param enable_fallback If true, use nearest cell when position not in any cell (default: true)
+         * @param status Output parameter for operation status (required)
+         * @return Number of waypoints in smooth path, 0 on failure
+         *
+         * High-level convenience function that combines cell lookup and pathfinding.
+         * Automatically finds cells for start/goal positions and computes smooth path.
+         *
+         * Algorithm:
+         * 1. Find cell containing start_pos (with optional fallback to nearest)
+         * 2. Find cell containing goal_pos (with optional fallback to nearest)
+         * 3. If cells found, call find_path_smoothed() to compute path
+         *
+         * Status Codes:
+         * - SUCCESS: Path found, positions were inside cells
+         * - SUCCESS_START_FALLBACK: Path found, start_pos used fallback to nearest cell
+         * - SUCCESS_GOAL_FALLBACK: Path found, goal_pos used fallback to nearest cell
+         * - ERROR_START_NOT_IN_CELL: start_pos not in any cell, fallback disabled
+         * - ERROR_GOAL_NOT_IN_CELL: goal_pos not in any cell, fallback disabled
+         * - ERROR_NO_PATH: Cells found but no path exists between them
+         * - Other error codes: From underlying pathfinding (heap full, etc.)
+         *
+         * Use Cases:
+         * 1. enable_fallback=true, status=SUCCESS: Normal path, both positions in cells
+         * 2. enable_fallback=true, status=SUCCESS_START_FALLBACK: Move agent to out_smooth_path[0]
+         * 3. enable_fallback=true, status=SUCCESS_GOAL_FALLBACK: Agent reaches nearest valid position
+         * 4. enable_fallback=false: Reject invalid clicks on walls/obstacles
+         *
+         * Example - Handle fallback for player movement:
+         * @code
+         * PathStatus status;
+         * dmArray<Vec2> path;
+         * uint32_t waypoints = find_path_from_positions(
+         *     player_pos, click_pos, &path, 64, agent_radius, true, &status
+         * );
+         *
+         * if (waypoints > 0) {
+         *     if (status == SUCCESS_START_FALLBACK || status == SUCCESS_GOAL_FALLBACK) {
+         *         // Position was outside navmesh, move to nearest valid position
+         *         move_player_to(path[0]);  // Start from first waypoint (nearest cell)
+         *     } else {
+         *         // Normal path, follow waypoints
+         *         follow_path(path);
+         *     }
+         * }
+         * @endcode
+         *
+         * Time Complexity: O(find_cell × 2 + pathfinding)
+         * - Cell lookup: O(1) typical, O(N) with fallback
+         * - Pathfinding: O((C + E) log C + P)
+         */
+        uint32_t find_path_from_positions(Vec2           start_pos,
+                                          Vec2           goal_pos,
+                                          dmArray<Vec2>* out_smooth_path,
+                                          uint32_t       max_length,
+                                          float          agent_radius,
+                                          bool           enable_fallback,
+                                          PathStatus*    status);
 
         /**
          * @brief Find raw cell corridor path without smoothing (Polygon A* only)

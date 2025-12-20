@@ -57,9 +57,6 @@ embedded_instances {
   "  }\n"
   "}\n"
   ""
-  position {
-    y: 1.504018
-  }
 }
 embedded_instances {
   id: "camera"

@@ -45,54 +45,6 @@ namespace pathfinder
             const uint32_t SPATIAL_INDEX_MAX_GRID_DIM = 1000;
 
             /*******************************************/
-            // SPATIAL INDEX CONFIGURATION
-            /*******************************************/
-
-            /**
-             * @brief Initialize spatial index with custom configuration
-             * @param min_cell_size Minimum grid cell size in world units (default: 1.0f)
-             * @param max_cell_size Maximum grid cell size in world units (default: 2.0f)
-             * @param max_grid_dim Maximum grid dimension in either axis (default: 1000)
-             *
-             * Sets global configuration for spatial index grid sizing.
-             * Actual grid cell size is computed when building index based on NavMesh bounds.
-             *
-             * Configuration Guidelines:
-             * - min_cell_size: Should be ~= average NavMesh cell size
-             * - max_cell_size: Should be ~= 2-3× average NavMesh cell size
-             * - max_grid_dim: Prevents excessive memory for large worlds (1000×1000 = 1M cells)
-             *
-             * Time Complexity: O(1) - just stores configuration
-             * Must be called BEFORE build_spatial_index() if custom config needed.
-             */
-            void init(float    min_cell_size = SPATIAL_INDEX_MIN_CELL_SIZE,
-                      float    max_cell_size = SPATIAL_INDEX_MAX_CELL_SIZE,
-                      uint32_t max_grid_dim = SPATIAL_INDEX_MAX_GRID_DIM);
-
-            /**
-             * @brief Get current spatial index configuration
-             * @param out_min_cell_size Output minimum cell size (can be NULL)
-             * @param out_max_cell_size Output maximum cell size (can be NULL)
-             * @param out_max_grid_dim Output maximum grid dimension (can be NULL)
-             *
-             * Retrieves current configuration values.
-             * All parameters are optional (pass NULL to skip).
-             *
-             * Time Complexity: O(1)
-             */
-            void get_config(float* out_min_cell_size, float* out_max_cell_size, uint32_t* out_max_grid_dim);
-
-            /**
-             * @brief Shutdown spatial index system and reset to defaults
-             *
-             * Resets configuration to default values.
-             * Does NOT destroy existing spatial indices (use destroy_spatial_index for that).
-             *
-             * Time Complexity: O(1)
-             */
-            void shutdown();
-
-            /*******************************************/
             // SPATIAL INDEX MANAGEMENT
             /*******************************************/
 
@@ -103,11 +55,13 @@ namespace pathfinder
              *
              * Algorithm:
              * 1. Compute NavMesh bounding box (min/max over all cell vertices)
-             * 2. Calculate grid cell size (clamped to min_cell_size/max_cell_size)
+             * 2. Calculate grid cell size (clamped to config min_cell_size/max_cell_size)
              * 3. Create 2D grid array (width × height)
              * 4. For each NavMesh cell:
              *    - Compute bounding box
              *    - Insert into all overlapping grid cells
+             *
+             * Uses configuration stored in navmesh->m_SpatialConfig.
              *
              * Time Complexity: O(N × V) where N = cells, V = avg vertices per cell
              * Memory: O(grid_width × grid_height + N × overlap_factor)
@@ -136,24 +90,37 @@ namespace pathfinder
              * @brief Find NavMesh cell containing a given position
              * @param navmesh NavMesh to search
              * @param position Position to query
-             * @return Cell index containing position, -1 if not found
+             * @param enable_fallback If true, find nearest cell when position not in any cell (default: true)
+             * @param out_used_fallback Output parameter indicating if fallback was used (optional, can be NULL)
+             * @return Cell index containing position, -1 if not found or fallback disabled
              *
              * Algorithm:
              * 1. Hash position to grid cell coordinates
              * 2. Retrieve list of candidate NavMesh cells in that grid cell
              * 3. Test each candidate with point_in_polygon()
              * 4. Return first match (or -1 if no matches)
+             * 5. If no match and enable_fallback=true: Find nearest cell by center distance
              *
              * Time Complexity: O(cells_per_grid_cell × avg_vertices)
              * - Typically O(1) with good spatial distribution
              * - Worst case O(N × V) if all cells overlap one grid cell
+             * - Fallback: O(N) when no exact match found
              *
              * Returns -1 if:
              * - Position outside grid bounds
              * - No cells in grid cell at position
-             * - Point not inside any candidate cell polygons
+             * - Point not inside any candidate cell polygons AND enable_fallback=false
+             *
+             * Fallback Behavior:
+             * - When enable_fallback=true (default): Returns nearest cell and sets *out_used_fallback=true
+             * - When enable_fallback=false: Returns -1 and sets *out_used_fallback=false
+             *
+             * Use Cases:
+             * 1. enable_fallback=true: User can click anywhere, always get a path (original behavior)
+             * 2. enable_fallback=false: Reject clicks on walls/obstacles (prevent invalid paths)
+             * 3. Check out_used_fallback: Move agent to nearest cell vs target position
              */
-            int find_cell_at_position(PolygonNavMesh* navmesh, Vec2 position);
+            int find_cell_at_position(PolygonNavMesh* navmesh, Vec2 position, bool enable_fallback = true, bool* out_used_fallback = NULL);
 
             /*******************************************/
             // UTILITY FUNCTIONS

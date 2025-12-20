@@ -30,12 +30,13 @@ function agents.add(start_position, goal_position)
 
 	local goal_node_id = 0
 
-	path_size, path_status, path_status_text, path = pathfinder.navmesh_find_path(start_position.x, start_position.z, goal_position.x, goal_position.z, 128, 0.0)
+	path_size, path_status, path_status_text, path = pathfinder.navmesh_find_path(start_position.x, start_position.z, goal_position.x, goal_position.z, 128, 0.0, false)
+
+	pprint(path_status)
+	pprint(path_status_text)
 
 
-	pprint(path)
-
-	if path_status ~= pathfinder.PathStatus.SUCCESS then
+	if path_status ~= pathfinder.PathStatus.SUCCESS and path_status ~= pathfinder.PathStatus.SUCCESS_START_FALLBACK and path_status ~= pathfinder.PathStatus.SUCCESS_GOAL_FALLBACK then
 		return
 	end
 
@@ -56,7 +57,7 @@ function agents.add(start_position, goal_position)
 		position            = start_position,
 		velocity            = vmath.vector3(),
 		max_speed           = 5.5,
-		rotation_speed      = 10.0,
+		rotation_speed      = 85.0,
 		speed               = 0,
 		rotation            = target_quat,
 		rotation_angle      = 0,

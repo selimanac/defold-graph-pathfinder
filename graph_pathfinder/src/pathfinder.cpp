@@ -22,6 +22,10 @@ static inline const char* path_status_to_string(enum pathfinder::PathStatus stat
     {
         case pathfinder::SUCCESS:
             return "Success";
+        case pathfinder::SUCCESS_START_FALLBACK:
+            return "Start position not in any cell, used fallback to nearest cell";
+        case pathfinder::SUCCESS_GOAL_FALLBACK:
+            return "Goal position not in any cell, used fallback to nearest cell";
         case pathfinder::ERROR_NO_PATH:
             return "No valid path found between to goal node";
         case pathfinder::ERROR_START_GOAL_NODE_SAME:
@@ -30,6 +34,10 @@ static inline const char* path_status_to_string(enum pathfinder::PathStatus stat
             return "Invalid or inactive start node ID";
         case pathfinder::ERROR_GOAL_NODE_INVALID:
             return "Invalid or inactive goal node ID";
+        case pathfinder::ERROR_START_NOT_IN_CELL:
+            return "Start position not in any cell, fallback disabled";
+        case pathfinder::ERROR_GOAL_NOT_IN_CELL:
+            return "Goal position not in any cell, fallback disabled";
         case pathfinder::ERROR_NODE_FULL:
             return "Node capacity reached — cannot add more nodes";
         case pathfinder::ERROR_EDGE_FULL:
@@ -111,8 +119,9 @@ static int pathfinder_navmesh_init(lua_State* L)
     float    min_cell_size = (float)luaL_optnumber(L, 6, 5);
     float    max_cell_size = (float)luaL_optnumber(L, 7, 10);
     uint32_t max_grid_dim = (uint32_t)luaL_optinteger(L, 8, 1000);
+    bool     debug = lua_toboolean(L, 2);
 
-    pathfinder::navmesh::init(max_cells, max_edges_per_cell, pool_block_size, min_cell_size, max_cell_size, max_grid_dim, cache_size, max_cache_path_length);
+    pathfinder::navmesh::init(max_cells, max_edges_per_cell, pool_block_size, min_cell_size, max_cell_size, max_grid_dim, cache_size, max_cache_path_length, debug);
 
     return 0;
 }
@@ -137,17 +146,16 @@ static int pathfinder_navmesh_find_smoothed(lua_State* L)
     float                     target_y = luaL_checknumber(L, 4);
     uint32_t                  max_path = luaL_checkint(L, 5);
     float                     agent_radius = (float)luaL_optnumber(L, 6, 0.0f);
+    bool                      enable_fallback = lua_toboolean(L, 7);
 
     pathfinder::Vec2          start_position = { start_x, start_y };
     pathfinder::Vec2          goal_position = { target_x, target_y };
-    uint32_t                  start_cell = pathfinder::navmesh::find_cell_at_position(start_position);
-    uint32_t                  goal_cell = pathfinder::navmesh::find_cell_at_position(goal_position);
-
     pathfinder::PathStatus    status;
     dmArray<pathfinder::Vec2> smooth_path;
     smooth_path.SetCapacity(max_path);
 
-    uint32_t path_length = pathfinder::navmesh::find_path_smoothed(start_cell, goal_cell, start_position, goal_position, &smooth_path, max_path, agent_radius, &status);
+    uint32_t path_length = pathfinder::navmesh::find_path_from_positions(
+    start_position, goal_position, &smooth_path, max_path, agent_radius, enable_fallback, &status);
 
     lua_pushinteger(L, path_length);
     lua_pushinteger(L, status);
@@ -157,7 +165,31 @@ static int pathfinder_navmesh_find_smoothed(lua_State* L)
     return 4;
 }
 
+static int pathfinder_set_spatial_index(lua_State* L)
+{
+}
+
+static int pathfinder_get_spatial_index(lua_State* L)
+{
+}
+
+static int pathfinder_navmesh_get_spatial_index(lua_State* L)
+{
+}
+
+static int pathfinder_navmesh_set_funnel(lua_State* L)
+{
+}
+
+static int pathfinder_navmesh_get_stats(lua_State* L)
+{
+}
+
 static int pathfinder_navmesh_find_raw(lua_State* L)
+{
+}
+
+static int pathfinder_navmesh_find_cell_at_position(lua_State* L)
 {
 }
 
@@ -1127,12 +1159,18 @@ static const luaL_reg Module_methods[] = {
     { "init", pathfinder_init },
     { "shutdown", pathfinder_shutdown },
     { "get_stats", pathfinder_cache_stats },
+    { "set_spatial_index", pathfinder_set_spatial_index }, // TODO
+    { "get_spatial_index", pathfinder_get_spatial_index }, // TODO
 
     // Navmesh
     { "navmesh_init", pathfinder_navmesh_init },
     { "navmesh_set_buffer", pathfinder_navmesh_set_buffer },
     { "navmesh_find_path", pathfinder_navmesh_find_smoothed },
-    { "navmesh_find_path_raw", pathfinder_navmesh_find_raw },
+    { "navmesh_find_path_raw", pathfinder_navmesh_find_raw },                 // TODO
+    { "navmesh_cell_at_position", pathfinder_navmesh_find_cell_at_position }, // TODO
+    { "navmesh_get_stats", pathfinder_navmesh_get_stats },                    // TODO
+    { "navmesh_get_spatial_index", pathfinder_navmesh_get_spatial_index },    // TODO
+    { "navmesh_set_funnel", pathfinder_navmesh_set_funnel },                  // TODO
 
     // Nodes
     { "add_node", pathfinder_add_node },
@@ -1190,10 +1228,14 @@ static void LuaInit(lua_State* L)
     lua_setfield(L, table, #name)
 
     SET_CONSTANT(pathStatusTable, SUCCESS);
+    SET_CONSTANT(pathStatusTable, SUCCESS_START_FALLBACK);
+    SET_CONSTANT(pathStatusTable, SUCCESS_GOAL_FALLBACK);
     SET_CONSTANT(pathStatusTable, ERROR_NO_PATH);
     SET_CONSTANT(pathStatusTable, ERROR_START_GOAL_NODE_SAME);
     SET_CONSTANT(pathStatusTable, ERROR_START_NODE_INVALID);
     SET_CONSTANT(pathStatusTable, ERROR_GOAL_NODE_INVALID);
+    SET_CONSTANT(pathStatusTable, ERROR_START_NOT_IN_CELL);
+    SET_CONSTANT(pathStatusTable, ERROR_GOAL_NOT_IN_CELL);
     SET_CONSTANT(pathStatusTable, ERROR_NODE_FULL);
     SET_CONSTANT(pathStatusTable, ERROR_EDGE_FULL);
     SET_CONSTANT(pathStatusTable, ERROR_HEAP_FULL);
