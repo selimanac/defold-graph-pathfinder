@@ -45,6 +45,22 @@ namespace pathfinder
             const uint32_t SPATIAL_INDEX_MAX_GRID_DIM = 1000;
 
             /*******************************************/
+            // DEBUG CONFIGURATION
+            /*******************************************/
+
+            /**
+             * @brief Set debug mode for spatial index operations
+             * @param enable Enable (true) or disable (false) debug output
+             *
+             * Controls whether spatial index operations log diagnostic messages.
+             * Only has effect when NAVMESH_DEBUG is enabled at compile time.
+             * Called automatically by navmesh::init() with the debug parameter.
+             *
+             * Time Complexity: O(1)
+             */
+            void set_debug_mode(bool enable);
+
+            /*******************************************/
             // SPATIAL INDEX MANAGEMENT
             /*******************************************/
 

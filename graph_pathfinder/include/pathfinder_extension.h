@@ -45,7 +45,16 @@ namespace pathfinder
         void     smooth_path(uint32_t smooth_id, dmArray<uint32_t>& path, dmArray<Vec2>& smoothed_path);
         void     smooth_path_waypoint(uint32_t smooth_id, dmArray<Vec2>& waypoints, dmArray<Vec2>& smoothed_path);
 
-        void     navmesh_set_buffer(dmBuffer::HBuffer& buffer);
+        // Navmesh
+        void navmesh_set_buffer(dmBuffer::HBuffer& buffer);
+
+        void navmesh_get_stats(uint32_t& cache_entries,
+                               uint32_t& cache_capacity,
+                               uint32_t& cache_hit_rate,
+                               uint32_t& dist_cache_size,
+                               uint32_t& dist_cache_hits,
+                               uint32_t& dist_cache_misses,
+                               uint32_t& dist_cache_hit_rate);
 
     } // namespace extension
 } // namespace pathfinder

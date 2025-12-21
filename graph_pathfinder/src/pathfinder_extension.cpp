@@ -415,5 +415,29 @@ namespace pathfinder
             dmLogInfo("Successfully built navmesh with %u triangles", tri_count);
         }
 
+        void navmesh_get_stats(uint32_t& cache_entries,
+                               uint32_t& cache_capacity,
+                               uint32_t& cache_hit_rate,
+                               uint32_t& dist_cache_size,
+                               uint32_t& dist_cache_hits,
+                               uint32_t& dist_cache_misses,
+                               uint32_t& dist_cache_hit_rate)
+        {
+            // Path cache statistics
+            pathfinder::cache::CacheContext* cache_ctx = pathfinder::navmesh::get_cache_context();
+
+            if (cache_ctx)
+            {
+                pathfinder::cache::get_cache_stats(cache_ctx, &cache_entries, &cache_capacity, &cache_hit_rate);
+            }
+
+            // Distance cache statistics
+            pathfinder::distance_cache::DistanceCacheContext* dist_cache_ctx = pathfinder::navmesh::get_distance_cache_context();
+            if (dist_cache_ctx)
+            {
+                pathfinder::distance_cache::get_stats(dist_cache_ctx, &dist_cache_size, &dist_cache_hits, &dist_cache_misses, &dist_cache_hit_rate);
+            }
+        }
+
     } // namespace extension
 } // namespace pathfinder

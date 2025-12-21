@@ -10,32 +10,32 @@
 --==========================================================
 
 -- const
-local COLORS = {
+local COLORS            = {
 	RED = vmath.vector4(1, 0, 0, 1),
 	GREEN = vmath.vector4(0, 1, 0, 1),
 	BLUE = vmath.vector4(0, 0, 1, 1)
 }
 
 -- Graph data storage
-local nodes = {}
-local edges = {}
-
+local nodes             = {}
+local edges             = {}
+local grid              = {}
 -- Visual representation of nodes
-local node_instances = {}
+local node_instances    = {}
 
 -- Number of extra nodes reserved for projected pathfinding entry points
-local projected_count = 2
+local projected_count   = 2
 
 -- Current mouse and position for projected pathfinding
-local mouse_position = vmath.vector3()
-local target_position = vmath.vector3()
+local mouse_position    = vmath.vector3()
+local target_position   = vmath.vector3()
 
 -- Path smoothing configuration ID
 local path_smoothing_id = 0
 
 -- Path smoothing configuration using Bezier quadratic curves
 -- Includes parameters for different smoothing styles (commented styles are not active)
-local smoothing_config = {
+local smoothing_config  = {
 	style                 = pathfinder.PathSmoothStyle.BEZIER_QUADRATIC,
 	bezier_sample_segment = 8, -- Number of segments per curve
 	bezier_curve_radius   = 0.8, -- For bezier_quadratic style
@@ -47,7 +47,7 @@ local smoothing_config = {
 	--	bezier_arc_radius                   = 40.0 -- For CIRCULAR_ARC style
 }
 
-local path =
+local path              =
 {
 	node_to_node = {
 		size = 0,
@@ -180,6 +180,15 @@ local function draw_projected(projected_path_size, projected_path_entry_point, p
 	end
 end
 
+
+local function draw_grid()
+	for _, direction in pairs(grid) do
+		for _, cell in ipairs(direction) do
+			msg.post("@render:", "draw_line", { start_point = cell.start_position, end_point = cell.end_position, color = COLORS.RED })
+		end
+	end
+end
+
 --==========================================================
 -- FUNCTIONS
 --==========================================================
@@ -206,6 +215,9 @@ function init(self)
 
 	-- Initialize the pathfinder system
 	pathfinder.init(max_nodes, max_gameobject_nodes, max_edges_per_node, heap_pool_block_size, max_cache_path_length)
+
+	pathfinder.set_spatial_index(1000, 5, 10, 1)
+	grid = pathfinder.get_spatial_index()
 
 	-- Create path smoothing configuration
 	path_smoothing_id = pathfinder.add_path_smoothing(smoothing_config)
@@ -249,7 +261,7 @@ end
 function update(self, dt)
 	-- Draw all edges
 	draw_edges()
-
+	draw_grid()
 	--==========================================================
 	-- Example 1: Static pathfinding between two fixed nodes
 	-- Find and draw a smoothed path from node 0 to node 66

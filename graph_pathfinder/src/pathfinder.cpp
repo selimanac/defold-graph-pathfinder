@@ -2,6 +2,7 @@
 // Extension lib defines
 
 #include "dmsdk/dlib/log.h"
+#include "dmsdk/dlib/vmath.h"
 #include "pathfinder_constants.h"
 #define LIB_NAME "GraphPathfinder"
 #define MODULE_NAME "pathfinder"
@@ -15,6 +16,10 @@
 #include <pathfinder_navmesh.h>
 #include <pathfinder_math.h>
 #include "pathfinder_smooth.h"
+
+//=========================================================
+// Utils
+//=========================================================
 
 static inline const char* path_status_to_string(enum pathfinder::PathStatus status)
 {
@@ -106,7 +111,9 @@ static inline void push_smoothed_path_table(lua_State* L, const dmArray<pathfind
     }
 }
 
+//=========================================================
 // Navmesh
+//=========================================================
 static int pathfinder_navmesh_init(lua_State* L)
 {
     DM_LUA_STACK_CHECK(L, 0);
@@ -122,6 +129,15 @@ static int pathfinder_navmesh_init(lua_State* L)
     bool     debug = lua_toboolean(L, 2);
 
     pathfinder::navmesh::init(max_cells, max_edges_per_cell, pool_block_size, min_cell_size, max_cell_size, max_grid_dim, cache_size, max_cache_path_length, debug);
+
+    return 0;
+}
+
+static int pathfinder_navmesh_shutdown(lua_State* L)
+{
+    DM_LUA_STACK_CHECK(L, 0);
+
+    pathfinder::navmesh::shutdown();
 
     return 0;
 }
@@ -157,6 +173,7 @@ static int pathfinder_navmesh_find_smoothed(lua_State* L)
     uint32_t path_length = pathfinder::navmesh::find_path_from_positions(
     start_position, goal_position, &smooth_path, max_path, agent_radius, enable_fallback, &status);
 
+    // OUT ->
     lua_pushinteger(L, path_length);
     lua_pushinteger(L, status);
     lua_pushstring(L, path_status_to_string(status));
@@ -165,33 +182,190 @@ static int pathfinder_navmesh_find_smoothed(lua_State* L)
     return 4;
 }
 
-static int pathfinder_set_spatial_index(lua_State* L)
+static int pathfinder_navmesh_find_raw(lua_State* L)
 {
-}
+    DM_LUA_STACK_CHECK(L, 0);
+    // IN <-
+    float                  start_x = luaL_checknumber(L, 1);
+    float                  start_y = luaL_checknumber(L, 2);
+    float                  target_x = luaL_checknumber(L, 3);
+    float                  target_y = luaL_checknumber(L, 4);
+    uint32_t               max_path = luaL_checkint(L, 5);
+    float                  agent_radius = (float)luaL_optnumber(L, 6, 0.0f);
+    bool                   enable_fallback = lua_toboolean(L, 7);
 
-static int pathfinder_get_spatial_index(lua_State* L)
-{
+    pathfinder::Vec2       start_position = { start_x, start_y };
+    pathfinder::Vec2       goal_position = { target_x, target_y };
+    pathfinder::PathStatus status;
+    dmArray<uint32_t>      raw_path;
+    raw_path.SetCapacity(max_path);
+
+    uint32_t start_cell = pathfinder::navmesh::find_cell_at_position(start_position);
+    uint32_t goal_cell = pathfinder::navmesh::find_cell_at_position(goal_position);
+
+    uint32_t raw_length = pathfinder::navmesh::find_path_raw(start_cell, goal_cell, start_position, goal_position, &raw_path, max_path, &status);
+
+    return 0;
 }
 
 static int pathfinder_navmesh_get_spatial_index(lua_State* L)
 {
+    DM_LUA_STACK_CHECK(L, 1);
+    pathfinder::navmesh::NavMeshSpatialIndex* spatial_index = pathfinder::navmesh::get_spatial_index();
+
+    // grid table
+    lua_createtable(L, 0, 2);
+    int grid_table = lua_gettop(L);
+
+    /* ---------------- vertical ---------------- */
+
+    lua_pushstring(L, "vertical");
+    lua_createtable(L, spatial_index->m_GridWidth + 1, 0);
+    int vertical_table = lua_gettop(L);
+
+    int vi = 1;
+    for (uint32_t gx = 0; gx <= spatial_index->m_GridWidth; gx++)
+    {
+        float            world_x = spatial_index->m_GridMin.x + gx * spatial_index->m_CellSize;
+        float            max_z = spatial_index->m_GridMin.y + spatial_index->m_GridHeight * spatial_index->m_CellSize;
+
+        dmVMath::Vector3 start(world_x, 0.0f, spatial_index->m_GridMin.y);
+        dmVMath::Vector3 end(world_x, 0.0f, max_z);
+
+        // line table
+        lua_createtable(L, 0, 2);
+        int line_table = lua_gettop(L);
+
+        lua_pushstring(L, "start_position");
+        dmScript::PushVector3(L, start);
+        lua_settable(L, line_table);
+
+        lua_pushstring(L, "end_position");
+        dmScript::PushVector3(L, end);
+        lua_settable(L, line_table);
+
+        lua_rawseti(L, vertical_table, vi++);
+    }
+
+    // grid.vertical = vertical_table
+    lua_settable(L, grid_table);
+
+    /* ---------------- horizontal ---------------- */
+
+    lua_pushstring(L, "horizontal");
+    lua_createtable(L, spatial_index->m_GridHeight + 1, 0);
+    int horizontal_table = lua_gettop(L);
+
+    int hi = 1;
+    for (uint32_t gy = 0; gy <= spatial_index->m_GridHeight; gy++)
+    {
+        float            world_z = spatial_index->m_GridMin.y + gy * spatial_index->m_CellSize;
+        float            max_x = spatial_index->m_GridMin.x + spatial_index->m_GridWidth * spatial_index->m_CellSize;
+
+        dmVMath::Vector3 start(spatial_index->m_GridMin.x, 0.0f, world_z);
+        dmVMath::Vector3 end(max_x, 0.0f, world_z);
+
+        // line table
+        lua_createtable(L, 0, 2);
+        int line_table = lua_gettop(L);
+
+        lua_pushstring(L, "start_position");
+        dmScript::PushVector3(L, start);
+        lua_settable(L, line_table);
+
+        lua_pushstring(L, "end_position");
+        dmScript::PushVector3(L, end);
+        lua_settable(L, line_table);
+
+        lua_rawseti(L, horizontal_table, hi++);
+    }
+
+    // grid.horizontal = horizontal_table
+    lua_settable(L, grid_table);
+
+    return 1;
 }
 
 static int pathfinder_navmesh_set_funnel(lua_State* L)
 {
+    DM_LUA_STACK_CHECK(L, 0);
+    float portal_vertex_tolerance = luaL_checknumber(L, 1);
+    float portal_collapse_threshold = luaL_checknumber(L, 2);
+    float waypoint_duplicate_tolerance = luaL_checknumber(L, 3);
+    pathfinder::navmesh::funnel_init(portal_vertex_tolerance, portal_collapse_threshold, waypoint_duplicate_tolerance);
+
+    return 0;
 }
 
 static int pathfinder_navmesh_get_stats(lua_State* L)
 {
-}
+    DM_LUA_STACK_CHECK(L, 1);
 
-static int pathfinder_navmesh_find_raw(lua_State* L)
-{
+    uint32_t cache_entries;
+    uint32_t cache_capacity;
+    uint32_t cache_hit_rate;
+    uint32_t dist_cache_size;
+    uint32_t dist_cache_hits;
+    uint32_t dist_cache_misses;
+    uint32_t dist_cache_hit_rate;
+
+    pathfinder::extension::navmesh_get_stats(cache_entries, cache_capacity, cache_hit_rate, dist_cache_size, dist_cache_hits, dist_cache_misses, dist_cache_hit_rate);
+
+    // ============================================================================
+    // CREATE RESULT TABLE
+    // ============================================================================
+    lua_createtable(L, 0, 2); // main table
+
+    //  path_cache
+    lua_createtable(L, 0, 3);
+    lua_pushinteger(L, cache_entries);
+    lua_setfield(L, -2, "cache_entries");
+    lua_pushinteger(L, cache_capacity);
+    lua_setfield(L, -2, "cache_capacity");
+    lua_pushinteger(L, cache_hit_rate);
+    lua_setfield(L, -2, "cache_hit_rate");
+
+    // add to main table
+    lua_setfield(L, -2, "path_cache");
+
+    //  distance_cache
+    lua_createtable(L, 0, 4);
+    lua_pushinteger(L, dist_cache_size);
+    lua_setfield(L, -2, "current_size");
+    lua_pushinteger(L, dist_cache_hits);
+    lua_setfield(L, -2, "hit_count");
+    lua_pushinteger(L, dist_cache_misses);
+    lua_setfield(L, -2, "miss_count");
+    lua_pushinteger(L, dist_cache_hit_rate);
+    lua_setfield(L, -2, "hit_rate");
+
+    // add to main table
+    lua_setfield(L, -2, "distance_cache");
+
+    return 1;
 }
 
 static int pathfinder_navmesh_find_cell_at_position(lua_State* L)
 {
+    DM_LUA_STACK_CHECK(L, 3);
+
+    float            x = luaL_checknumber(L, 1);
+    float            y = luaL_checknumber(L, 2);
+
+    pathfinder::Vec2 position = pathfinder::Vec2(x, y);
+
+    uint32_t         cell_id = pathfinder::navmesh::find_cell_at_position(position, false);
+    pathfinder::Vec2 center = pathfinder::navmesh::get_cell_center(cell_id);
+
+    lua_pushinteger(L, cell_id);
+    lua_pushinteger(L, center.x);
+    lua_pushinteger(L, center.y);
+    return 3;
 }
+
+//=========================================================
+// PATH
+//=========================================================
 
 static int pathfinder_init(lua_State* L)
 {
@@ -225,6 +399,97 @@ static int pathfinder_init(lua_State* L)
         pathfinder::extension::set_gameobject_capacity(max_gameobject_nodes);
     }
     return 0;
+}
+
+static int pathfinder_set_spatial_index(lua_State* L)
+{
+    DM_LUA_STACK_CHECK(L, 0);
+
+    uint32_t max_grid_size = luaL_checkint(L, 1);
+    float    min_cell_size = luaL_checknumber(L, 2);
+    float    max_cell_size = luaL_checknumber(L, 3);
+    uint32_t max_cell_search_radius = luaL_checkint(L, 4);
+    pathfinder::path::spatial_index_init(max_grid_size, min_cell_size, max_cell_size, max_cell_search_radius);
+    return 0;
+}
+
+static int pathfinder_get_spatial_index(lua_State* L)
+{
+    DM_LUA_STACK_CHECK(L, 1);
+
+    pathfinder::spatial_index::SpatialIndexContext* spatial_index = pathfinder::path::get_spatial_index();
+
+    lua_createtable(L, 0, 2);
+    int grid_table = lua_gettop(L);
+    if (spatial_index && spatial_index->m_Initialized)
+    {
+        /* ---------------- vertical ---------------- */
+        lua_pushstring(L, "vertical");
+        lua_createtable(L, spatial_index->m_GridWidth + 1, 0);
+        int vertical_table = lua_gettop(L);
+
+        int vi = 1;
+        // Draw vertical grid lines
+        for (uint32_t gx = 0; gx <= spatial_index->m_GridWidth; gx++)
+        {
+            float            world_x = spatial_index->m_GridMin.x + gx * spatial_index->m_CellSize;
+
+            dmVMath::Vector3 start(world_x, spatial_index->m_GridMin.y, 0.0f);
+            dmVMath::Vector3 end(world_x, spatial_index->m_GridMax.y, 0.0f);
+
+            // line table
+            lua_createtable(L, 0, 2);
+            int line_table = lua_gettop(L);
+
+            lua_pushstring(L, "start_position");
+            dmScript::PushVector3(L, start);
+            lua_settable(L, line_table);
+
+            lua_pushstring(L, "end_position");
+            dmScript::PushVector3(L, end);
+            lua_settable(L, line_table);
+
+            lua_rawseti(L, vertical_table, vi++);
+        }
+
+        // grid.vertical = vertical_table
+        lua_settable(L, grid_table);
+
+        /* ---------------- horizontal ---------------- */
+
+        lua_pushstring(L, "horizontal");
+        lua_createtable(L, spatial_index->m_GridHeight + 1, 0);
+        int horizontal_table = lua_gettop(L);
+
+        int hi = 1;
+        // Draw horizontal grid lines
+        for (uint32_t gy = 0; gy <= spatial_index->m_GridHeight; gy++)
+        {
+            float world_y = spatial_index->m_GridMin.y + gy * spatial_index->m_CellSize;
+            // DrawLine((int)ctx->m_GridMin.x, (int)world_y, (int)ctx->m_GridMax.x, (int)world_y, grid_color);
+
+            dmVMath::Vector3 start(spatial_index->m_GridMin.x, world_y, 0.0f);
+            dmVMath::Vector3 end(spatial_index->m_GridMax.x, world_y, 0.0f);
+
+            // line table
+            lua_createtable(L, 0, 2);
+            int line_table = lua_gettop(L);
+
+            lua_pushstring(L, "start_position");
+            dmScript::PushVector3(L, start);
+            lua_settable(L, line_table);
+
+            lua_pushstring(L, "end_position");
+            dmScript::PushVector3(L, end);
+            lua_settable(L, line_table);
+
+            lua_rawseti(L, horizontal_table, hi++);
+        }
+
+        // grid.horizontal = horizontal_table
+        lua_settable(L, grid_table);
+    }
+    return 1;
 }
 
 static int pathfinder_add_nodes(lua_State* L)
@@ -1159,18 +1424,19 @@ static const luaL_reg Module_methods[] = {
     { "init", pathfinder_init },
     { "shutdown", pathfinder_shutdown },
     { "get_stats", pathfinder_cache_stats },
-    { "set_spatial_index", pathfinder_set_spatial_index }, // TODO
-    { "get_spatial_index", pathfinder_get_spatial_index }, // TODO
+    { "set_spatial_index", pathfinder_set_spatial_index },
+    { "get_spatial_index", pathfinder_get_spatial_index },
 
     // Navmesh
     { "navmesh_init", pathfinder_navmesh_init },
+    { "navmesh_shutdown", pathfinder_navmesh_shutdown },
     { "navmesh_set_buffer", pathfinder_navmesh_set_buffer },
     { "navmesh_find_path", pathfinder_navmesh_find_smoothed },
-    { "navmesh_find_path_raw", pathfinder_navmesh_find_raw },                 // TODO
-    { "navmesh_cell_at_position", pathfinder_navmesh_find_cell_at_position }, // TODO
-    { "navmesh_get_stats", pathfinder_navmesh_get_stats },                    // TODO
-    { "navmesh_get_spatial_index", pathfinder_navmesh_get_spatial_index },    // TODO
-    { "navmesh_set_funnel", pathfinder_navmesh_set_funnel },                  // TODO
+    { "navmesh_find_path_raw", pathfinder_navmesh_find_raw }, // TODO
+    { "navmesh_cell_at_position", pathfinder_navmesh_find_cell_at_position },
+    { "navmesh_get_stats", pathfinder_navmesh_get_stats },
+    { "navmesh_get_spatial_index", pathfinder_navmesh_get_spatial_index },
+    { "navmesh_set_funnel", pathfinder_navmesh_set_funnel },
 
     // Nodes
     { "add_node", pathfinder_add_node },
@@ -1295,6 +1561,7 @@ static dmExtension::Result AppFinalizeGraphPathfinder(dmExtension::AppParams* pa
     dmLogInfo("AppFinalizeGraphPathfinder");
     pathfinder::extension::shutdown();
     pathfinder::path::shutdown();
+    pathfinder::navmesh::shutdown();
     return dmExtension::RESULT_OK;
 }
 
