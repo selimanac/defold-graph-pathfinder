@@ -57,6 +57,9 @@ embedded_instances {
   "  }\n"
   "}\n"
   ""
+  position {
+    y: 1.620904
+  }
 }
 embedded_instances {
   id: "camera"
@@ -75,7 +78,7 @@ embedded_instances {
   "  data: \"aspect_ratio: 1.0\\n"
   "fov: 0.7854\\n"
   "near_z: 0.1\\n"
-  "far_z: 100.0\\n"
+  "far_z: 200.0\\n"
   "auto_aspect_ratio: 1\\n"
   "\"\n"
   "}\n"
@@ -127,5 +130,22 @@ embedded_instances {
   ""
   position {
     y: 1.898955
+  }
+}
+embedded_instances {
+  id: "navmesh"
+  data: "embedded_components {\n"
+  "  id: \"mesh\"\n"
+  "  type: \"mesh\"\n"
+  "  data: \"material: \\\"/example/materials/unlit/model_unlit.material\\\"\\n"
+  "vertices: \\\"/example/assets/navmesh.buffer\\\"\\n"
+  "textures: \\\"/example/img/gray.png\\\"\\n"
+  "position_stream: \\\"position\\\"\\n"
+  "normal_stream: \\\"normal\\\"\\n"
+  "\"\n"
+  "}\n"
+  ""
+  position {
+    y: 1.646512
   }
 }

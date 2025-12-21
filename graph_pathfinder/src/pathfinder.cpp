@@ -181,7 +181,7 @@ static int pathfinder_navmesh_find_smoothed(lua_State* L)
 
     return 4;
 }
-
+/*
 static int pathfinder_navmesh_find_raw(lua_State* L)
 {
     DM_LUA_STACK_CHECK(L, 0);
@@ -207,7 +207,7 @@ static int pathfinder_navmesh_find_raw(lua_State* L)
 
     return 0;
 }
-
+*/
 static int pathfinder_navmesh_get_spatial_index(lua_State* L)
 {
     DM_LUA_STACK_CHECK(L, 1);
@@ -412,6 +412,12 @@ static int pathfinder_set_spatial_index(lua_State* L)
     pathfinder::path::spatial_index_init(max_grid_size, min_cell_size, max_cell_size, max_cell_search_radius);
     return 0;
 }
+static int pathfinder_spatial_index_is_initialized(lua_State* L)
+{
+    DM_LUA_STACK_CHECK(L, 1);
+    lua_pushboolean(L, pathfinder::path::spatial_index_is_initialized() ? 1 : 0);
+    return 1;
+}
 
 static int pathfinder_get_spatial_index(lua_State* L)
 {
@@ -433,9 +439,10 @@ static int pathfinder_get_spatial_index(lua_State* L)
         for (uint32_t gx = 0; gx <= spatial_index->m_GridWidth; gx++)
         {
             float            world_x = spatial_index->m_GridMin.x + gx * spatial_index->m_CellSize;
+            float            max_y = spatial_index->m_GridMin.y + spatial_index->m_GridHeight * spatial_index->m_CellSize;
 
             dmVMath::Vector3 start(world_x, spatial_index->m_GridMin.y, 0.0f);
-            dmVMath::Vector3 end(world_x, spatial_index->m_GridMax.y, 0.0f);
+            dmVMath::Vector3 end(world_x, max_y, 0.0f);
 
             // line table
             lua_createtable(L, 0, 2);
@@ -465,11 +472,11 @@ static int pathfinder_get_spatial_index(lua_State* L)
         // Draw horizontal grid lines
         for (uint32_t gy = 0; gy <= spatial_index->m_GridHeight; gy++)
         {
-            float world_y = spatial_index->m_GridMin.y + gy * spatial_index->m_CellSize;
-            // DrawLine((int)ctx->m_GridMin.x, (int)world_y, (int)ctx->m_GridMax.x, (int)world_y, grid_color);
+            float            world_y = spatial_index->m_GridMin.y + gy * spatial_index->m_CellSize;
+            float            max_x = spatial_index->m_GridMin.x + spatial_index->m_GridWidth * spatial_index->m_CellSize;
 
             dmVMath::Vector3 start(spatial_index->m_GridMin.x, world_y, 0.0f);
-            dmVMath::Vector3 end(spatial_index->m_GridMax.x, world_y, 0.0f);
+            dmVMath::Vector3 end(max_x, world_y, 0.0f);
 
             // line table
             lua_createtable(L, 0, 2);
@@ -1426,13 +1433,14 @@ static const luaL_reg Module_methods[] = {
     { "get_stats", pathfinder_cache_stats },
     { "set_spatial_index", pathfinder_set_spatial_index },
     { "get_spatial_index", pathfinder_get_spatial_index },
+    { "spatial_index_initialized", pathfinder_spatial_index_is_initialized },
 
     // Navmesh
     { "navmesh_init", pathfinder_navmesh_init },
     { "navmesh_shutdown", pathfinder_navmesh_shutdown },
     { "navmesh_set_buffer", pathfinder_navmesh_set_buffer },
     { "navmesh_find_path", pathfinder_navmesh_find_smoothed },
-    { "navmesh_find_path_raw", pathfinder_navmesh_find_raw }, // TODO
+    //{ "navmesh_find_path_raw", pathfinder_navmesh_find_raw }, // TODO -> No any good use
     { "navmesh_cell_at_position", pathfinder_navmesh_find_cell_at_position },
     { "navmesh_get_stats", pathfinder_navmesh_get_stats },
     { "navmesh_get_spatial_index", pathfinder_navmesh_get_spatial_index },

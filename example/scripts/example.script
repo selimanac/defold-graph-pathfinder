@@ -20,6 +20,9 @@ local COLORS            = {
 local nodes             = {}
 local edges             = {}
 local grid              = {}
+
+local get_spatial_index = true
+
 -- Visual representation of nodes
 local node_instances    = {}
 
@@ -216,8 +219,8 @@ function init(self)
 	-- Initialize the pathfinder system
 	pathfinder.init(max_nodes, max_gameobject_nodes, max_edges_per_node, heap_pool_block_size, max_cache_path_length)
 
-	pathfinder.set_spatial_index(1000, 5, 10, 1)
-	grid = pathfinder.get_spatial_index()
+	pathfinder.set_spatial_index(70, 20, 30, 1)
+
 
 	-- Create path smoothing configuration
 	path_smoothing_id = pathfinder.add_path_smoothing(smoothing_config)
@@ -261,7 +264,15 @@ end
 function update(self, dt)
 	-- Draw all edges
 	draw_edges()
-	draw_grid()
+
+	if pathfinder.spatial_index_initialized() then
+		if get_spatial_index then
+			grid = pathfinder.get_spatial_index()
+			get_spatial_index = false
+		end
+		draw_grid()
+	end
+
 	--==========================================================
 	-- Example 1: Static pathfinding between two fixed nodes
 	-- Find and draw a smoothed path from node 0 to node 66

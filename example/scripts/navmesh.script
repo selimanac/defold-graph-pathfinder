@@ -1,7 +1,9 @@
+go.property("arc_buffer", resource.buffer("/example/assets/navmesh.buffer"))
+
 local agents = require "example.scripts.agents"
 local const  = require "example.scripts.const"
 local data   = require "example.scripts.data"
-go.property("arc_buffer", resource.buffer("/example/assets/arc_1_navmesh.buffer"))
+
 
 local mouse_position = vmath.vector3()
 local start_position = vmath.vector3()
