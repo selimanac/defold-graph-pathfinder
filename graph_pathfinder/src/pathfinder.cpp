@@ -125,7 +125,7 @@ static int pathfinder_navmesh_init(lua_State* L)
     float    min_cell_size = (float)luaL_optnumber(L, 6, 5);
     float    max_cell_size = (float)luaL_optnumber(L, 7, 10);
     uint32_t max_grid_dim = (uint32_t)luaL_optinteger(L, 8, 1000);
-    bool     debug = lua_toboolean(L, 2);
+    bool     debug = lua_toboolean(L, 9);
 
     pathfinder::navmesh::init(max_cells, max_edges_per_cell, pool_block_size, min_cell_size, max_cell_size, max_grid_dim, cache_size, max_cache_path_length, debug);
 

@@ -26,7 +26,7 @@ function init(self)
 	cam                    = msg.url("/camera#camera")
 	data.path_smoothing_id = pathfinder.add_path_smoothing(const.SMOOTHING_CONFIG)
 
-	pathfinder.navmesh_init(600, 6, 32, 16, 256, 5, 10, 500, true)
+	pathfinder.navmesh_init(600, 6, 32, 16, 256, 5, 10, 500, false)
 	pathfinder.navmesh_set_buffer(navmesh_buffer)
 	spatial_index_grid = pathfinder.navmesh_get_spatial_index()
 end
