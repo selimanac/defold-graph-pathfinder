@@ -38,11 +38,12 @@ const.SMOOTHING_CONFIG = {
 
 const.TRIGGERS         =
 {
-	KEY_1              = hash("KEY_1"),
-	MOUSE_BUTTON_1     = hash("MOUSE_BUTTON_1"),
-	MOUSE_WHEEL_UP     = hash("MOUSE_WHEEL_UP"),
-	MOUSE_WHEEL_DOWN   = hash("MOUSE_WHEEL_DOWN"),
-	MOUSE_BUTTON_2     = hash("MOUSE_BUTTON_2"),
-	MOUSE_BUTTON_RIGHT = hash("MOUSE_BUTTON_RIGHT"),
+	LEFT_SHIFT         = hash("left_shift"),
+	MOUSE_BUTTON_RIGHT = hash("mouse_button_right"),
+	MOUSE_BUTTON_LEFT  = hash("mouse_button_left"),
+	MOUSE_WHEEL_UP     = hash("mouse_wheel_up"),
+	MOUSE_WHEEL_DOWN   = hash("mouse_wheel_down"),
+	SPACE              = hash("space"),
+
 }
 return const

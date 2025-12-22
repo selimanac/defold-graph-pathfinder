@@ -1,4 +1,5 @@
 local data = require "example.scripts.data"
+local const = require "example.scripts.const"
 -- The initial zoom level
 go.property("zoom", 3)
 -- The speed of the zoom
@@ -7,6 +8,10 @@ go.property("zoom_speed", 0.1)
 go.property("rotation_speed", 0.5)
 -- The offset of the camera from the origin
 go.property("offset", vmath.vector3(0, 0, 0))
+
+
+local shift_pressed = false
+
 
 function init(self)
 	-- Acquire input focus to receive input events
@@ -41,24 +46,22 @@ function update(self, dt)
 	go.set_rotation(camera_rotation)
 end
 
-local lpress = false
-
 function on_input(self, action_id, action)
-	if action_id == hash("left_shift") and action.pressed then
-		lpress = true
+	if action_id == const.TRIGGERS.LEFT_SHIFT then
+		if action.pressed then
+			shift_pressed = true
+		elseif action.released then
+			shift_pressed = false
+		end
 	end
 
-	if action_id == hash("left_shift") and action.released then
-		lpress = false
-	end
-
-	if lpress then
-		if action_id == hash("mouse_button_right") and not action.pressed then
+	if shift_pressed then
+		if action_id == const.TRIGGERS.MOUSE_BUTTON_RIGHT and not action.pressed then
 			self.yaw   = self.yaw - action.dx * self.rotation_speed
 			self.pitch = self.pitch + action.dy * self.rotation_speed
-		elseif action_id == hash("mouse_wheel_up") then
+		elseif action_id == const.TRIGGERS.MOUSE_WHEEL_UP then
 			self.zoom_offset = self.zoom_offset - self.zoom * self.zoom_speed
-		elseif action_id == hash("mouse_wheel_down") then
+		elseif action_id == const.TRIGGERS.MOUSE_WHEEL_DOWN then
 			self.zoom_offset = self.zoom_offset + self.zoom * self.zoom_speed
 		end
 	end
