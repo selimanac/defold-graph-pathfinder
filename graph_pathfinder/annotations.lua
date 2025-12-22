@@ -12,8 +12,8 @@
 ---@class PathEdge
 ---@field from_node_id number Source node ID
 ---@field to_node_id number Target node ID
----@field bidirectional? boolean [optional] Whether the edge is bidirectional
----@field cost? (number|nil): Optional edge cost (default: Euclidean distance between nodes)
+---@field bidirectional? boolean Optional: Whether the edge is bidirectional
+---@field cost? number Optional: Edge cost (default: Euclidean distance between nodes)
 
 ---@class PathSmoothConfig
 ---@field style number Path smoothing style (use pathfinder.PathSmoothStyle constants)
@@ -29,10 +29,14 @@
 ---@enum PathStatus
 pathfinder.PathStatus = {
     SUCCESS = 0,                         -- Operation completed successfully
+    SUCCESS_START_FALLBACK = 1,          -- Success, but start position used fallback to nearest cell (navmesh only)
+    SUCCESS_GOAL_FALLBACK = 2,           -- Success, but goal position used fallback to nearest cell (navmesh only)
     ERROR_NO_PATH = -1,                  -- No valid path found between start and goal nodes
     ERROR_START_GOAL_NODE_SAME = -12,    -- Start node ID and goal node ID are the same
     ERROR_START_NODE_INVALID = -2,       -- Invalid or inactive start node ID
     ERROR_GOAL_NODE_INVALID = -3,        -- Invalid or inactive goal node ID
+    ERROR_START_NOT_IN_CELL = -13,       -- Start position not in any cell, fallback disabled (navmesh only)
+    ERROR_GOAL_NOT_IN_CELL = -14,        -- Goal position not in any cell, fallback disabled (navmesh only)
     ERROR_NODE_FULL = -4,                -- Node capacity reached, cannot add more nodes
     ERROR_EDGE_FULL = -5,                -- Edge capacity reached, cannot add more edges
     ERROR_HEAP_FULL = -6,                -- Heap pool exhausted during pathfinding
@@ -102,7 +106,8 @@ function pathfinder.get_node_edges(node_id, bidirectional, include_incoming) end
 ---@param from_node_id number Source node ID
 ---@param to_node_id number Target node ID
 ---@param bidirectional? boolean If true, creates edges in both directions
-function pathfinder.add_edge(from_node_id, to_node_id, bidirectional) end
+---@param cost? number Optional edge cost (default: Euclidean distance between nodes)
+function pathfinder.add_edge(from_node_id, to_node_id, bidirectional, cost) end
 
 ---Add multiple edges to the pathfinding graph in batch.
 ---@param edges PathEdge[] Array of edge definitions
@@ -111,7 +116,7 @@ function pathfinder.add_edges(edges) end
 ---Remove an edge between two nodes.
 ---@param from_node_id number Source node ID
 ---@param to_node_id number Target node ID
----@param bidirectional? boolean If true, removes edges in both directions
+---@param bidirectional? boolean If true, removes edges in both directions (default: false)
 function pathfinder.remove_edge(from_node_id, to_node_id, bidirectional) end
 
 ---Find a path between two nodes using A* algorithm.
@@ -226,5 +231,79 @@ function pathfinder.gameobject_update(enabled) end
 ---Set the update frequency for game object node position updates.
 ---@param frequency number Update frequency in Hz
 function pathfinder.set_update_frequency(frequency) end
+
+---Get comprehensive statistics about pathfinding caches and spatial index.
+---@return table stats Table containing cache and spatial index statistics with fields: path_cache, distance_cache, spatial_index
+function pathfinder.get_stats() end
+
+---Initialize the spatial index with custom configuration for accelerating projected pathfinding queries.
+---@param max_grid_size number Maximum grid dimension (recommended: 1000)
+---@param min_cell_size number Minimum cell size (recommended: 10.0)
+---@param max_cell_size number Maximum cell size (recommended: 500.0)
+---@param max_cell_search_radius number Search radius in cells (1 = 3×3 grid, 2 = 5×5 grid)
+function pathfinder.set_spatial_index(max_grid_size, min_cell_size, max_cell_size, max_cell_search_radius) end
+
+---Get spatial index grid data for debug visualization.
+---@return table grid Table with vertical and horizontal arrays, each containing line data with start_position and end_position (vector3)
+function pathfinder.get_spatial_index() end
+
+---Check if the spatial index has been initialized and built.
+---@return boolean is_initialized True if spatial index is active, false otherwise
+function pathfinder.spatial_index_initialized() end
+
+---Initialize the navigation mesh pathfinding system. Must be called before any other navmesh operations.
+---@param max_cells number Maximum number of polygon cells in the navigation mesh
+---@param max_edges_per_cell number Maximum edges/neighbors per cell (typically 3-8)
+---@param pool_block_size number Heap pool block size for A* algorithm (default: 32)
+---@param cache_size number Number of paths to cache (0 to disable, recommended: 16-128)
+---@param max_cache_path_length number Maximum length of cached paths in cells (default: 256)
+---@param min_cell_size? number Minimum spatial index grid cell size (default: 5.0)
+---@param max_cell_size? number Maximum spatial index grid cell size (default: 10.0)
+---@param max_grid_dim? number Maximum spatial index grid dimension (default: 1000)
+---@param debug? boolean Enable debug output (default: false, requires NAVMESH_DEBUG=1 at compile time)
+function pathfinder.navmesh_init(max_cells, max_edges_per_cell, pool_block_size, cache_size, max_cache_path_length, min_cell_size, max_cell_size, max_grid_dim, debug) end
+
+---Shutdown and cleanup the navigation mesh system.
+function pathfinder.navmesh_shutdown() end
+
+---Configure the funnel algorithm tolerances for path smoothing. Must be called AFTER navmesh_init().
+---@param portal_vertex_tolerance number Tolerance for vertex matching in portal extraction (default: 0.002)
+---@param portal_collapse_threshold number Threshold for collapsing narrow portals (default: 0.1)
+---@param waypoint_duplicate_tolerance number Tolerance for duplicate waypoint filtering (default: 0.001)
+function pathfinder.navmesh_set_funnel(portal_vertex_tolerance, portal_collapse_threshold, waypoint_duplicate_tolerance) end
+
+---Load navigation mesh data from a Defold buffer.
+---@param buffer buffer Defold buffer containing navigation mesh vertex data
+function pathfinder.navmesh_set_buffer(buffer) end
+
+---Find a smoothed path through the navigation mesh using Polygon A* and Funnel algorithm.
+---@param start_x number X coordinate of start position
+---@param start_y number Y coordinate of start position (typically Z in 3D)
+---@param goal_x number X coordinate of goal position
+---@param goal_y number Y coordinate of goal position (typically Z in 3D)
+---@param max_path_length number Maximum path length in waypoints
+---@param agent_radius? number Agent radius for collision avoidance (default: 0.0, 0 = no offset)
+---@param enable_fallback? boolean Use nearest cell when position not in any cell (default: false)
+---@return number path_length Number of waypoints in the path
+---@return number status PathStatus code indicating success or error
+---@return string status_text Human-readable status message
+---@return PathNode[] path Array of waypoint positions with x and y coordinates
+function pathfinder.navmesh_find_path(start_x, start_y, goal_x, goal_y, max_path_length, agent_radius, enable_fallback) end
+
+---Find which navigation mesh cell contains a given position.
+---@param x number X coordinate of position to query
+---@param y number Y coordinate of position to query (typically Z in 3D)
+---@return number cell_id ID of cell containing position, or special value if not found
+---@return number center_x X coordinate of cell center
+---@return number center_y Y coordinate of cell center
+function pathfinder.navmesh_cell_at_position(x, y) end
+
+---Get spatial index grid data for debug visualization (navmesh).
+---@return table grid Table with vertical and horizontal arrays, each containing line data with start_position and end_position (vector3)
+function pathfinder.navmesh_get_spatial_index() end
+
+---Get comprehensive statistics about navmesh pathfinding caches.
+---@return table stats Table containing cache statistics with fields: path_cache, distance_cache
+function pathfinder.navmesh_get_stats() end
 
 return pathfinder
