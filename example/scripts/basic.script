@@ -32,6 +32,9 @@ local smooth_config = {
 }
 
 function init(self)
+	profiler.enable_ui(true)
+	profiler.set_ui_view_mode(profiler.VIEW_MODE_MINIMIZED)
+
 	-- Initialize the pathfinder
 	-- Parameters: max_nodes, max_gameobject_nodes, max_edges_per_node, heap_pool_block_size, max_cache_path_length
 	pathfinder.init(32, nil, 4, 32, 4)

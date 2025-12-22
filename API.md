@@ -10,6 +10,8 @@ Defold Graph Pathfinder Extension - High-performance A* pathfinding library for 
 - [Pathfinding](#pathfinding)
 - [Path Smoothing](#path-smoothing)
 - [Game Object Nodes](#game-object-nodes)
+- [Spatial Index](#spatial-index-1)
+- [Statistics](#statistics)
 - [Enumerations](#enumerations)
 - [Data Types](#data-types)
 
@@ -673,6 +675,189 @@ pathfinder.set_update_frequency(60)  -- Update at 60 Hz
 
 ---
 
+## Spatial Index
+
+### pathfinder.set_spatial_index()
+
+Initialize the spatial index with custom configuration for accelerating projected pathfinding queries.
+
+**Syntax:**
+```lua
+pathfinder.set_spatial_index(max_grid_size, min_cell_size, max_cell_size, max_cell_search_radius)
+```
+
+**Parameters:**
+- `max_grid_size` (number): Maximum grid dimension (recommended: 1000)
+- `min_cell_size` (number): Minimum cell size (recommended: 10.0)
+- `max_cell_size` (number): Maximum cell size (recommended: 500.0)
+- `max_cell_search_radius` (number): Search radius in cells (1 = 3×3 grid, 2 = 5×5 grid)
+
+**Description:**
+
+The spatial index is a grid-based acceleration structure for finding nearest edges during projected pathfinding. 
+
+**When to use:**
+- Graph has >500 nodes
+- Frequent projected pathfinding queries (>20 per frame)
+- Need 10-100× speedup for large graphs
+
+**Behavior:**
+- Must be called AFTER `pathfinder.init()` 
+- If not called, spatial index remains disabled
+- If called, spatial index is built lazily on first projected path query
+- Automatically updates when nodes move
+
+**Example:**
+```lua
+function init(self)
+    -- Initialize pathfinder
+    pathfinder.init(1000, nil, 4, 32, 32)
+    
+    -- Enable spatial index for large graph
+    pathfinder.set_spatial_index(1000, 10.0, 500.0, 1)
+    
+    -- Add nodes and edges...
+    -- Spatial index will be built on first projected path query
+end
+```
+
+### pathfinder.get_spatial_index()
+
+Get spatial index grid data for debug visualization.
+
+**Syntax:**
+```lua
+local grid = pathfinder.get_spatial_index()
+```
+
+**Returns:**
+- `grid` (table): Table with `vertical` and `horizontal` arrays, each containing line data with `start_position` and `end_position` (vector3)
+
+**Description:**
+
+Returns the spatial index grid structure for rendering debug overlays. Useful for visualizing the spatial partitioning used to accelerate projected pathfinding.
+
+**Example:**
+```lua
+function update(self, dt)
+    local grid = pathfinder.get_spatial_index()
+    
+    if grid.vertical then
+        -- Draw vertical grid lines
+        for _, line in ipairs(grid.vertical) do
+            msg.post("@render:", "draw_line", {
+                start_point = line.start_position,
+                end_point = line.end_position,
+                color = vmath.vector4(1, 0, 0, 0.3)
+            })
+        end
+    end
+    
+    if grid.horizontal then
+        -- Draw horizontal grid lines
+        for _, line in ipairs(grid.horizontal) do
+            msg.post("@render:", "draw_line", {
+                start_point = line.start_position,
+                end_point = line.end_position,
+                color = vmath.vector4(1, 0, 0, 0.3)
+            })
+        end
+    end
+end
+```
+
+### pathfinder.spatial_index_initialized()
+
+Check if the spatial index has been initialized and built.
+
+**Syntax:**
+```lua
+local is_initialized = pathfinder.spatial_index_initialized()
+```
+
+**Returns:**
+- `is_initialized` (boolean): True if spatial index is active, false otherwise
+
+**Description:**
+
+Returns whether the spatial index has been configured via `set_spatial_index()` and built. The spatial index is built lazily on the first projected path query after calling `set_spatial_index()`.
+
+**Example:**
+```lua
+function update(self, dt)
+    if pathfinder.spatial_index_initialized() then
+        -- Spatial index is active, projected queries will be fast
+        label.set_text("#status", "Spatial Index: ACTIVE")
+    else
+        -- No spatial index, projected queries use full scan
+        label.set_text("#status", "Spatial Index: INACTIVE")
+    end
+end
+```
+
+---
+
+## Statistics
+
+### pathfinder.get_stats()
+
+Get comprehensive statistics about pathfinding caches and spatial index.
+
+**Syntax:**
+```lua
+local stats = pathfinder.get_stats()
+```
+
+**Returns:**
+- `stats` (table): Table containing cache and spatial index statistics
+
+**Fields:**
+- `path_cache` (table): Path cache statistics
+  - `cache_entries` (number): Current number of cached paths
+  - `cache_capacity` (number): Maximum cache capacity
+  - `cache_hit_rate` (number): Cache hit rate percentage (0-100)
+- `distance_cache` (table): Distance cache statistics
+  - `current_size` (number): Current number of cached distances
+  - `hit_count` (number): Number of cache hits
+  - `miss_count` (number): Number of cache misses
+  - `hit_rate` (number): Cache hit rate percentage (0-100)
+- `spatial_index` (table): Spatial index statistics
+  - `cell_count` (number): Number of grid cells
+  - `edge_count` (number): Total edges indexed
+  - `avg_edges_per_cell` (number): Average edges per cell
+  - `max_edges_per_cell` (number): Maximum edges in any cell
+
+**Description:**
+
+Provides detailed performance metrics for monitoring and optimizing pathfinding operations. Use this data to:
+- Tune cache sizes
+- Monitor spatial index efficiency
+- Identify performance bottlenecks
+- Validate optimization strategies
+
+**Example:**
+```lua
+function update(self, dt)
+    local stats = pathfinder.get_stats()
+    
+    -- Monitor path cache efficiency
+    print("Path Cache: " .. stats.path_cache.cache_entries .. "/" .. stats.path_cache.cache_capacity)
+    print("Path Cache Hit Rate: " .. stats.path_cache.cache_hit_rate .. "%")
+    
+    -- Monitor distance cache
+    print("Distance Cache Size: " .. stats.distance_cache.current_size)
+    print("Distance Cache Hit Rate: " .. stats.distance_cache.hit_rate .. "%")
+    
+    -- Monitor spatial index
+    if stats.spatial_index.cell_count > 0 then
+        print("Spatial Index Cells: " .. stats.spatial_index.cell_count)
+        print("Avg Edges per Cell: " .. string.format("%.2f", stats.spatial_index.avg_edges_per_cell))
+    end
+end
+```
+
+---
+
 
 ## Enumerations
 
@@ -683,10 +868,14 @@ Status codes for pathfinding operations.
 | Constant | Value | Description |
 |----------|-------|-------------|
 | `SUCCESS` | 0 | Operation completed successfully |
+| `SUCCESS_START_FALLBACK` | 1 | Success, but start position used fallback to nearest cell (navmesh only) |
+| `SUCCESS_GOAL_FALLBACK` | 2 | Success, but goal position used fallback to nearest cell (navmesh only) |
 | `ERROR_NO_PATH` | -1 | No valid path found between start and goal nodes |
 | `ERROR_START_GOAL_NODE_SAME` | -12 | Start node ID and goal node ID are the same |
 | `ERROR_START_NODE_INVALID` | -2 | Invalid or inactive start node ID |
 | `ERROR_GOAL_NODE_INVALID` | -3 | Invalid or inactive goal node ID |
+| `ERROR_START_NOT_IN_CELL` | -13 | Start position not in any cell, fallback disabled (navmesh only) |
+| `ERROR_GOAL_NOT_IN_CELL` | -14 | Goal position not in any cell, fallback disabled (navmesh only) |
 | `ERROR_NODE_FULL` | -4 | Node capacity reached, cannot add more nodes |
 | `ERROR_EDGE_FULL` | -5 | Edge capacity reached, cannot add more edges |
 | `ERROR_HEAP_FULL` | -6 | Heap pool exhausted during pathfinding |
@@ -700,6 +889,8 @@ Status codes for pathfinding operations.
 ```lua
 if status == pathfinder.PathStatus.SUCCESS then
     -- Path found successfully
+elseif status == pathfinder.PathStatus.SUCCESS_START_FALLBACK then
+    -- Path found, but start was outside navmesh (moved to nearest cell)
 elseif status == pathfinder.PathStatus.ERROR_NO_PATH then
     -- No path exists
 end
@@ -998,15 +1189,55 @@ Responsible for caching the distances between nodes to speed up calculations.
 
 ## Spatial Index
 
-A Spatial Index is a grid-based structure used to find the nearest edge from a projected point. It is useful if you have >100 nodes and is activated automatically. You can benefit from it if you have many projected pathfinding queries in a large graph(>500 nodes).  
+A Spatial Index is a grid-based structure used to find the nearest edge from a projected point. It provides significant performance improvements for projected pathfinding in large graphs.
 
-**Details**
-- Enabled automatically for graphs with >100 nodes
-- Cell size automatically calculated from average edge length
+### Configuration
+
+The spatial index is **no longer enabled automatically**. You must explicitly configure it by calling `pathfinder.set_spatial_index()` after initialization.
+
+**When to enable:**
+- Graph has >500 nodes
+- Frequent projected pathfinding queries (>20 per frame)
+- Expected speedup: 10-100× for large graphs
+
+**Configuration Steps:**
+```lua
+-- 1. Initialize pathfinder
+pathfinder.init(1000, nil, 4, 32, 32)
+
+-- 2. Configure spatial index (required for acceleration)
+pathfinder.set_spatial_index(
+    1000,  -- max_grid_size
+    10.0,  -- min_cell_size
+    500.0, -- max_cell_size
+    1      -- max_cell_search_radius (1 = 3×3 grid)
+)
+
+-- 3. Add nodes and edges
+-- Spatial index will be built lazily on first projected path query
+```
+
+**Behavior:**
+- Lazy initialization: Built on first projected pathfinding query after `set_spatial_index()` is called
+- Cell size automatically calculated from average edge length (clamped to min/max)
 - Incrementally updates when nodes move
 - Integrates with cache invalidation
+- Check status with `pathfinder.spatial_index_initialized()`
 
-
-
+**Debug Visualization:**
+```lua
+-- Get spatial index grid for rendering
+local grid = pathfinder.get_spatial_index()
+if grid.vertical then
+    for _, line in ipairs(grid.vertical) do
+        -- Draw vertical grid lines
+        msg.post("@render:", "draw_line", {
+            start_point = line.start_position,
+            end_point = line.end_position,
+            color = vmath.vector4(1, 0, 0, 0.3)
+        })
+    end
+end
+```
 
 ---

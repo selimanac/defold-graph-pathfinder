@@ -1,4 +1,24 @@
+key_trigger {
+  input: KEY_LSHIFT
+  action: "left_shift"
+}
+key_trigger {
+  input: KEY_SPACE
+  action: "space"
+}
 mouse_trigger {
-  input: MOUSE_BUTTON_1
-  action: "touch"
+  input: MOUSE_BUTTON_LEFT
+  action: "mouse_button_left"
+}
+mouse_trigger {
+  input: MOUSE_BUTTON_RIGHT
+  action: "mouse_button_right"
+}
+mouse_trigger {
+  input: MOUSE_WHEEL_UP
+  action: "mouse_wheel_up"
+}
+mouse_trigger {
+  input: MOUSE_WHEEL_DOWN
+  action: "mouse_wheel_down"
 }

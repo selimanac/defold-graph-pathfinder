@@ -33,11 +33,11 @@
  * @code
  * dmArray<uint32_t> path;  // From find_path()
  * dmArray<Vec2> smoothed_path;
- * 
+ *
  * // Calculate required capacity (optional but recommended)
  * uint32_t capacity = pathfinder::smooth::calculate_smoothed_path_capacity(path, 8);
  * smoothed_path.SetCapacity(capacity);
- * 
+ *
  * // Apply smoothing
  * pathfinder::smooth::bezier_quadratic(path, smoothed_path, 8, 0.5f);
  * @endcode
@@ -191,10 +191,10 @@ namespace pathfinder
          * @code
          * // Conservative smoothing (tight spaces)
          * bezier_quadratic(path, smoothed, 8, 0.3f);
-         * 
+         *
          * // Balanced smoothing (recommended)
          * bezier_quadratic(path, smoothed, 12, 0.5f);
-         * 
+         *
          * // Aggressive smoothing (open areas)
          * bezier_quadratic(path, smoothed, 16, 0.7f);
          * @endcode
@@ -210,7 +210,7 @@ namespace pathfinder
          * @param skip_second_waypoint_corner If true, prevents waypoint[1] from being smoothed as a corner
          *
          * Same as bezier_quadratic() but operates on Vec2 positions directly.
-         * 
+         *
          * Special Parameter:
          * - skip_second_waypoint_corner: Useful for projected paths where waypoint[1] is
          *   the entry point (projection onto graph edge). Prevents smoothing at the entry
@@ -314,10 +314,10 @@ namespace pathfinder
          * @code
          * // Gentle, wide arcs
          * bezier_adaptive(path, smoothed, 12, 0.3f, 0.5f, 50.0f);
-         * 
+         *
          * // Tight, sharp corners
          * bezier_adaptive(path, smoothed, 8, 0.8f, 0.3f, 20.0f);
-         * 
+         *
          * // Very round, sweeping curves
          * bezier_adaptive(path, smoothed, 16, 0.4f, 0.9f, 80.0f);
          * @endcode
@@ -404,10 +404,10 @@ namespace pathfinder
          * @code
          * // Tight grid turns (tile-based game)
          * circular_arc(path, smoothed, 8, 15.0f);
-         * 
+         *
          * // Balanced smoothness (general purpose)
          * circular_arc(path, smoothed, 12, 30.0f);
-         * 
+         *
          * // Very smooth railroad curves
          * circular_arc(path, smoothed, 16, 60.0f);
          * @endcode
@@ -509,7 +509,7 @@ namespace pathfinder
          * Vec2 end = {100, 100};
          * dmArray<Vec2> arc_points;
          * bool success = circular_arc_corner(start, corner, end, arc_points, 16, 90.0f, 50.0f);
-         * 
+         *
          * if (success) {
          *     // Use arc_points for rendering/collision
          * }

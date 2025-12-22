@@ -4,6 +4,7 @@
 #include "dmarray_include.h"
 #include "pathfinder_constants.h"
 #include "pathfinder_types.h"
+#include "pathfinder_spatial_index.h"
 #include <cstdint>
 
 /**
@@ -409,6 +410,115 @@ namespace pathfinder
          * - out_exit_point should not be NULL (required output)
          */
         uint32_t find_path_projected_with_exit(const Vec2 start_position, const Vec2 end_position, const uint32_t start_node_id, dmArray<uint32_t>* out_path, const uint32_t max_path, Vec2* out_entry_point, Vec2* out_exit_point, PathStatus* status, const uint32_t virtual_max_path = 64);
+
+        /**
+         * @brief Get distance cache statistics
+         * @param size Output: Total cache size in entries (can be NULL)
+         * @param hits Output: Number of cache hits (can be NULL)
+         * @param misses Output: Number of cache misses (can be NULL)
+         * @param hitRate Output: Hit rate percentage 0-100 (can be NULL)
+         *
+         * Retrieves performance metrics from the internal distance cache.
+         * All parameters are optional (pass NULL to skip).
+         */
+        void get_distance_cache_stats(uint32_t* size, uint32_t* hits, uint32_t* misses, uint32_t* hitRate);
+
+        /**
+         * @brief Get path cache statistics
+         * @param entries Output: Number of currently cached paths (can be NULL)
+         * @param capacity Output: Maximum cache capacity (can be NULL)
+         * @param hitRate Output: Cache hit rate percentage 0-100 (can be NULL)
+         *
+         * Retrieves performance metrics from the internal path cache.
+         * All parameters are optional (pass NULL to skip).
+         */
+        void get_cache_stats(uint32_t* entries, uint32_t* capacity, uint32_t* hitRate);
+
+        /*******************************************/
+        // SPATIAL INDEX ACCESSOR FUNCTIONS
+        /*******************************************/
+
+        /**
+         * @brief Check if spatial index is initialized
+         * @return true if initialized, false otherwise
+         *
+         * Checks the internal spatial index context managed by the pathfinder.
+         */
+        bool spatial_index_is_initialized();
+
+        /**
+         * @brief Get spatial index statistics
+         * @param cell_count Output: Total number of grid cells (can be NULL)
+         * @param edge_count Output: Total edges in index (can be NULL)
+         * @param avg_edges_per_cell Output: Average edges per cell (can be NULL)
+         * @param max_edges_per_cell Output: Maximum edges in any cell (can be NULL)
+         *
+         * Retrieves statistics from the internal spatial index context.
+         * All parameters are optional (pass NULL to skip).
+         */
+        void get_spatial_index_stats(uint32_t* cell_count, uint32_t* edge_count, float* avg_edges_per_cell, uint32_t* max_edges_per_cell);
+
+        /*******************************************/
+        // SPATIAL INDEX CONFIGURATION
+        /*******************************************/
+
+        /**
+         * @brief Initialize spatial index with custom configuration
+         * @param max_grid_size Maximum grid dimension (default: 1000)
+         * @param min_cell_size Minimum cell size (default: 10.0f)
+         * @param max_cell_size Maximum cell size (default: 500.0f)
+         * @param max_cell_search_radius Search radius in cells (default: 1 = 3×3 grid)
+         *
+         * Initializes the spatial index for projected pathfinding acceleration.
+         * Must be called AFTER path::init() and BEFORE adding nodes/edges if you want
+         * spatial index enabled from the start.
+         *
+         * If this function is NOT called, spatial index remains disabled.
+         * If this function IS called, spatial index is enabled and will be built
+         * on the first projected query.
+         *
+         * Example:
+         * @code
+         * pathfinder::path::init(128, 10, 32, 64);
+         * pathfinder::path::spatial_index_init(1000, 10.0f, 500.0f, 1);
+         * // Spatial index now enabled and will be used for projected queries
+         * @endcode
+         *
+         * Time Complexity: O(1) - just stores configuration
+         */
+        void spatial_index_init(uint32_t max_grid_size = 1000, float min_cell_size = 10.0f, float max_cell_size = 500.0f, uint32_t max_cell_search_radius = 1);
+
+        /**
+         * @brief Shutdown and deallocate spatial index
+         *
+         * Disables and cleans up the spatial index.
+         * Can be called to free spatial index memory while keeping pathfinding active.
+         */
+        void spatial_index_shutdown();
+
+        /**
+         * @brief Get pointer to spatial index context for debug rendering
+         * @return Pointer to spatial index context, or NULL if not initialized
+         *
+         * Returns the internal spatial index context for direct access to grid data.
+         * Useful for debug visualization similar to navmesh spatial index drawing.
+         *
+         * Example:
+         * @code
+         * spatial_index::SpatialIndexContext* ctx = pathfinder::path::get_spatial_index();
+         * if (ctx && ctx->m_Initialized) {
+         *     // Draw grid lines
+         *     for (uint32_t y = 0; y <= ctx->m_GridHeight; ++y) {
+         *         for (uint32_t x = 0; x <= ctx->m_GridWidth; ++x) {
+         *             float world_x = ctx->m_GridMin.x + x * ctx->m_CellSize;
+         *             float world_y = ctx->m_GridMin.y + y * ctx->m_CellSize;
+         *             // Draw line...
+         *         }
+         *     }
+         * }
+         * @endcode
+         */
+        spatial_index::SpatialIndexContext* get_spatial_index();
 
     } // namespace path
 

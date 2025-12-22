@@ -1,5 +1,6 @@
 
 #include <cstdint>
+#include <cstdio>
 #include <pathfinder_extension.h>
 #include <dmsdk/dlib/hashtable.h>
 #include "dmsdk/dlib/log.h"
@@ -9,10 +10,10 @@
 #include "pathfinder_path.h"
 #include "pathfinder_smooth.h"
 
-#include "pathfinder_cache.h"
-#include "pathfinder_distance_cache.h"
-#include "pathfinder_spatial_index.h"
-
+// #include "pathfinder_cache.h"
+// #include "pathfinder_distance_cache.h"
+// #include "pathfinder_spatial_index.h"
+#include <pathfinder_navmesh.h>
 namespace pathfinder
 {
     namespace extension
@@ -22,8 +23,8 @@ namespace pathfinder
         //==========================================================
         typedef struct SmoothConfig
         {
-            pathfinder::PathSmoothStyle       m_PathSmoothStyle;
-            navigation::AgentPathSmoothConfig m_PathSmoothConfig;
+            pathfinder::PathSmoothStyle  m_PathSmoothStyle;
+            pathfinder::PathSmoothConfig m_PathSmoothConfig;
         } SmoothConfig;
 
         const static uint8_t               MAX_SMOOTH_CONFIG = 64;
@@ -152,9 +153,11 @@ namespace pathfinder
                              float&    spatial_index_avg_edges_per_cell,
                              uint32_t& spatial_index_max_edges_per_cell)
         {
-            pathfinder::cache::get_cache_stats(&path_cache_entries, &path_cache_capacity, &path_cache_hit_rate);
-            pathfinder::distance_cache::get_stats(&dist_cache_size, &dist_cache_hits, &dist_cache_misses, &dist_cache_hit_rate);
-            pathfinder::spatial_index::get_stats(&spatial_index_cell_count, &spatial_index_edge_count, &spatial_index_avg_edges_per_cell, &spatial_index_max_edges_per_cell);
+            pathfinder::path::get_cache_stats(&path_cache_entries, &path_cache_capacity, &path_cache_hit_rate);
+
+            pathfinder::path::get_distance_cache_stats(&dist_cache_size, &dist_cache_hits, &dist_cache_misses, &dist_cache_hit_rate);
+
+            pathfinder::path::get_spatial_index_stats(&spatial_index_cell_count, &spatial_index_edge_count, &spatial_index_avg_edges_per_cell, &spatial_index_max_edges_per_cell);
         }
 
         //==========================================================
@@ -246,7 +249,7 @@ namespace pathfinder
         // Smooth
         //==========================================================
 
-        uint32_t add_smooth_config(uint32_t path_style, const navigation::AgentPathSmoothConfig path_smooth_config)
+        uint32_t add_smooth_config(uint32_t path_style, const pathfinder::PathSmoothConfig path_smooth_config)
         {
             if (m_SmoothConfigs.Full())
             {
@@ -263,7 +266,7 @@ namespace pathfinder
             return m_SmoothId;
         }
 
-        void update_smooth_config(uint32_t smooth_id, uint32_t path_style, const navigation::AgentPathSmoothConfig path_smooth_config)
+        void update_smooth_config(uint32_t smooth_id, uint32_t path_style, const pathfinder::PathSmoothConfig path_smooth_config)
         {
             SmoothConfig* smooth_config = m_SmoothConfigs.Get(smooth_id);
             if (smooth_config == 0x0)
@@ -346,6 +349,93 @@ namespace pathfinder
                 case CIRCULAR_ARC:
                     pathfinder::smooth::circular_arc_waypoints(waypoints, smoothed_path, smooth_config->m_PathSmoothConfig.m_SampleSegment, smooth_config->m_PathSmoothConfig.m_ArcRadius);
                     break;
+            }
+        }
+
+        void navmesh_set_buffer(dmBuffer::HBuffer& buffer)
+        {
+            void*            data = 0;
+            uint32_t         count = 0;
+            uint32_t         components = 0;
+            uint32_t         stride = 0;
+            dmBuffer::Result buffer_result = dmBuffer::GetStream(buffer, dmHashString64("position"), &data, &count, &components, &stride);
+
+            if (buffer_result != dmBuffer::RESULT_OK)
+            {
+                dmLogError("No position stream");
+                return;
+            }
+
+            dmLogInfo("Position stream: vertices=%u components=%u stride=%u\n", count, components, stride);
+
+            if (count % 3 != 0)
+            {
+                dmLogError("Vertex count must be multiple of 3 for triangles");
+                return;
+            }
+
+            uint32_t tri_count = count / 3;
+            if (tri_count == 0)
+            {
+                dmLogWarning("No triangles in buffer");
+                return;
+            }
+
+            uint32_t vertex_stride = stride;
+            if (stride < components * sizeof(float))
+            {
+                vertex_stride = components * sizeof(float);
+            }
+
+            uint32_t               z_component = (components == 3) ? 2 : 1;
+            uint8_t*               bytes = (uint8_t*)data;
+            pathfinder::PathStatus status;
+
+            for (uint32_t t = 0; t < tri_count; ++t)
+            {
+                pathfinder::Vec2 vertices[3];
+
+                for (uint32_t v = 0; v < 3; ++v)
+                {
+                    float* floats = (float*)(bytes + ((t * 3 + v) * vertex_stride));
+                    vertices[v] = pathfinder::Vec2(floats[0], floats[z_component]);
+                    //    dmLogInfo("t: %u - x %f -  y: % f", t, vertices[v].x, vertices[v].y);
+                }
+
+                // I'm are not doing anything with cell_id yet
+                uint32_t cell_id = pathfinder::navmesh::add_cell(vertices, 3, &status);
+                if (status != pathfinder::SUCCESS)
+                {
+                    dmLogError("Failed to add cell %u (status: %d)", t, status);
+                    return;
+                }
+            }
+            pathfinder::navmesh::build_adjacency();
+
+            dmLogInfo("Successfully built navmesh with %u triangles", tri_count);
+        }
+
+        void navmesh_get_stats(uint32_t& cache_entries,
+                               uint32_t& cache_capacity,
+                               uint32_t& cache_hit_rate,
+                               uint32_t& dist_cache_size,
+                               uint32_t& dist_cache_hits,
+                               uint32_t& dist_cache_misses,
+                               uint32_t& dist_cache_hit_rate)
+        {
+            // Path cache statistics
+            pathfinder::cache::CacheContext* cache_ctx = pathfinder::navmesh::get_cache_context();
+
+            if (cache_ctx)
+            {
+                pathfinder::cache::get_cache_stats(cache_ctx, &cache_entries, &cache_capacity, &cache_hit_rate);
+            }
+
+            // Distance cache statistics
+            pathfinder::distance_cache::DistanceCacheContext* dist_cache_ctx = pathfinder::navmesh::get_distance_cache_context();
+            if (dist_cache_ctx)
+            {
+                pathfinder::distance_cache::get_stats(dist_cache_ctx, &dist_cache_size, &dist_cache_hits, &dist_cache_misses, &dist_cache_hit_rate);
             }
         }
 

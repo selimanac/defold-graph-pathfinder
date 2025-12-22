@@ -114,6 +114,10 @@ namespace pathfinder
     {
         SUCCESS = 0, ///< Operation completed successfully
 
+        // Success with Fallback (NavMesh-specific, positive values to indicate success)
+        SUCCESS_START_FALLBACK = 1, ///< Start position not in any cell, used fallback to nearest cell
+        SUCCESS_GOAL_FALLBACK = 2,  ///< Goal position not in any cell, used fallback to nearest cell
+
         // Pathfinding Errors (path not found or unreachable)
         ERROR_NO_PATH = -1,               ///< No valid path exists between start and goal nodes
         ERROR_START_GOAL_NODE_SAME = -12, ///< Start node ID and Goal node ID are same
@@ -121,6 +125,10 @@ namespace pathfinder
         // Node Validation Errors
         ERROR_START_NODE_INVALID = -2, ///< Start node ID is invalid, inactive, or out of bounds
         ERROR_GOAL_NODE_INVALID = -3,  ///< Goal node ID is invalid, inactive, or out of bounds
+
+        // NavMesh Cell Validation Errors (position not in any cell, fallback disabled)
+        ERROR_START_NOT_IN_CELL = -13, ///< Start position not in any cell, fallback disabled
+        ERROR_GOAL_NOT_IN_CELL = -14,  ///< Goal position not in any cell, fallback disabled
 
         // Capacity Errors (system limits reached)
         ERROR_NODE_FULL = -4,     ///< Maximum node capacity reached, cannot add more nodes

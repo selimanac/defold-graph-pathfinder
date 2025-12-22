@@ -1,0 +1,134 @@
+name: "main"
+scale_along_z: 0
+embedded_instances {
+  id: "scripts"
+  data: "components {\n"
+  "  id: \"navmesh\"\n"
+  "  component: \"/example/scripts/navmesh.script\"\n"
+  "}\n"
+  ""
+}
+embedded_instances {
+  id: "factories"
+  data: "embedded_components {\n"
+  "  id: \"agent\"\n"
+  "  type: \"factory\"\n"
+  "  data: \"prototype: \\\"/example/components/gameobjects/agent.go\\\"\\n"
+  "\"\n"
+  "}\n"
+  ""
+}
+embedded_instances {
+  id: "maze"
+  data: "embedded_components {\n"
+  "  id: \"model\"\n"
+  "  type: \"model\"\n"
+  "  data: \"mesh: \\\"/example/assets/maze.glb\\\"\\n"
+  "name: \\\"{{NAME}}\\\"\\n"
+  "materials {\\n"
+  "  name: \\\"tex0\\\"\\n"
+  "  material: \\\"/example/components/materials/unlit/model_unlit_instanced.material\\\"\\n"
+  "  textures {\\n"
+  "    sampler: \\\"tex0\\\"\\n"
+  "    texture: \\\"/example/assets/color.png\\\"\\n"
+  "  }\\n"
+  "}\\n"
+  "create_go_bones: false\\n"
+  "\"\n"
+  "  position {\n"
+  "    y: -1.65\n"
+  "  }\n"
+  "}\n"
+  ""
+  position {
+    y: 1.620904
+  }
+}
+embedded_instances {
+  id: "camera"
+  data: "components {\n"
+  "  id: \"orbit_camera\"\n"
+  "  component: \"/example/scripts/orbit_camera.script\"\n"
+  "  properties {\n"
+  "    id: \"zoom\"\n"
+  "    value: \"50.0\"\n"
+  "    type: PROPERTY_TYPE_NUMBER\n"
+  "  }\n"
+  "}\n"
+  "embedded_components {\n"
+  "  id: \"camera\"\n"
+  "  type: \"camera\"\n"
+  "  data: \"aspect_ratio: 1.0\\n"
+  "fov: 0.7854\\n"
+  "near_z: 0.1\\n"
+  "far_z: 200.0\\n"
+  "auto_aspect_ratio: 1\\n"
+  "\"\n"
+  "}\n"
+  ""
+  rotation {
+    x: -0.70710677
+    w: 0.70710677
+  }
+}
+embedded_instances {
+  id: "path_start"
+  data: "embedded_components {\n"
+  "  id: \"model\"\n"
+  "  type: \"model\"\n"
+  "  data: \"mesh: \\\"/builtins/assets/meshes/sphere.dae\\\"\\n"
+  "name: \\\"{{NAME}}\\\"\\n"
+  "materials {\\n"
+  "  name: \\\"default\\\"\\n"
+  "  material: \\\"/example/components/materials/unlit/model_unlit_instanced.material\\\"\\n"
+  "  textures {\\n"
+  "    sampler: \\\"tex0\\\"\\n"
+  "    texture: \\\"/example/assets/img/green.png\\\"\\n"
+  "  }\\n"
+  "}\\n"
+  "\"\n"
+  "}\n"
+  ""
+  position {
+    y: 3.643508
+  }
+}
+embedded_instances {
+  id: "path_end"
+  data: "embedded_components {\n"
+  "  id: \"model\"\n"
+  "  type: \"model\"\n"
+  "  data: \"mesh: \\\"/builtins/assets/meshes/sphere.dae\\\"\\n"
+  "name: \\\"{{NAME}}\\\"\\n"
+  "materials {\\n"
+  "  name: \\\"default\\\"\\n"
+  "  material: \\\"/example/components/materials/unlit/model_unlit_instanced.material\\\"\\n"
+  "  textures {\\n"
+  "    sampler: \\\"tex0\\\"\\n"
+  "    texture: \\\"/example/assets/img/red.png\\\"\\n"
+  "  }\\n"
+  "}\\n"
+  "\"\n"
+  "}\n"
+  ""
+  position {
+    y: 1.898955
+  }
+}
+embedded_instances {
+  id: "navmesh_debug"
+  data: "embedded_components {\n"
+  "  id: \"mesh_debug\"\n"
+  "  type: \"mesh\"\n"
+  "  data: \"material: \\\"/example/components/materials/unlit/model_unlit.material\\\"\\n"
+  "vertices: \\\"/example/assets/navmesh_debug.buffer\\\"\\n"
+  "textures: \\\"/example/assets/img/gray.png\\\"\\n"
+  "position_stream: \\\"position\\\"\\n"
+  "normal_stream: \\\"normal\\\"\\n"
+  "\"\n"
+  "}\n"
+  ""
+  position {
+    y: 1.646512
+  }
+}
