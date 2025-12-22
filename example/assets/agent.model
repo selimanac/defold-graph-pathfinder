@@ -1,22 +1,22 @@
-mesh: "/example/assets/man.glb"
-skeleton: "/example/assets/man.glb"
-animations: "/example/assets/man.glb"
+mesh: "/example/assets/dummy.glb"
+skeleton: "/example/assets/dummy.glb"
+animations: "/example/assets/dummy.glb"
 default_animation: "Sprint_Loop"
 name: "agent"
 materials {
   name: "M_Joints"
-  material: "/example/materials/unlit/model_unlit_skinned_instanced.material"
+  material: "/example/components/materials/unlit/model_unlit_skinned_instanced.material"
   textures {
     sampler: "tex0"
-    texture: "/example/img/qhite.png"
+    texture: "/example/assets/img/white.png"
   }
 }
 materials {
   name: "M_Main"
-  material: "/example/materials/unlit/model_unlit_skinned_instanced.material"
+  material: "/example/components/materials/unlit/model_unlit_skinned_instanced.material"
   textures {
     sampler: "tex0"
-    texture: "/example/img/red.png"
+    texture: "/example/assets/img/red.png"
   }
 }
 create_go_bones: false

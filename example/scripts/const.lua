@@ -1,18 +1,20 @@
-local const = {}
+local const            = {}
 
+const.EPSILON          = 0.0001
+const.PLANE_POINT      = vmath.vector3(0, 0, 0)
+const.PLANE_NORMAL     = vmath.vector3(0, 1, 0)
 
-
-const.CAMERA = msg.url()
-const.FACTORIES = {
-	AGENT = "/factories#agent"
+const.FACTORIES        = {
+	AGENT     = "/factories#agent",
+	DIRECTION = "/factories#direction",
+	NODE      = "/factories#node"
 }
 
-const.COLORS = {
-	RED = vmath.vector4(1, 0, 0, 1),
+const.COLORS           = {
+	RED   = vmath.vector4(1, 0, 0, 1),
 	GREEN = vmath.vector4(0, 1, 0, 1),
-	BLUE = vmath.vector4(0, 0, 1, 1)
+	BLUE  = vmath.vector4(0, 0, 1, 1)
 }
-
 
 const.AGENT_STATES     = {
 	INACTIVE       = 0, -- Not in navigation system
@@ -22,6 +24,7 @@ const.AGENT_STATES     = {
 	ARRIVED        = 4, -- Reached goal,
 	WAITTING_ORDER = 5
 }
+
 const.SMOOTHING_CONFIG = {
 	style                               = pathfinder.PathSmoothStyle.BEZIER_QUADRATIC,
 	bezier_sample_segment               = 8, -- Number of segments per curve
@@ -33,9 +36,7 @@ const.SMOOTHING_CONFIG = {
 	bezier_arc_radius                   = 0.3, -- For circular_arc style
 }
 
-
-
-const.TRIGGERS =
+const.TRIGGERS         =
 {
 	KEY_1              = hash("KEY_1"),
 	MOUSE_BUTTON_1     = hash("MOUSE_BUTTON_1"),

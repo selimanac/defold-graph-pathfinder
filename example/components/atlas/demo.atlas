@@ -1,0 +1,25 @@
+images {
+  image: "/example/assets/img/node.png"
+}
+images {
+  image: "/example/assets/img/entry.png"
+}
+images {
+  image: "/example/assets/img/mouse.png"
+}
+images {
+  image: "/example/assets/img/pointy_dot_ac.png"
+}
+images {
+  image: "/example/assets/img/pointy_dot.png"
+}
+images {
+  image: "/example/assets/img/pointy_dot_s.png"
+}
+images {
+  image: "/example/assets/img/direction.png"
+}
+images {
+  image: "/example/assets/img/pointy_up.png"
+}
+extrude_borders: 2
