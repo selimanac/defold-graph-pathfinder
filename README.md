@@ -11,7 +11,10 @@ https://github.com/selimanac/defold-graph-pathfinder/discussions
 
 ## Documentation
 
-For detailed function descriptions and usage examples, see the [API Reference](./API.md).
+For detailed function descriptions and usage examples:  
+
+- [Path API Reference](./API.md).
+- [Navmesh API Reference](./NAVMESH_API.md).
 
 ## Installation
 
@@ -31,10 +34,11 @@ This library consists of three parts:
 The core library. Responsible for managing nodes, edges, and performing pathfinding.
 
 ✅ Projected Pathfinding  
+✅ Static Navmesh Pathfinding  
 ✅ Min-Heap Priority Queue  
 ✅ Path Caching  
 ✅ Distance Caching  
-❌ Smoothed Path Caching — not planned, maybe in the future  
+
 
 ### Path Smoothing
 
