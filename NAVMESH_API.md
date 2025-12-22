@@ -57,8 +57,8 @@ pathfinder.navmesh_init(max_cells, max_edges_per_cell, pool_block_size, cache_si
 - `pool_block_size` (number): Heap pool block size for A* algorithm (default: 32)
 - `cache_size` (number): Number of paths to cache (0 to disable, recommended: 16-128)
 - `max_cache_path_length` (number): Maximum length of cached paths in cells (default: 256)
-- `min_cell_size` (number)[optional, default: 5]: Minimum spatial index grid cell size
-- `max_cell_size` (number)[optional, default: 10]: Maximum spatial index grid cell size
+- `min_cell_size` (number)[optional, default: 5.0]: Minimum spatial index grid cell size
+- `max_cell_size` (number)[optional, default: 10.0]: Maximum spatial index grid cell size
 - `max_grid_dim` (number)[optional, default: 1000]: Maximum spatial index grid dimension
 - `debug` (boolean)[optional, default: false]: Enable debug output (requires NAVMESH_DEBUG=1 at compile time)
 
@@ -207,7 +207,7 @@ local path_length, status, status_text, path = pathfinder.navmesh_find_path(star
 - `goal_y` (number): Y coordinate of goal position (typically Z in 3D)
 - `max_path_length` (number): Maximum path length in waypoints
 - `agent_radius` (number)[optional, default: 0.0]: Agent radius for collision avoidance (0 = no offset)
-- `enable_fallback` (boolean)[optional, default: true]: Use nearest cell when position not in any cell
+- `enable_fallback` (boolean)[optional, default: false]: Use nearest cell when position not in any cell
 
 **Returns:**
 - `path_length` (number): Number of waypoints in the path
