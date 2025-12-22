@@ -13,8 +13,8 @@ https://github.com/selimanac/defold-graph-pathfinder/discussions
 
 For detailed function descriptions and usage examples:  
 
-- [Path API Reference](./API.md).
-- [Navmesh API Reference](./NAVMESH_API.md).
+- [Path API Reference](./API.md)
+- [Navmesh API Reference](./NAVMESH_API.md)
 
 ## Installation
 
