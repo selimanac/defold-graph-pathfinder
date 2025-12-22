@@ -10,7 +10,6 @@
 
 // pathfinder
 #include "pathfinder_extension.h"
-#include "navigation_types.h"
 #include "pathfinder_types.h"
 #include <pathfinder_path.h>
 #include <pathfinder_navmesh.h>
@@ -1168,7 +1167,7 @@ static int pathfinder_move_node(lua_State* L)
     return 0;
 }
 
-static inline void setup_smooth_config(lua_State* L, int index, navigation::AgentPathSmoothConfig& path_smooth_config, uint32_t& smooth_style)
+static inline void setup_smooth_config(lua_State* L, int index, pathfinder::PathSmoothConfig& path_smooth_config, uint32_t& smooth_style)
 {
     // Get "style"
     lua_getfield(L, index, "style");
@@ -1218,8 +1217,8 @@ static int pathfinder_add_path_smoothing(lua_State* L)
     // IN <-
     luaL_checktype(L, 1, LUA_TTABLE);
 
-    navigation::AgentPathSmoothConfig path_smooth_config;
-    uint32_t                          smooth_style = 0;
+    pathfinder::PathSmoothConfig path_smooth_config;
+    uint32_t                     smooth_style = 0;
 
     setup_smooth_config(L, 1, path_smooth_config, smooth_style);
 
@@ -1237,8 +1236,8 @@ static int pathfinder_update_path_smoothing(lua_State* L)
     uint32_t smooth_id = luaL_checkinteger(L, 1);
     luaL_checktype(L, 2, LUA_TTABLE);
 
-    navigation::AgentPathSmoothConfig path_smooth_config;
-    uint32_t                          smooth_style = 0;
+    pathfinder::PathSmoothConfig path_smooth_config;
+    uint32_t                     smooth_style = 0;
 
     setup_smooth_config(L, 2, path_smooth_config, smooth_style);
 
@@ -1440,8 +1439,8 @@ static const luaL_reg Module_methods[] = {
     { "navmesh_shutdown", pathfinder_navmesh_shutdown },
     { "navmesh_set_buffer", pathfinder_navmesh_set_buffer },
     { "navmesh_find_path", pathfinder_navmesh_find_smoothed },
-    //{ "navmesh_find_path_raw", pathfinder_navmesh_find_raw }, // TODO -> No any good use
-    { "navmesh_cell_at_position", pathfinder_navmesh_find_cell_at_position },
+    //{ "navmesh_find_path_raw", pathfinder_navmesh_find_raw }, // TODO -> No good use
+    { "navmesh_cell_at_position", pathfinder_navmesh_find_cell_at_position }, //  No good use
     { "navmesh_get_stats", pathfinder_navmesh_get_stats },
     { "navmesh_get_spatial_index", pathfinder_navmesh_get_spatial_index },
     { "navmesh_set_funnel", pathfinder_navmesh_set_funnel },

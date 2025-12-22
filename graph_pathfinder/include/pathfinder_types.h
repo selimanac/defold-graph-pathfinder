@@ -177,5 +177,16 @@ namespace pathfinder
         bool     m_Bidirectional; ///< True if reverse edge exists (m_To -> m_From)
     } EdgeInfo;
 
+    typedef struct PathSmoothConfig
+    {
+        uint32_t m_SampleSegment;               // All
+        float    m_ControlPointOffset;          // bezier_cubic
+        float    m_CurveRadius;                 // bezier_quadratic
+        float    m_BezierAdaptiveTightness;     // bezier_adaptive
+        float    m_BezierAdaptiveRoundness;     // bezier_adaptive
+        float    m_BezierAdaptiveMaxCornerDist; // bezier_adaptive
+        float    m_ArcRadius;                   // circular_arc
+    } PathSmoothConfig;
+
 } // namespace pathfinder
 #endif

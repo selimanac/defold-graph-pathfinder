@@ -50,8 +50,8 @@ local function find_path()
 end
 
 function init(self)
-	--	profiler.enable_ui(true)
-	--	profiler.set_ui_view_mode(profiler.VIEW_MODE_MINIMIZED)
+	profiler.enable_ui(true)
+	profiler.set_ui_view_mode(profiler.VIEW_MODE_MINIMIZED)
 	msg.post(".", "acquire_input_focus")
 	cam                    = msg.url("/camera#camera")
 	data.path_smoothing_id = pathfinder.add_path_smoothing(const.SMOOTHING_CONFIG)

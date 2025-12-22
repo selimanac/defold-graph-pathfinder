@@ -23,8 +23,8 @@ namespace pathfinder
         //==========================================================
         typedef struct SmoothConfig
         {
-            pathfinder::PathSmoothStyle       m_PathSmoothStyle;
-            navigation::AgentPathSmoothConfig m_PathSmoothConfig;
+            pathfinder::PathSmoothStyle  m_PathSmoothStyle;
+            pathfinder::PathSmoothConfig m_PathSmoothConfig;
         } SmoothConfig;
 
         const static uint8_t               MAX_SMOOTH_CONFIG = 64;
@@ -249,7 +249,7 @@ namespace pathfinder
         // Smooth
         //==========================================================
 
-        uint32_t add_smooth_config(uint32_t path_style, const navigation::AgentPathSmoothConfig path_smooth_config)
+        uint32_t add_smooth_config(uint32_t path_style, const pathfinder::PathSmoothConfig path_smooth_config)
         {
             if (m_SmoothConfigs.Full())
             {
@@ -266,7 +266,7 @@ namespace pathfinder
             return m_SmoothId;
         }
 
-        void update_smooth_config(uint32_t smooth_id, uint32_t path_style, const navigation::AgentPathSmoothConfig path_smooth_config)
+        void update_smooth_config(uint32_t smooth_id, uint32_t path_style, const pathfinder::PathSmoothConfig path_smooth_config)
         {
             SmoothConfig* smooth_config = m_SmoothConfigs.Get(smooth_id);
             if (smooth_config == 0x0)
