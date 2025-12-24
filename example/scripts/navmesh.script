@@ -29,6 +29,10 @@ function init(self)
 	pathfinder.navmesh_init(300, 6, 32, 32, 64, 5, 10, 500, true)
 	pathfinder.navmesh_set_buffer(navmesh_buffer)
 	spatial_index_grid = pathfinder.navmesh_get_spatial_index()
+
+
+	start_position = go.get_position("/path_start")
+	goal_position = go.get_position("/path_end")
 end
 
 function update(self, dt)
@@ -45,6 +49,7 @@ function on_input(self, action_id, action)
 		mouse_position.y = action.y
 	end
 
+	-- Hold LEFT SHIFT for camera and rotate with RIGHT MOUSE BUTTON
 	if action_id == const.TRIGGERS.LEFT_SHIFT then
 		if action.pressed then
 			shift_pressed = true
@@ -56,14 +61,16 @@ function on_input(self, action_id, action)
 	if not shift_pressed then
 		if not action.pressed then return end
 
-		if action_id == const.TRIGGERS.MOUSE_BUTTON_LEFT then
+
+		if action_id == const.TRIGGERS.MOUSE_BUTTON_LEFT then -- LEFT CLICK for start position
 			start_position = utils.screen_to_plane(cam, action.screen_x, action.screen_y)
 			go.set_position(start_position, "/path_start")
-		elseif action_id == const.TRIGGERS.MOUSE_BUTTON_RIGHT then
+		elseif action_id == const.TRIGGERS.MOUSE_BUTTON_RIGHT then -- RIGHT CLICK for goal position
 			goal_position = utils.screen_to_plane(cam, action.screen_x, action.screen_y)
 			go.set_position(goal_position, "/path_end")
 		end
 
+		-- Press SPACE to add agent
 		if action_id == const.TRIGGERS.SPACE and action.pressed then
 			agents.add(start_position, goal_position)
 		end
