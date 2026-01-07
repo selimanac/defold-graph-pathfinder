@@ -4,6 +4,11 @@
 
 A high-performance A* pathfinding library written in C++11, designed for real-time games and simulations with hundreds to thousands of moving objects. Built with a focus on performance, using flat array data structures and advanced caching mechanisms.
 
+## Graph Pathfinder Editor
+
+![Defold Graph Pathfinder](https://raw.githubusercontent.com/selimanac/defold-graph-pathfinder-editor/refs/heads/main/.github/editor.jpg)
+
+https://github.com/selimanac/defold-graph-pathfinder-editor
 
 ## Discussions & Release Notes
 
