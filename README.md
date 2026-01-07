@@ -19,6 +19,8 @@ For detailed function descriptions and usage examples:
 
 ## Graph Pathfinder Editor
 
+A visual editor for creating and editing navigation graphs for the Defold Graph Pathfinder extension.
+
 ![Defold Graph Pathfinder](https://raw.githubusercontent.com/selimanac/defold-graph-pathfinder-editor/refs/heads/main/.github/editor.jpg)
 
 https://github.com/selimanac/defold-graph-pathfinder-editor
