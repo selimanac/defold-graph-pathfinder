@@ -4,6 +4,12 @@
 ---Defold Graph Pathfinder Extension
 ---High-performance A* pathfinding library for real-time games and simulations.
 ---@class pathfinder
+local pathfinder = {}
+
+---Invalid ID constant for cells and nodes (UINT32_MAX = 4294967295)
+---Used to indicate invalid cell ID when position is not in any navmesh cell
+---@type number
+pathfinder.INVALID_ID = 4294967295
 
 ---@class PathNode
 ---@field x number X coordinate of the node position
