@@ -1,15 +1,42 @@
----@diagnostic disable: missing-return, unused-local
-
----@meta pathfinder
 ---Defold Graph Pathfinder Extension
 ---High-performance A* pathfinding library for real-time games and simulations.
 ---@class pathfinder
-local pathfinder = {}
-
----Invalid ID constant for cells and nodes (UINT32_MAX = 4294967295)
----Used to indicate invalid cell ID when position is not in any navmesh cell
----@type number
-pathfinder.INVALID_ID = 0xFFFFFFFF
+pathfinder = {
+    INVALID_ID = 0xFFFFFFFF,  -- Invalid ID constant for cells and nodes (UINT32_MAX)
+    
+    ---PathStatus enum - Status codes for pathfinding operations
+    ---@enum PathStatus
+    PathStatus = {
+        SUCCESS = 0,                         -- Operation completed successfully
+        SUCCESS_START_FALLBACK = 1,          -- Success, but start position used fallback to nearest cell (navmesh only)
+        SUCCESS_GOAL_FALLBACK = 2,           -- Success, but goal position used fallback to nearest cell (navmesh only)
+        ERROR_NO_PATH = -1,                  -- No valid path found between start and goal nodes
+        ERROR_START_GOAL_NODE_SAME = -12,    -- Start node ID and goal node ID are the same
+        ERROR_START_NODE_INVALID = -2,       -- Invalid or inactive start node ID
+        ERROR_GOAL_NODE_INVALID = -3,        -- Invalid or inactive goal node ID
+        ERROR_START_NOT_IN_CELL = -13,       -- Start position not in any cell, fallback disabled (navmesh only)
+        ERROR_GOAL_NOT_IN_CELL = -14,        -- Goal position not in any cell, fallback disabled (navmesh only)
+        ERROR_NODE_FULL = -4,                -- Node capacity reached, cannot add more nodes
+        ERROR_EDGE_FULL = -5,                -- Edge capacity reached, cannot add more edges
+        ERROR_HEAP_FULL = -6,                -- Heap pool exhausted during pathfinding
+        ERROR_PATH_TOO_LONG = -7,            -- Path exceeds maximum allowed length
+        ERROR_GRAPH_CHANGED = -8,            -- Graph modified during pathfinding (retrying)
+        ERROR_GRAPH_CHANGED_TOO_OFTEN = -11, -- Graph changed too often during pathfinding
+        ERROR_NO_PROJECTION = -9,            -- Cannot project point onto graph (no edges exist)
+        ERROR_VIRTUAL_NODE_FAILED = -10      -- Failed to create or connect virtual node
+    },
+    
+    ---PathSmoothStyle enum - Path smoothing algorithms
+    ---@enum PathSmoothStyle
+    PathSmoothStyle = {
+        NONE = 0,             -- No smoothing (angular paths, fastest)
+        CATMULL_ROM = 1,      -- Passes through all waypoints with smooth curves
+        BEZIER_CUBIC = 2,     -- Very smooth curves with two control points
+        BEZIER_QUADRATIC = 3, -- Corner-only smoothing (recommended)
+        BEZIER_ADAPTIVE = 4,  -- Adaptive corner smoothing (highly customizable)
+        CIRCULAR_ARC = 5      -- Perfect circular arcs (best for tile-based games)
+    }
+}
 
 ---@class PathNode
 ---@field x number X coordinate of the node position
@@ -30,39 +57,6 @@ pathfinder.INVALID_ID = 0xFFFFFFFF
 ---@field bezier_adaptive_roundness number Roundness for BEZIER_ADAPTIVE style (default: 0.5)
 ---@field bezier_adaptive_max_corner_distance number Maximum corner distance for BEZIER_ADAPTIVE (default: 50.0)
 ---@field bezier_arc_radius number Arc radius for CIRCULAR_ARC style (default: 60.0)
-
----PathStatus enum - Status codes for pathfinding operations
----@enum PathStatus
-pathfinder.PathStatus = {
-    SUCCESS = 0,                         -- Operation completed successfully
-    SUCCESS_START_FALLBACK = 1,          -- Success, but start position used fallback to nearest cell (navmesh only)
-    SUCCESS_GOAL_FALLBACK = 2,           -- Success, but goal position used fallback to nearest cell (navmesh only)
-    ERROR_NO_PATH = -1,                  -- No valid path found between start and goal nodes
-    ERROR_START_GOAL_NODE_SAME = -12,    -- Start node ID and goal node ID are the same
-    ERROR_START_NODE_INVALID = -2,       -- Invalid or inactive start node ID
-    ERROR_GOAL_NODE_INVALID = -3,        -- Invalid or inactive goal node ID
-    ERROR_START_NOT_IN_CELL = -13,       -- Start position not in any cell, fallback disabled (navmesh only)
-    ERROR_GOAL_NOT_IN_CELL = -14,        -- Goal position not in any cell, fallback disabled (navmesh only)
-    ERROR_NODE_FULL = -4,                -- Node capacity reached, cannot add more nodes
-    ERROR_EDGE_FULL = -5,                -- Edge capacity reached, cannot add more edges
-    ERROR_HEAP_FULL = -6,                -- Heap pool exhausted during pathfinding
-    ERROR_PATH_TOO_LONG = -7,            -- Path exceeds maximum allowed length
-    ERROR_GRAPH_CHANGED = -8,            -- Graph modified during pathfinding (retrying)
-    ERROR_GRAPH_CHANGED_TOO_OFTEN = -11, -- Graph changed too often during pathfinding
-    ERROR_NO_PROJECTION = -9,            -- Cannot project point onto graph (no edges exist)
-    ERROR_VIRTUAL_NODE_FAILED = -10      -- Failed to create or connect virtual node
-}
-
----PathSmoothStyle enum - Path smoothing algorithms
----@enum PathSmoothStyle
-pathfinder.PathSmoothStyle = {
-    NONE = 0,             -- No smoothing (angular paths, fastest)
-    CATMULL_ROM = 1,      -- Passes through all waypoints with smooth curves
-    BEZIER_CUBIC = 2,     -- Very smooth curves with two control points
-    BEZIER_QUADRATIC = 3, -- Corner-only smoothing (recommended)
-    BEZIER_ADAPTIVE = 4,  -- Adaptive corner smoothing (highly customizable)
-    CIRCULAR_ARC = 5      -- Perfect circular arcs (best for tile-based games)
-}
 
 ---Initialize the pathfinding system. Must be called before any other pathfinding operations.
 ---@param max_nodes number Maximum number of nodes in the graph
@@ -311,5 +305,3 @@ function pathfinder.navmesh_get_spatial_index() end
 ---Get comprehensive statistics about navmesh pathfinding caches.
 ---@return table stats Table containing cache statistics with fields: path_cache, distance_cache
 function pathfinder.navmesh_get_stats() end
-
-return pathfinder
