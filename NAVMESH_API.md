@@ -303,7 +303,7 @@ local cell_id, center_x, center_y = pathfinder.navmesh_cell_at_position(x, y)
 - `y` (number): Y coordinate of position to query (typically Z in 3D)
 
 **Returns:**
-- `cell_id` (number): ID of cell containing position, or `pathfinder.INVALID_ID` (4294967295) if not found
+- `cell_id` (number): ID of cell containing position, or `pathfinder.INVALID_ID` (UINT32_MAX) if not found
 - `center_x` (number): X coordinate of cell center
 - `center_y` (number): Y coordinate of cell center
 

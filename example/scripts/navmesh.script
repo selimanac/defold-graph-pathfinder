@@ -19,6 +19,19 @@ local shift_pressed      = false
 --==========================================================
 -- FUNCTIONS
 --==========================================================
+local function validate_spawn_point(x, y)
+	local cell_id, center_x, center_y = pathfinder.navmesh_cell_at_position(x, y)
+
+	if cell_id ~= pathfinder.INVALID_ID then
+		print("Position is walkable, in cell", cell_id)
+		print("Cell center:", center_x, center_y)
+		return true
+	else
+		print("Position is not walkable (outside navmesh): ", x, y)
+		return false
+	end
+end
+
 function init(self)
 	msg.post(".", "acquire_input_focus")
 
@@ -32,6 +45,11 @@ function init(self)
 
 	start_position = go.get_position("/path_start")
 	goal_position = go.get_position("/path_end")
+
+
+	-- Example 8: Validate Cell at position
+	validate_spawn_point(start_position.x, start_position.z)
+	validate_spawn_point(100, 100)
 end
 
 function update(self, dt)
@@ -63,9 +81,11 @@ function on_input(self, action_id, action)
 		if action_id == const.TRIGGERS.MOUSE_BUTTON_LEFT then -- LEFT CLICK for start position
 			start_position = utils.screen_to_plane(cam, action.screen_x, action.screen_y)
 			go.set_position(start_position, "/path_start")
+			validate_spawn_point(start_position.x, start_position.z)
 		elseif action_id == const.TRIGGERS.MOUSE_BUTTON_RIGHT then -- RIGHT CLICK for goal position
 			goal_position = utils.screen_to_plane(cam, action.screen_x, action.screen_y)
 			go.set_position(goal_position, "/path_end")
+			validate_spawn_point(goal_position.x, goal_position.z)
 		end
 
 		-- Press SPACE to add agent
