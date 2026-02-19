@@ -1492,6 +1492,12 @@ static void LuaInit(lua_State* L)
     luaL_register(L, MODULE_NAME, Module_methods);
 
     // ----------------------------
+    // INVALID_ID constant
+    // ----------------------------
+    lua_pushnumber(L, (lua_Number)pathfinder::INVALID_ID);
+    lua_setfield(L, -2, "INVALID_ID");
+
+    // ----------------------------
     // PathStatus enum
     // ----------------------------
     lua_newtable(L); // PathStatus table

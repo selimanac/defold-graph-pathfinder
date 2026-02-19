@@ -303,7 +303,7 @@ local cell_id, center_x, center_y = pathfinder.navmesh_cell_at_position(x, y)
 - `y` (number): Y coordinate of position to query (typically Z in 3D)
 
 **Returns:**
-- `cell_id` (number): ID of cell containing position, or special value if not found
+- `cell_id` (number): ID of cell containing position, or `pathfinder.INVALID_ID` (UINT32_MAX) if not found
 - `center_x` (number): X coordinate of cell center
 - `center_y` (number): Y coordinate of cell center
 
@@ -319,7 +319,7 @@ Uses the spatial grid index for O(1) average lookup, then performs point-in-poly
 function validate_spawn_point(self, x, z)
     local cell_id, center_x, center_y = pathfinder.navmesh_cell_at_position(x, z)
     
-    if cell_id ~= pathfinder.INVALID_CELL_ID then
+    if cell_id ~= pathfinder.INVALID_ID then
         print("Position is walkable, in cell", cell_id)
         print("Cell center:", center_x, center_y)
         return true
