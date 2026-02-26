@@ -36,6 +36,7 @@ namespace pathfinder
         // Update
         void set_update_state(bool state);
         void set_update_frequency(uint8_t update_frequency);
+        void set_max_time_step(float max_time_step);
         void update();
 
         // Smooth
