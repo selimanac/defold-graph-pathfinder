@@ -1492,6 +1492,12 @@ static void LuaInit(lua_State* L)
     luaL_register(L, MODULE_NAME, Module_methods);
 
     // ----------------------------
+    // INVALID_ID constant
+    // ----------------------------
+    lua_pushnumber(L, (lua_Number)pathfinder::INVALID_ID);
+    lua_setfield(L, -2, "INVALID_ID");
+
+    // ----------------------------
     // PathStatus enum
     // ----------------------------
     lua_newtable(L); // PathStatus table
@@ -1548,9 +1554,11 @@ static dmExtension::Result AppInitializeGraphPathfinder(dmExtension::AppParams* 
 {
     dmLogInfo("AppInitializeGraphPathfinder");
     uint8_t update_frequency = dmConfigFile::GetInt(params->m_ConfigFile, "display.update_frequency", 0);
+    float   max_time_step = dmConfigFile::GetFloat(params->m_ConfigFile, "engine.max_time_step", 1.0f / 30);
 
     pathfinder::extension::init();
     pathfinder::extension::set_update_frequency(update_frequency);
+    pathfinder::extension::set_max_time_step(max_time_step);
 
     return dmExtension::RESULT_OK;
 }

@@ -5,13 +5,25 @@
 A high-performance A* pathfinding library written in C++11, designed for real-time games and simulations with hundreds to thousands of moving objects. Built with a focus on performance, using flat array data structures and advanced caching mechanisms.
 
 
+
 ## Discussions & Release Notes
 
 https://github.com/selimanac/defold-graph-pathfinder/discussions  
 
 ## Documentation
 
-For detailed function descriptions and usage examples, see the [API Reference](./API.md).
+For detailed function descriptions and usage examples:  
+
+- [Path API Reference](./API.md)
+- [Navmesh API Reference](./NAVMESH_API.md)
+
+## Graph Pathfinder Editor
+
+A visual editor for creating and editing navigation graphs for the Defold Graph Pathfinder extension.  
+
+https://github.com/selimanac/defold-graph-pathfinder-editor
+
+![Defold Graph Pathfinder](https://raw.githubusercontent.com/selimanac/defold-graph-pathfinder-editor/refs/heads/main/.github/editor.jpg)
 
 ## Installation
 
@@ -31,10 +43,11 @@ This library consists of three parts:
 The core library. Responsible for managing nodes, edges, and performing pathfinding.
 
 ✅ Projected Pathfinding  
+✅ Static Navmesh Pathfinding  
 ✅ Min-Heap Priority Queue  
 ✅ Path Caching  
 ✅ Distance Caching  
-❌ Smoothed Path Caching — not planned, maybe in the future  
+
 
 ### Path Smoothing
 

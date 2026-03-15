@@ -55,6 +55,7 @@ namespace pathfinder
         // Update
         //==========================================================
         static uint8_t  m_UpdateFrequency;
+        static float    m_MaxTimeStep;
         static uint64_t m_PreviousFrameTime;
         static float    m_AccumFrameTime;
         static bool     m_UpdateLoopState = true;
@@ -70,9 +71,9 @@ namespace pathfinder
             float frame_dt = (float)(frame_time / 1000000.0);
 
             // Never allow for large hitches
-            if (frame_dt > 0.5f)
+            if (frame_dt > m_MaxTimeStep)
             {
-                frame_dt = 0.5f;
+                frame_dt = m_MaxTimeStep;
             }
 
             // Variable frame rate
@@ -221,6 +222,11 @@ namespace pathfinder
         {
             m_UpdateLoopState = state;
         }
+
+        void set_max_time_step(float max_time_step)
+        {
+            m_MaxTimeStep = max_time_step;
+        };
 
         void set_update_frequency(uint8_t update_frequency)
         {

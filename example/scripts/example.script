@@ -163,7 +163,9 @@ end
 
 function on_input(self, action_id, action)
 	-- Track mouse position for projected pathfinding
-	mouse_position.x = action.x
-	mouse_position.y = action.y
-	go.set_position(mouse_position, "/mouse")
+	if action.x then
+		mouse_position.x = action.x
+		mouse_position.y = action.y
+		go.set_position(mouse_position, "/mouse")
+	end
 end
