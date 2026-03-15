@@ -19,6 +19,9 @@
 
 #include "dmarray_include.h"
 #include "dmhashtable_include.h"
+#include "pathfinder_cache.h"
+#include "pathfinder_distance_cache.h"
+#include "pathfinder_heap.h"
 #include "pathfinder_types.h"
 #include <stdbool.h>
 #include <stdint.h>
@@ -52,6 +55,35 @@ namespace pathfinder
             uint32_t  m_NeighborCount;   // Number of neighbors (0-8 typically)
             bool      m_Walkable;        // Is walkable? (false = removed/obstacle)
         } Cell;
+
+        /*******************************************/
+        // POLYGON A* SEARCH NODE (for A* scratch buffer)
+        /*******************************************/
+
+        /**
+         * @brief Internal A* search node for polygon pathfinding
+         *
+         * Stores per-cell state during a single A* search.  A pre-allocated array
+         * of these nodes (sized to m_MaxCells) is stored in NavMeshContext to avoid
+         * a heap allocation on every find_polygon_path() call.
+         *
+         * Generation Counter:
+         * A generation counter replaces a full-array reset between searches.
+         * If m_Generation does not match the context's current generation, the node
+         * is treated as unvisited (stale values are ignored).  This keeps reset cost
+         * proportional to the number of cells actually visited rather than the total
+         * cell count.
+         */
+        typedef struct PolygonAStarNode
+        {
+            uint32_t m_CellIdx;    // Index into cell array
+            float    m_GScore;     // Cost from start
+            float    m_FScore;     // Estimated total cost (g + h)
+            uint32_t m_CameFrom;   // Previous cell in path (INVALID_ID if none)
+            bool     m_InOpen;     // In open set
+            bool     m_InClosed;   // In closed set
+            uint32_t m_Generation; // Generation stamp — 0 means uninitialized
+        } PolygonAStarNode;
 
         /*******************************************/
         // POLYGON GRAPH NODE (for Recast-style A*)
@@ -238,6 +270,49 @@ namespace pathfinder
             dmArray<PolygonNode>*            m_PolygonGraph;  // Cached polygon graph (built once, reused)
             SpatialConfig                    m_SpatialConfig; // Configuration for spatial index grid sizing
         } PolygonNavMesh;
+
+        /*******************************************/
+        // NAVMESH CONTEXT (user-managed lifetime)
+        /*******************************************/
+
+        /**
+         * @brief User-managed NavMesh context
+         *
+         * Encapsulates all state required for polygon-based pathfinding.
+         * Created via create_context(), destroyed via destroy_context().
+         *
+         * Memory Ownership:
+         * - User creates and owns this context (malloc'd in create_context)
+         * - All sub-contexts (heap, cache, distance_cache) are owned by this context
+         * - User must call destroy_context() to free all memory
+         *
+         * Multiple instances are supported by creating separate contexts.
+         *
+         * Cache Efficiency:
+         * - Hot data (NavMesh pointer, sub-contexts) placed first for cache locality
+         * - Configuration (FunnelConfig) placed last as it is rarely accessed
+         */
+        typedef struct NavMeshContext
+        {
+            // Hot path: frequently accessed during pathfinding
+            PolygonNavMesh*                       m_NavMesh;             // Main navmesh container
+            heap::HeapContext*                    m_HeapContext;         // Heap for A* priority queue
+            distance_cache::DistanceCacheContext* m_DistanceCacheContext; // Distance heuristic cache
+            cache::CacheContext*                  m_CacheContext;         // Path result cache (LRU)
+
+            // Pre-allocated A* scratch buffer (avoids per-call heap allocation)
+            // Sized to m_MaxCells at creation time.  Reused across find_polygon_path()
+            // calls via the generation counter m_AStarGeneration.
+            PolygonAStarNode* m_AStarScratch;     // Flat array [0..m_MaxCells-1]
+            uint32_t          m_AStarGeneration;  // Incremented each search; 0 is reserved
+
+            // Capacity limits
+            uint32_t m_MaxCells; // Maximum cell capacity
+
+            // Cold path: algorithm configuration
+            FunnelConfig m_FunnelConfig; // Funnel algorithm tolerances
+            bool         m_DebugMode;    // Runtime debug flag
+        } NavMeshContext;
 
     } // namespace navmesh
 } // namespace pathfinder

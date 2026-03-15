@@ -10,6 +10,11 @@
  * - LRU path caching with version-tracked invalidation
  * - Runtime agent radius collision avoidance via portal offsetting
  *
+ * Context-Based API:
+ * All operations take a NavMeshContext* as the first parameter.
+ * Use create_context() to allocate and initialize state, destroy_context() to free it.
+ * Multiple independent NavMesh instances are supported.
+ *
  * Algorithm Pipeline:
  * 1. Build NavMesh: Add cells → Build adjacency graph
  * 2. Pathfinding: Polygon A* (find corridor) → Funnel (extract shortest path)
@@ -29,9 +34,6 @@
 #include "pathfinder_constants.h"
 #include "pathfinder_navmesh_types.h"
 #include "pathfinder_types.h"
-#include "pathfinder_heap.h"
-#include "pathfinder_cache.h"
-#include "pathfinder_distance_cache.h"
 #include <stdint.h>
 
 namespace pathfinder
@@ -39,13 +41,12 @@ namespace pathfinder
     namespace navmesh
     {
         /*******************************************/
-        // INITIALIZATION & SHUTDOWN
+        // CONTEXT CREATION & DESTRUCTION
         /*******************************************/
 
         /**
-         * @brief Initialize the NavMesh pathfinding system
+         * @brief Create a new NavMesh context
          * @param max_cells Maximum number of polygon cells in the navigation mesh
-         * @param max_edges_per_cell Maximum edges/neighbors per cell
          * @param pool_block_size Heap pool block size for A* algorithm (default: 32, automatically clamped to max_cells if larger)
          * @param min_cell_size Minimum spatial index grid cell size (default: 1.0f)
          * @param max_cell_size Maximum spatial index grid cell size (default: 2.0f)
@@ -53,9 +54,13 @@ namespace pathfinder
          * @param cache_size Number of paths to cache (default: 32, set to 0 to disable caching)
          * @param max_cache_path_length Maximum length of cached paths in cells (default: 64)
          * @param debug Enable debug output (default: false, only works if NAVMESH_DEBUG is enabled at compile time)
+         * @return Pointer to the created context, or NULL on allocation failure
          *
          * Allocates all memory upfront for cells, adjacency, spatial index, and pathfinding state.
          * Also initializes heap pool, path cache, and distance cache subsystems.
+         *
+         * NOTE: This NavMesh system supports triangle cells only (vertex_count == 3).
+         * build_adjacency() and the internal polygon graph are optimized for triangles.
          *
          * IMPORTANT: The heap pool capacity equals max_cells. If pool_block_size > max_cells,
          * it will be automatically clamped to max_cells to prevent heap allocation failures.
@@ -69,32 +74,31 @@ namespace pathfinder
          *
          * DEBUG: Set debug=true to enable diagnostic output (requires NAVMESH_DEBUG=1 at compile time).
          * - When NAVMESH_DEBUG=0: debug parameter is ignored, no overhead
-         * - When NAVMESH_DEBUG=1: debug parameter controls runtime output
+         * - When NAVMESH_DEBUG=1: debug parameter controls runtime output stored in NavMeshContext
          *
          * Time Complexity: O(max_cells + spatial_grid_size)
          * Memory: O(max_cells * (vertices + neighbors) + spatial_grid_size)
-         *
-         * Must be called before any other navmesh operations.
          */
-        void init(uint32_t max_cells,
-                  uint32_t max_edges_per_cell,
-                  uint32_t pool_block_size = 32,
-                  float    min_cell_size = 1.0f,
-                  float    max_cell_size = 2.0f,
-                  uint32_t max_grid_dim = 1000,
-                  uint32_t cache_size = 32,
-                  uint32_t max_cache_path_length = 64,
-                  bool     debug = false);
+        NavMeshContext* create_context(uint32_t max_cells,
+                                       uint32_t pool_block_size = 32,
+                                       float    min_cell_size = 1.0f,
+                                       float    max_cell_size = 2.0f,
+                                       uint32_t max_grid_dim = 1000,
+                                       uint32_t cache_size = 32,
+                                       uint32_t max_cache_path_length = 64,
+                                       bool     debug = false);
 
         /**
-         * @brief Shutdown and cleanup the NavMesh system
+         * @brief Destroy a NavMesh context and free all associated memory
+         * @param ctx Context to destroy (may be NULL, which is a no-op)
          *
-         * Deallocates all memory and resets version counters.
+         * Deallocates all memory including cells, spatial index, heap, cache, and distance cache.
          * All cell IDs become invalid after this call.
+         * Does nothing if ctx is NULL.
          *
-         * Time Complexity: O(1)
+         * Time Complexity: O(cell_count) to free per-cell vertex and neighbor arrays
          */
-        void shutdown();
+        void destroy_context(NavMeshContext* ctx);
 
         /*******************************************/
         // FUNNEL ALGORITHM CONFIGURATION
@@ -102,11 +106,12 @@ namespace pathfinder
 
         /**
          * @brief Initialize funnel algorithm configuration with custom tolerances
+         * @param ctx NavMesh context
          * @param portal_vertex_tolerance Tolerance for vertex matching in portal extraction (default: 0.002)
          * @param portal_collapse_threshold Threshold for collapsing narrow portals (default: 0.1)
          * @param waypoint_duplicate_tolerance Tolerance for duplicate waypoint filtering (default: 0.001)
          *
-         * Must be called AFTER navmesh::init() to customize funnel algorithm tolerances.
+         * Must be called AFTER create_context() to customize funnel algorithm tolerances.
          * If not called, default values are used.
          *
          * WHEN TO CUSTOMIZE:
@@ -119,13 +124,14 @@ namespace pathfinder
          *
          * Example:
          * @code
-         * navmesh::init(100, 8, 32);
-         * navmesh::funnel_init(0.005f, 0.2f, 0.01f);  // Custom tolerances for large worlds
+         * NavMeshContext* ctx = navmesh::create_context(100, 8, 32);
+         * navmesh::funnel_init(ctx, 0.005f, 0.2f, 0.01f);  // Custom tolerances for large worlds
          * @endcode
          */
-        void funnel_init(float portal_vertex_tolerance = 0.002f,
-                         float portal_collapse_threshold = 0.1f,
-                         float waypoint_duplicate_tolerance = 0.001f);
+        void funnel_init(NavMeshContext* ctx,
+                         float           portal_vertex_tolerance = 0.002f,
+                         float           portal_collapse_threshold = 0.1f,
+                         float           waypoint_duplicate_tolerance = 0.001f);
 
         /*******************************************/
         // CELL MANAGEMENT
@@ -133,13 +139,18 @@ namespace pathfinder
 
         /**
          * @brief Add a polygon cell to the navigation mesh
+         * @param ctx NavMesh context
          * @param vertices Array of polygon vertices (must be counter-clockwise or clockwise)
-         * @param vertex_count Number of vertices (typically 3 for triangles, but supports general convex polygons)
+         * @param vertex_count Number of vertices (must be 3; only triangle cells are supported)
          * @param status Output parameter for operation status (optional)
-         * @return Cell ID (0 to max_cells-1) on success, ERROR (UINT32_MAX) on failure
+         * @return Cell ID (0 to max_cells-1) on success, INVALID_ID on failure
          *
-         * Creates a new walkable polygon cell with computed centroid.
+         * Creates a new walkable triangle cell with computed centroid.
          * Cell IDs are assigned sequentially and remain stable until removed.
+         *
+         * TRIANGLE-ONLY: Only triangle cells (vertex_count == 3) are supported.
+         * build_adjacency() silently skips cells with vertex_count != 3.
+         * Most navigation meshes are built from triangles; n-gons are not supported.
          *
          * Time Complexity: O(vertex_count) for centroid calculation
          * Success: status = SUCCESS, returns valid cell ID
@@ -148,23 +159,28 @@ namespace pathfinder
          * Note: Does not automatically create adjacency edges. Use build_adjacency() or
          * add_edge_manual() to connect cells after adding all polygons.
          */
-        uint32_t add_cell(Vec2* vertices, uint32_t vertex_count, PathStatus* status);
+        uint32_t add_cell(NavMeshContext* ctx,
+                          Vec2*           vertices,
+                          uint32_t        vertex_count,
+                          PathStatus*     status);
 
         /**
          * @brief Remove a cell from the navigation mesh
+         * @param ctx NavMesh context
          * @param cell_id ID of cell to remove
          *
          * Marks cell as unwalkable and removes all edges connected to/from this cell.
          * Invalidates cached paths containing this cell.
          * Cell ID slot becomes available for reuse via add_cell().
          *
-         * Time Complexity: O(max_cells * max_edges_per_cell) - must scan all edges
+         * Time Complexity: O(max_cells * 3) - must scan all triangle neighbor lists
          * Does nothing if cell ID is invalid or already removed.
          */
-        void remove_cell(uint32_t cell_id);
+        void remove_cell(NavMeshContext* ctx, uint32_t cell_id);
 
         /**
          * @brief Get the center position of a cell
+         * @param ctx NavMesh context
          * @param cell_id Cell ID to query
          * @return Vec2 centroid position of the cell
          *
@@ -173,7 +189,7 @@ namespace pathfinder
          * Time Complexity: O(1)
          * Warning: No bounds checking. Ensure cell_id is valid.
          */
-        Vec2 get_cell_center(uint32_t cell_id);
+        Vec2 get_cell_center(NavMeshContext* ctx, uint32_t cell_id);
 
         /*******************************************/
         // ADJACENCY & GRAPH BUILDING
@@ -181,24 +197,30 @@ namespace pathfinder
 
         /**
          * @brief Build adjacency graph from cell edges using edge hashing
+         * @param ctx NavMesh context
          *
          * Automatically detects shared edges between cells by hashing edge vertex pairs.
          * Creates bidirectional adjacency links for all pairs of cells sharing an edge.
          *
+         * TRIANGLE-ONLY: Only triangle cells (vertex_count == 3) are processed.
+         * Cells with a different vertex count are silently skipped. Each triangle has
+         * at most 3 neighbors (one per edge), matching most real-world NavMesh data.
+         *
          * Algorithm:
-         * 1. For each cell, hash all edges (vertex pairs)
+         * 1. For each triangle cell, hash all 3 edges (vertex pairs)
          * 2. Match edges with identical hash values
          * 3. Create bidirectional neighbor links for matches
          *
-         * Time Complexity: O(max_cells * avg_vertices_per_cell)
+         * Time Complexity: O(max_cells * 3)
          * Must be called after adding all cells but before pathfinding.
          *
          * Note: Replaces any existing adjacency data.
          */
-        void build_adjacency();
+        void build_adjacency(NavMeshContext* ctx);
 
         /**
          * @brief Manually add edge between two cells
+         * @param ctx NavMesh context
          * @param cell1_id First cell ID
          * @param cell2_id Second cell ID
          *
@@ -208,20 +230,21 @@ namespace pathfinder
          * Time Complexity: O(1)
          * Does nothing if either cell is invalid or edge already exists.
          */
-        void add_edge_manual(uint32_t cell1_id, uint32_t cell2_id);
+        void add_edge_manual(NavMeshContext* ctx, uint32_t cell1_id, uint32_t cell2_id);
 
         /**
          * @brief Remove edge between two cells
+         * @param ctx NavMesh context
          * @param cell1_id First cell ID
          * @param cell2_id Second cell ID
          *
          * Removes bidirectional adjacency link between cells.
          * Invalidates cached paths using this edge.
          *
-         * Time Complexity: O(max_edges_per_cell) - must search neighbors
+         * Time Complexity: O(3) - must search up to 3 triangle neighbors
          * Does nothing if edge doesn't exist or cells are invalid.
          */
-        void remove_edge(uint32_t cell1_id, uint32_t cell2_id);
+        void remove_edge(NavMeshContext* ctx, uint32_t cell1_id, uint32_t cell2_id);
 
         /*******************************************/
         // PATHFINDING OPERATIONS
@@ -229,6 +252,7 @@ namespace pathfinder
 
         /**
          * @brief Find smoothed path through navigation mesh (Polygon A* + Funnel Algorithm)
+         * @param ctx NavMesh context
          * @param start_cell Starting cell ID
          * @param goal_cell Goal cell ID
          * @param start_pos Starting position within start_cell
@@ -261,24 +285,20 @@ namespace pathfinder
          * - status = ERROR_GOAL_NODE_INVALID: goal_cell invalid or unwalkable
          * - status = ERROR_NO_PATH: no cell corridor exists between cells
          * - status = ERROR_HEAP_FULL: heap pool exhausted during A*
-         *
-         * Notes:
-         * - Agent radius offset provides runtime collision avoidance
-         * - Narrow portals (< agent_radius * collapse_threshold) collapse to midpoint
-         * - out_smooth_path array grows automatically if needed
-         * - max_length is advisory, not strictly enforced
          */
-        uint32_t find_path_smoothed(uint32_t       start_cell,
-                                    uint32_t       goal_cell,
-                                    Vec2           start_pos,
-                                    Vec2           goal_pos,
-                                    dmArray<Vec2>* out_smooth_path,
-                                    uint32_t       max_length,
-                                    float          agent_radius,
-                                    PathStatus*    status);
+        uint32_t find_path_smoothed(NavMeshContext* ctx,
+                                    uint32_t        start_cell,
+                                    uint32_t        goal_cell,
+                                    Vec2            start_pos,
+                                    Vec2            goal_pos,
+                                    dmArray<Vec2>*  out_smooth_path,
+                                    uint32_t        max_length,
+                                    float           agent_radius,
+                                    PathStatus*     status);
 
         /**
          * @brief Find cell containing a given position using spatial index
+         * @param ctx NavMesh context
          * @param position Position to query
          * @param enable_fallback If true, find nearest cell when position not in any cell (default: true)
          * @param out_used_fallback Output parameter indicating if fallback was used (optional, can be NULL)
@@ -294,16 +314,15 @@ namespace pathfinder
          * Fallback Behavior:
          * - enable_fallback=true (default): Returns nearest cell, sets *out_used_fallback=true
          * - enable_fallback=false: Returns INVALID_ID, sets *out_used_fallback=false
-         *
-         * Use Cases:
-         * 1. enable_fallback=true: User can click anywhere, always get a path (original behavior)
-         * 2. enable_fallback=false: Reject clicks on walls/obstacles (prevent invalid paths)
-         * 3. Check out_used_fallback: Know if agent should move to nearest cell vs target position
          */
-        uint32_t find_cell_at_position(Vec2 position, bool enable_fallback = true, bool* out_used_fallback = NULL);
+        uint32_t find_cell_at_position(NavMeshContext* ctx,
+                                       Vec2            position,
+                                       bool            enable_fallback = true,
+                                       bool*           out_used_fallback = NULL);
 
         /**
          * @brief Find smoothed path from arbitrary positions (convenience wrapper)
+         * @param ctx NavMesh context
          * @param start_pos Starting position (any world position)
          * @param goal_pos Goal position (any world position)
          * @param out_smooth_path Output array for smoothed waypoints (Vec2 positions)
@@ -316,11 +335,6 @@ namespace pathfinder
          * High-level convenience function that combines cell lookup and pathfinding.
          * Automatically finds cells for start/goal positions and computes smooth path.
          *
-         * Algorithm:
-         * 1. Find cell containing start_pos (with optional fallback to nearest)
-         * 2. Find cell containing goal_pos (with optional fallback to nearest)
-         * 3. If cells found, call find_path_smoothed() to compute path
-         *
          * Status Codes:
          * - SUCCESS: Path found, positions were inside cells
          * - SUCCESS_START_FALLBACK: Path found, start_pos used fallback to nearest cell
@@ -330,45 +344,20 @@ namespace pathfinder
          * - ERROR_NO_PATH: Cells found but no path exists between them
          * - Other error codes: From underlying pathfinding (heap full, etc.)
          *
-         * Use Cases:
-         * 1. enable_fallback=true, status=SUCCESS: Normal path, both positions in cells
-         * 2. enable_fallback=true, status=SUCCESS_START_FALLBACK: Move agent to out_smooth_path[0]
-         * 3. enable_fallback=true, status=SUCCESS_GOAL_FALLBACK: Agent reaches nearest valid position
-         * 4. enable_fallback=false: Reject invalid clicks on walls/obstacles
-         *
-         * Example - Handle fallback for player movement:
-         * @code
-         * PathStatus status;
-         * dmArray<Vec2> path;
-         * uint32_t waypoints = find_path_from_positions(
-         *     player_pos, click_pos, &path, 64, agent_radius, true, &status
-         * );
-         *
-         * if (waypoints > 0) {
-         *     if (status == SUCCESS_START_FALLBACK || status == SUCCESS_GOAL_FALLBACK) {
-         *         // Position was outside navmesh, move to nearest valid position
-         *         move_player_to(path[0]);  // Start from first waypoint (nearest cell)
-         *     } else {
-         *         // Normal path, follow waypoints
-         *         follow_path(path);
-         *     }
-         * }
-         * @endcode
-         *
          * Time Complexity: O(find_cell × 2 + pathfinding)
-         * - Cell lookup: O(1) typical, O(N) with fallback
-         * - Pathfinding: O((C + E) log C + P)
          */
-        uint32_t find_path_from_positions(Vec2           start_pos,
-                                          Vec2           goal_pos,
-                                          dmArray<Vec2>* out_smooth_path,
-                                          uint32_t       max_length,
-                                          float          agent_radius,
-                                          bool           enable_fallback,
-                                          PathStatus*    status);
+        uint32_t find_path_from_positions(NavMeshContext* ctx,
+                                          Vec2            start_pos,
+                                          Vec2            goal_pos,
+                                          dmArray<Vec2>*  out_smooth_path,
+                                          uint32_t        max_length,
+                                          float           agent_radius,
+                                          bool            enable_fallback,
+                                          PathStatus*     status);
 
         /**
          * @brief Find raw cell corridor path without smoothing (Polygon A* only)
+         * @param ctx NavMesh context
          * @param start_cell Starting cell ID
          * @param goal_cell Goal cell ID
          * @param start_pos Starting position within start_cell (used for heuristic)
@@ -388,10 +377,9 @@ namespace pathfinder
          *
          * Success: status = SUCCESS, returns cell count > 0
          * Failure: Same error codes as find_path_smoothed()
-         *
-         * Note: Path is cached and can be reused by find_path_smoothed()
          */
-        uint32_t find_path_raw(uint32_t           start_cell,
+        uint32_t find_path_raw(NavMeshContext*    ctx,
+                               uint32_t           start_cell,
                                uint32_t           goal_cell,
                                Vec2               start_pos,
                                Vec2               goal_pos,
@@ -405,14 +393,16 @@ namespace pathfinder
 
         /**
          * @brief Get number of cells in the navigation mesh
+         * @param ctx NavMesh context
          * @return Number of active cells
          *
          * Time Complexity: O(1)
          */
-        uint32_t get_cell_count();
+        uint32_t get_cell_count(NavMeshContext* ctx);
 
         /**
          * @brief Get direct access to cell array for visualization (read-only)
+         * @param ctx NavMesh context
          * @return Pointer to internal cell array (do not modify!)
          *
          * Provides read-only access to cell data for debug rendering.
@@ -420,57 +410,62 @@ namespace pathfinder
          *
          * Time Complexity: O(1)
          */
-        Cell* get_cells();
+        Cell* get_cells(NavMeshContext* ctx);
 
         /**
          * @brief Get heap context for advanced usage (read-only)
+         * @param ctx NavMesh context
          * @return Pointer to internal heap context (do not modify!)
          *
          * Useful for debugging heap allocation and performance profiling.
          *
          * Time Complexity: O(1)
          */
-        heap::HeapContext* get_heap_context();
+        heap::HeapContext* get_heap_context(NavMeshContext* ctx);
 
         /**
          * @brief Get spatial index for visualization (read-only)
+         * @param ctx NavMesh context
          * @return Pointer to internal spatial index (do not modify!), NULL if not initialized
          *
          * Useful for debug rendering of spatial grid cells.
          *
          * Time Complexity: O(1)
          */
-        NavMeshSpatialIndex* get_spatial_index();
+        NavMeshSpatialIndex* get_spatial_index(NavMeshContext* ctx);
 
         /**
          * @brief Get cache context for statistics/testing (read-only)
+         * @param ctx NavMesh context
          * @return Pointer to internal cache context (do not modify!), NULL if caching disabled
          *
          * Use cache::get_hit_rate() and related functions to query cache performance.
          *
          * Time Complexity: O(1)
          */
-        cache::CacheContext* get_cache_context();
+        cache::CacheContext* get_cache_context(NavMeshContext* ctx);
 
         /**
          * @brief Get distance cache context for statistics/testing (read-only)
+         * @param ctx NavMesh context
          * @return Pointer to internal distance cache context (do not modify!), NULL if not initialized
          *
          * Use distance_cache functions to query cache statistics.
          *
          * Time Complexity: O(1)
          */
-        distance_cache::DistanceCacheContext* get_distance_cache_context();
+        distance_cache::DistanceCacheContext* get_distance_cache_context(NavMeshContext* ctx);
 
         /**
          * @brief Get funnel algorithm configuration (read-only)
+         * @param ctx NavMesh context
          * @return Const pointer to internal funnel configuration
          *
          * Returns the current funnel tolerances (set via funnel_init() or defaults).
          *
          * Time Complexity: O(1)
          */
-        const FunnelConfig* get_funnel_config();
+        const FunnelConfig* get_funnel_config(NavMeshContext* ctx);
 
     } // namespace navmesh
 } // namespace pathfinder

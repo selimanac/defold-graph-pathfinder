@@ -86,6 +86,10 @@ namespace pathfinder
              * @param heap_ctx Optional heap context (NULL = use global default context)
              * @param dist_cache_ctx Optional distance cache context (NULL = no caching)
              * @param cache_ctx Optional path cache context (NULL = no caching)
+             * @param astar_scratch Optional pre-allocated scratch node array sized to max_cells.
+             *        When provided with astar_generation, avoids a per-call heap allocation.
+             * @param astar_generation Pointer to the caller's generation counter.  Incremented
+             *        on every call so that stale scratch entries are detected without a full reset.
              * @return Number of cells in corridor, 0 on failure
              *
              * A* Algorithm on Polygon Graph:
@@ -127,7 +131,9 @@ namespace pathfinder
                                        PathStatus*                           status,
                                        heap::HeapContext*                    heap_ctx = NULL,
                                        distance_cache::DistanceCacheContext* dist_cache_ctx = NULL,
-                                       cache::CacheContext*                  cache_ctx = NULL);
+                                       cache::CacheContext*                  cache_ctx = NULL,
+                                       PolygonAStarNode*                     astar_scratch = NULL,
+                                       uint32_t*                             astar_generation = NULL);
 
         } // namespace astar
     } // namespace navmesh

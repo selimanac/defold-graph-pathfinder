@@ -45,28 +45,13 @@ namespace pathfinder
             const uint32_t SPATIAL_INDEX_MAX_GRID_DIM = 1000;
 
             /*******************************************/
-            // DEBUG CONFIGURATION
-            /*******************************************/
-
-            /**
-             * @brief Set debug mode for spatial index operations
-             * @param enable Enable (true) or disable (false) debug output
-             *
-             * Controls whether spatial index operations log diagnostic messages.
-             * Only has effect when NAVMESH_DEBUG is enabled at compile time.
-             * Called automatically by navmesh::init() with the debug parameter.
-             *
-             * Time Complexity: O(1)
-             */
-            void set_debug_mode(bool enable);
-
-            /*******************************************/
             // SPATIAL INDEX MANAGEMENT
             /*******************************************/
 
             /**
              * @brief Build spatial index for fast cell lookup
              * @param navmesh NavMesh to build index for
+             * @param debug Pass ctx->m_DebugMode to enable diagnostic output
              * @return Pointer to newly created spatial index, NULL on failure
              *
              * Algorithm:
@@ -85,7 +70,7 @@ namespace pathfinder
              * Caller is responsible for calling destroy_spatial_index() when done.
              * Returns NULL if NavMesh has no cells or memory allocation fails.
              */
-            NavMeshSpatialIndex* build_spatial_index(PolygonNavMesh* navmesh);
+            NavMeshSpatialIndex* build_spatial_index(PolygonNavMesh* navmesh, bool debug = false);
 
             /**
              * @brief Destroy spatial index and free all resources
@@ -108,6 +93,7 @@ namespace pathfinder
              * @param position Position to query
              * @param enable_fallback If true, find nearest cell when position not in any cell (default: true)
              * @param out_used_fallback Output parameter indicating if fallback was used (optional, can be NULL)
+             * @param debug Pass ctx->m_DebugMode to enable diagnostic output (default: false)
              * @return Cell index containing position, -1 if not found or fallback disabled
              *
              * Algorithm:
@@ -136,7 +122,11 @@ namespace pathfinder
              * 2. enable_fallback=false: Reject clicks on walls/obstacles (prevent invalid paths)
              * 3. Check out_used_fallback: Move agent to nearest cell vs target position
              */
-            int find_cell_at_position(PolygonNavMesh* navmesh, Vec2 position, bool enable_fallback = true, bool* out_used_fallback = NULL);
+            int find_cell_at_position(PolygonNavMesh* navmesh,
+                                      Vec2            position,
+                                      bool            enable_fallback = true,
+                                      bool*           out_used_fallback = NULL,
+                                      bool            debug = false);
 
             /*******************************************/
             // UTILITY FUNCTIONS
