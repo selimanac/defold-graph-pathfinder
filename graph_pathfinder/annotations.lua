@@ -2,8 +2,8 @@
 ---High-performance A* pathfinding library for real-time games and simulations.
 ---@class pathfinder
 pathfinder = {
-    INVALID_ID = 0xFFFFFFFF,  -- Invalid ID constant for cells and nodes (UINT32_MAX)
-    
+    INVALID_ID = 0xFFFFFFFF, -- Invalid ID constant for cells and nodes (UINT32_MAX)
+
     ---PathStatus enum - Status codes for pathfinding operations
     ---@enum PathStatus
     PathStatus = {
@@ -25,7 +25,7 @@ pathfinder = {
         ERROR_NO_PROJECTION = -9,            -- Cannot project point onto graph (no edges exist)
         ERROR_VIRTUAL_NODE_FAILED = -10      -- Failed to create or connect virtual node
     },
-    
+
     ---PathSmoothStyle enum - Path smoothing algorithms
     ---@enum PathSmoothStyle
     PathSmoothStyle = {
@@ -251,9 +251,9 @@ function pathfinder.get_spatial_index() end
 ---@return boolean is_initialized True if spatial index is active, false otherwise
 function pathfinder.spatial_index_initialized() end
 
----Initialize the navigation mesh pathfinding system. Must be called before any other navmesh operations.
----@param max_cells number Maximum number of polygon cells in the navigation mesh
----@param max_edges_per_cell number Maximum edges/neighbors per cell (typically 3-8)
+---Initialize a navigation mesh pathfinding context. Must be called before any other navmesh operations.
+---Multiple navmeshes can be active simultaneously; each call returns a unique navmesh_id.
+---@param max_cells number Maximum number of triangle cells in the navigation mesh
 ---@param pool_block_size number Heap pool block size for A* algorithm (default: 32)
 ---@param cache_size number Number of paths to cache (0 to disable, recommended: 16-128)
 ---@param max_cache_path_length number Maximum length of cached paths in cells (default: 256)
@@ -261,22 +261,32 @@ function pathfinder.spatial_index_initialized() end
 ---@param max_cell_size? number Maximum spatial index grid cell size (default: 10.0)
 ---@param max_grid_dim? number Maximum spatial index grid dimension (default: 1000)
 ---@param debug? boolean Enable debug output (default: false, requires NAVMESH_DEBUG=1 at compile time)
-function pathfinder.navmesh_init(max_cells, max_edges_per_cell, pool_block_size, cache_size, max_cache_path_length, min_cell_size, max_cell_size, max_grid_dim, debug) end
+---@return number navmesh_id Unique identifier for this navmesh context, required by all other navmesh functions
+function pathfinder.navmesh_init(max_cells, pool_block_size, cache_size, max_cache_path_length, min_cell_size, max_cell_size, max_grid_dim, debug) end
 
----Shutdown and cleanup the navigation mesh system.
+---Shutdown and cleanup all navigation mesh contexts.
 function pathfinder.navmesh_shutdown() end
 
+---Remove a single navigation mesh context and free its resources.
+---@param navmesh_id number Navmesh context identifier returned by navmesh_init()
+function pathfinder.navmesh_remove(navmesh_id) end
+
 ---Configure the funnel algorithm tolerances for path smoothing. Must be called AFTER navmesh_init().
+---@param navmesh_id number Navmesh context identifier returned by navmesh_init()
 ---@param portal_vertex_tolerance number Tolerance for vertex matching in portal extraction (default: 0.002)
 ---@param portal_collapse_threshold number Threshold for collapsing narrow portals (default: 0.1)
 ---@param waypoint_duplicate_tolerance number Tolerance for duplicate waypoint filtering (default: 0.001)
-function pathfinder.navmesh_set_funnel(portal_vertex_tolerance, portal_collapse_threshold, waypoint_duplicate_tolerance) end
+function pathfinder.navmesh_set_funnel(navmesh_id, portal_vertex_tolerance, portal_collapse_threshold, waypoint_duplicate_tolerance) end
 
----Load navigation mesh data from a Defold buffer.
----@param buffer buffer Defold buffer containing navigation mesh vertex data
-function pathfinder.navmesh_set_buffer(buffer) end
+---Load navigation mesh data from a Defold buffer into the given navmesh context.
+---WARNING: Only triangle cells (vertex_count == 3) are supported. Cells with a different vertex count are silently skipped.
+---Each triangle has at most 3 neighbors (one per edge), matching most real-world NavMesh data.
+---@param navmesh_id number Navmesh context identifier returned by navmesh_init()
+---@param buffer buffer Defold buffer containing navigation mesh vertex data (position stream, float32 x3)
+function pathfinder.navmesh_set_buffer(navmesh_id, buffer) end
 
----Find a smoothed path through the navigation mesh using Polygon A* and Funnel algorithm.
+---Find a smoothed path through the navigation mesh using Triangle A* and Funnel algorithm.
+---@param navmesh_id number Navmesh context identifier returned by navmesh_init()
 ---@param start_x number X coordinate of start position
 ---@param start_y number Y coordinate of start position (typically Z in 3D)
 ---@param goal_x number X coordinate of goal position
@@ -288,20 +298,23 @@ function pathfinder.navmesh_set_buffer(buffer) end
 ---@return number status PathStatus code indicating success or error
 ---@return string status_text Human-readable status message
 ---@return PathNode[] path Array of waypoint positions with x and y coordinates
-function pathfinder.navmesh_find_path(start_x, start_y, goal_x, goal_y, max_path_length, agent_radius, enable_fallback) end
+function pathfinder.navmesh_find_path(navmesh_id, start_x, start_y, goal_x, goal_y, max_path_length, agent_radius, enable_fallback) end
 
 ---Find which navigation mesh cell contains a given position.
+---@param navmesh_id number Navmesh context identifier returned by navmesh_init()
 ---@param x number X coordinate of position to query
 ---@param y number Y coordinate of position to query (typically Z in 3D)
 ---@return number cell_id ID of cell containing position, or special value if not found
 ---@return number center_x X coordinate of cell center
 ---@return number center_y Y coordinate of cell center
-function pathfinder.navmesh_cell_at_position(x, y) end
+function pathfinder.navmesh_cell_at_position(navmesh_id, x, y) end
 
 ---Get spatial index grid data for debug visualization (navmesh).
+---@param navmesh_id number Navmesh context identifier returned by navmesh_init()
 ---@return table grid Table with vertical and horizontal arrays, each containing line data with start_position and end_position (vector3)
-function pathfinder.navmesh_get_spatial_index() end
+function pathfinder.navmesh_get_spatial_index(navmesh_id) end
 
 ---Get comprehensive statistics about navmesh pathfinding caches.
+---@param navmesh_id number Navmesh context identifier returned by navmesh_init()
 ---@return table stats Table containing cache statistics with fields: path_cache, distance_cache
-function pathfinder.navmesh_get_stats() end
+function pathfinder.navmesh_get_stats(navmesh_id) end

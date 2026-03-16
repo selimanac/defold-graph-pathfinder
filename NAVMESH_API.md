@@ -1,6 +1,6 @@
 # Navmesh Pathfinding API Documentation
 
-Defold Graph Pathfinder Extension - Navigation mesh pathfinding with polygon-based A* and funnel algorithm for smooth, optimal paths through walkable areas.
+Defold Graph Pathfinder Extension - Navigation mesh pathfinding with triangle-based A* and funnel algorithm for smooth, optimal paths through walkable areas.
 
 ## Table of Contents
 
@@ -18,25 +18,20 @@ Defold Graph Pathfinder Extension - Navigation mesh pathfinding with polygon-bas
 
 ## Introduction
 
-The navmesh pathfinding system provides polygon-based pathfinding for games requiring smooth character movement through complex environments. It implements:
+The navmesh pathfinding system provides triangle-based pathfinding for games requiring smooth character movement through complex environments. It implements:
 
-- **Polygon-based A\*** algorithm for finding cell corridors through the navigation mesh
+- **Triangle-based A\*** algorithm for finding cell corridors through the navigation mesh
 - **Simple Stupid Funnel Algorithm (SSFA)** for extracting optimal smooth paths
 - **Agent radius support** for runtime collision avoidance via portal offsetting
 - **Spatial grid indexing** for fast cell lookup at arbitrary positions
 - **LRU path caching** with automatic invalidation on mesh changes
+- **Multiple simultaneous navmeshes** — each `navmesh_init()` call returns a unique `navmesh_id`; all operations are context-based
 
-**Key Features:**
-- Handles arbitrary convex polygon cells (not just triangles)
-- Automatic adjacency detection via edge hashing
-- Fallback positioning for clicks outside walkable areas
-- Cache provides 10-100× speedup for repeated queries
-- Zero runtime allocation after initialization
 
-**Performance:**
-- Pathfinding: O((C + E) log C + P) where C=cells, E=edges, P=portals
-- Cell lookup: O(1) average with spatial index
-- Memory: O(max_cells × (vertices + neighbors) + spatial_grid_size)
+
+> [!WARNING]
+> **TRIANGLE-ONLY:** Only triangle cells (`vertex_count == 3`) are supported. Cells with a different vertex count are silently skipped. Each triangle has at most 3 neighbors (one per edge), matching most real-world NavMesh data.
+
 
 ---
 
@@ -44,16 +39,15 @@ The navmesh pathfinding system provides polygon-based pathfinding for games requ
 
 ### pathfinder.navmesh_init()
 
-Initialize the navigation mesh pathfinding system. Must be called before any other navmesh operations.
+Initialize a navigation mesh pathfinding context. Returns a unique `navmesh_id` required by all other navmesh functions. Multiple navmesh contexts can be active simultaneously.
 
 **Syntax:**
 ```lua
-pathfinder.navmesh_init(max_cells, max_edges_per_cell, pool_block_size, cache_size, max_cache_path_length, min_cell_size, max_cell_size, max_grid_dim, debug)
+local navmesh_id = pathfinder.navmesh_init(max_cells, pool_block_size, cache_size, max_cache_path_length, min_cell_size, max_cell_size, max_grid_dim, debug)
 ```
 
 **Parameters:**
-- `max_cells` (number): Maximum number of polygon cells in the navigation mesh
-- `max_edges_per_cell` (number): Maximum edges/neighbors per cell (typically 3-8)
+- `max_cells` (number): Maximum number of triangle cells in the navigation mesh
 - `pool_block_size` (number): Heap pool block size for A* algorithm (default: 32)
 - `cache_size` (number): Number of paths to cache (0 to disable, recommended: 16-128)
 - `max_cache_path_length` (number): Maximum length of cached paths in cells (default: 256)
@@ -61,6 +55,9 @@ pathfinder.navmesh_init(max_cells, max_edges_per_cell, pool_block_size, cache_si
 - `max_cell_size` (number)[optional, default: 10.0]: Maximum spatial index grid cell size
 - `max_grid_dim` (number)[optional, default: 1000]: Maximum spatial index grid dimension
 - `debug` (boolean)[optional, default: false]: Enable debug output (requires NAVMESH_DEBUG=1 at compile time)
+
+**Returns:**
+- `navmesh_id` (number): Unique context identifier. Pass this to all other `navmesh_*` functions.
 
 > [!IMPORTANT]
 > The heap pool capacity equals `max_cells`. If `pool_block_size > max_cells`, it will be automatically clamped to `max_cells` to prevent heap allocation failures.
@@ -75,10 +72,9 @@ pathfinder.navmesh_init(max_cells, max_edges_per_cell, pool_block_size, cache_si
 **Example:**
 ```lua
 function init(self)
-    -- Initialize navmesh with 600 cells, 6 edges per cell
-    pathfinder.navmesh_init(
+    -- Initialize a navmesh context; store the returned id for all subsequent calls
+    self.navmesh_id = pathfinder.navmesh_init(
         600,   -- max_cells
-        6,     -- max_edges_per_cell
         32,    -- pool_block_size
         16,    -- cache_size
         256,   -- max_cache_path_length
@@ -92,7 +88,7 @@ end
 
 ### pathfinder.navmesh_shutdown()
 
-Shutdown and cleanup the navigation mesh system. Deallocates all memory and resets version counters.
+Shutdown and cleanup all navigation mesh contexts. Deallocates all memory and resets version counters.
 
 **Syntax:**
 ```lua
@@ -106,6 +102,27 @@ function final(self)
 end
 ```
 
+### pathfinder.navmesh_remove()
+
+Remove a single navigation mesh context and free its resources. Use this to release individual navmeshes while keeping others active.
+
+**Syntax:**
+```lua
+pathfinder.navmesh_remove(navmesh_id)
+```
+
+**Parameters:**
+- `navmesh_id` (number): Navmesh context identifier returned by `navmesh_init()`
+
+**Example:**
+```lua
+function on_level_unload(self)
+    -- Remove only this level's navmesh; other navmeshes remain active
+    pathfinder.navmesh_remove(self.level_navmesh_id)
+    self.level_navmesh_id = nil
+end
+```
+
 ---
 
 ## Configuration
@@ -116,10 +133,11 @@ Configure the funnel algorithm tolerances for path smoothing. Must be called AFT
 
 **Syntax:**
 ```lua
-pathfinder.navmesh_set_funnel(portal_vertex_tolerance, portal_collapse_threshold, waypoint_duplicate_tolerance)
+pathfinder.navmesh_set_funnel(navmesh_id, portal_vertex_tolerance, portal_collapse_threshold, waypoint_duplicate_tolerance)
 ```
 
 **Parameters:**
+- `navmesh_id` (number): Navmesh context identifier returned by `navmesh_init()`
 - `portal_vertex_tolerance` (number): Tolerance for vertex matching in portal extraction (default: 0.002)
 - `portal_collapse_threshold` (number): Threshold for collapsing narrow portals (default: 0.1)
 - `waypoint_duplicate_tolerance` (number): Tolerance for duplicate waypoint filtering (default: 0.001)
@@ -133,11 +151,11 @@ pathfinder.navmesh_set_funnel(portal_vertex_tolerance, portal_collapse_threshold
 **Example:**
 ```lua
 function init(self)
-    -- Initialize navmesh first
-    pathfinder.navmesh_init(600, 6, 32, 16, 256)
-    
+    self.navmesh_id = pathfinder.navmesh_init(600, 32, 16, 256)
+
     -- Customize funnel tolerances for large world
     pathfinder.navmesh_set_funnel(
+        self.navmesh_id,
         0.005,  -- portal_vertex_tolerance (increased for large scale)
         0.2,    -- portal_collapse_threshold
         0.01    -- waypoint_duplicate_tolerance
@@ -151,18 +169,22 @@ end
 
 ### pathfinder.navmesh_set_buffer()
 
-Load navigation mesh data from a Defold buffer. The buffer must contain vertex positions defining the polygon cells of the navigation mesh.
+Load navigation mesh data from a Defold buffer into the specified navmesh context.
 
 **Syntax:**
 ```lua
-pathfinder.navmesh_set_buffer(buffer)
+pathfinder.navmesh_set_buffer(navmesh_id, buffer)
 ```
 
 **Parameters:**
+- `navmesh_id` (number): Navmesh context identifier returned by `navmesh_init()`
 - `buffer` (buffer): Defold buffer containing navigation mesh vertex data
 
+> [!WARNING]
+> **TRIANGLE-ONLY:** Only triangle cells (`vertex_count == 3`) are supported. Cells with a different vertex count are silently skipped. Each triangle has at most 3 neighbors (one per edge), matching most real-world NavMesh data.
+
 **Buffer Format:**
-The buffer must have a stream named `"position"` with 3 float32 values per vertex (x, y, z). Vertices are grouped into polygons, with each polygon's vertices stored consecutively.
+The buffer must have a stream named `"position"` with 3 float32 values per vertex (x, y, z). Vertices are grouped into triangles, with each triangle's 3 vertices stored consecutively.
 
 **Example:**
 ```lua
@@ -170,13 +192,13 @@ The buffer must have a stream named `"position"` with 3 float32 values per verte
 go.property("navmesh_buffer", resource.buffer("/assets/navmesh.buffer"))
 
 function init(self)
-    -- Initialize navmesh system
-    pathfinder.navmesh_init(600, 6, 32, 16, 256)
-    
-    -- Load buffer from resource
+    -- Initialize navmesh context
+    self.navmesh_id = pathfinder.navmesh_init(600, 32, 16, 256)
+
+    -- Load buffer into context
     local buffer = resource.get_buffer(self.navmesh_buffer)
-    pathfinder.navmesh_set_buffer(buffer)
-    
+    pathfinder.navmesh_set_buffer(self.navmesh_id, buffer)
+
     -- Navmesh is now ready for pathfinding
 end
 ```
@@ -193,14 +215,15 @@ Navigation mesh buffers are typically generated from 3D modeling tools or navmes
 
 ### pathfinder.navmesh_find_path()
 
-Find a smoothed path through the navigation mesh from start to goal position using Polygon A* and Funnel algorithm.
+Find a smoothed path through the navigation mesh from start to goal position using Triangle A* and Funnel algorithm.
 
 **Syntax:**
 ```lua
-local path_length, status, status_text, path = pathfinder.navmesh_find_path(start_x, start_y, goal_x, goal_y, max_path_length, agent_radius, enable_fallback)
+local path_length, status, status_text, path = pathfinder.navmesh_find_path(navmesh_id, start_x, start_y, goal_x, goal_y, max_path_length, agent_radius, enable_fallback)
 ```
 
 **Parameters:**
+- `navmesh_id` (number): Navmesh context identifier returned by `navmesh_init()`
 - `start_x` (number): X coordinate of start position
 - `start_y` (number): Y coordinate of start position (typically Z in 3D)
 - `goal_x` (number): X coordinate of goal position
@@ -217,7 +240,7 @@ local path_length, status, status_text, path = pathfinder.navmesh_find_path(star
 
 **Algorithm Pipeline:**
 1. **Cell Lookup**: Find cells containing start and goal positions using spatial index
-2. **Polygon A\***: Find corridor of adjacent cells from start cell to goal cell
+2. **Triangle A\***: Find corridor of adjacent triangle cells from start cell to goal cell
 3. **Portal Extraction**: Extract shared edges (portals) between consecutive cells
 4. **Portal Offsetting**: If `agent_radius > 0`, offset portals inward for collision avoidance
 5. **Funnel Algorithm**: Apply SSFA to find optimal shortest path through portals
@@ -235,27 +258,25 @@ local path_length, status, status_text, path = pathfinder.navmesh_find_path(star
 ```lua
 function on_input(self, action_id, action)
     if action_id == hash("mouse_click") and action.pressed then
-        -- Convert screen to world position
         local world_pos = screen_to_world(action.x, action.y)
-        
-        -- Find path from player to clicked position
+
         local path_length, status, status_text, path = pathfinder.navmesh_find_path(
+            self.navmesh_id,    -- navmesh context
             self.player_pos.x,  -- start_x
             self.player_pos.z,  -- start_y (Z in 3D)
             world_pos.x,        -- goal_x
             world_pos.z,        -- goal_y
             128,                -- max_path_length
-            0.5,                -- agent_radius (0.5 units for collision)
+            0.5,                -- agent_radius
             true                -- enable_fallback
         )
-        
+
         if status == pathfinder.PathStatus.SUCCESS then
             print("Path found with", path_length, "waypoints")
             self.current_path = path
             self.path_index = 1
         elseif status == pathfinder.PathStatus.SUCCESS_START_FALLBACK then
             print("Path found, but start was outside navmesh")
-            -- Move player to first waypoint first
             self.current_path = path
             self.path_index = 1
         elseif status == pathfinder.PathStatus.ERROR_NO_PATH then
@@ -267,16 +288,13 @@ function on_input(self, action_id, action)
 end
 
 function update(self, dt)
-    -- Follow path
     if self.current_path and self.path_index <= #self.current_path then
         local waypoint = self.current_path[self.path_index]
         local target = vmath.vector3(waypoint.x, 0, waypoint.y)
-        
-        -- Move towards waypoint
+
         local dir = vmath.normalize(target - self.player_pos)
         self.player_pos = self.player_pos + dir * self.speed * dt
-        
-        -- Check if reached waypoint
+
         if vmath.length(target - self.player_pos) < 0.5 then
             self.path_index = self.path_index + 1
         end
@@ -295,10 +313,11 @@ Find which navigation mesh cell contains a given position.
 
 **Syntax:**
 ```lua
-local cell_id, center_x, center_y = pathfinder.navmesh_cell_at_position(x, y)
+local cell_id, center_x, center_y = pathfinder.navmesh_cell_at_position(navmesh_id, x, y)
 ```
 
 **Parameters:**
+- `navmesh_id` (number): Navmesh context identifier returned by `navmesh_init()`
 - `x` (number): X coordinate of position to query
 - `y` (number): Y coordinate of position to query (typically Z in 3D)
 
@@ -317,8 +336,8 @@ Uses the spatial grid index for O(1) average lookup, then performs point-in-poly
 **Example:**
 ```lua
 function validate_spawn_point(self, x, z)
-    local cell_id, center_x, center_y = pathfinder.navmesh_cell_at_position(x, z)
-    
+    local cell_id, center_x, center_y = pathfinder.navmesh_cell_at_position(self.navmesh_id, x, z)
+
     if cell_id ~= pathfinder.INVALID_ID then
         print("Position is walkable, in cell", cell_id)
         print("Cell center:", center_x, center_y)
@@ -340,8 +359,11 @@ Get spatial index grid data for debug visualization. The spatial index is a grid
 
 **Syntax:**
 ```lua
-local grid = pathfinder.navmesh_get_spatial_index()
+local grid = pathfinder.navmesh_get_spatial_index(navmesh_id)
 ```
+
+**Parameters:**
+- `navmesh_id` (number): Navmesh context identifier returned by `navmesh_init()`
 
 **Returns:**
 - `grid` (table): Table with `vertical` and `horizontal` arrays, each containing line data
@@ -355,38 +377,36 @@ local grid = pathfinder.navmesh_get_spatial_index()
 
 **Description:**
 
-Returns the spatial index grid structure for rendering debug overlays. This visualizes how the navigation mesh is spatially partitioned for efficient queries. The grid cell size is automatically calculated from the polygon sizes and clamped to min/max values specified in `navmesh_init()`.
+Returns the spatial index grid structure for rendering debug overlays. This visualizes how the navigation mesh is spatially partitioned for efficient queries. The grid cell size is automatically calculated from the triangle cell sizes and clamped to min/max values specified in `navmesh_init()`.
 
 **Example:**
 ```lua
 function init(self)
-    pathfinder.navmesh_init(600, 6, 32, 16, 256)
-    
+    self.navmesh_id = pathfinder.navmesh_init(600, 32, 16, 256)
+
     local buffer = resource.get_buffer(self.navmesh_buffer)
-    pathfinder.navmesh_set_buffer(buffer)
-    
-    -- Get spatial index for debug rendering
-    self.grid = pathfinder.navmesh_get_spatial_index()
+    pathfinder.navmesh_set_buffer(self.navmesh_id, buffer)
+
+    self.grid = pathfinder.navmesh_get_spatial_index(self.navmesh_id)
 end
 
 function update(self, dt)
-    -- Draw spatial index grid
     if self.grid.vertical then
         for _, line in ipairs(self.grid.vertical) do
             msg.post("@render:", "draw_line", {
                 start_point = line.start_position,
                 end_point = line.end_position,
-                color = vmath.vector4(1, 0, 0, 0.3)  -- Red, semi-transparent
+                color = vmath.vector4(1, 0, 0, 0.3)
             })
         end
     end
-    
+
     if self.grid.horizontal then
         for _, line in ipairs(self.grid.horizontal) do
             msg.post("@render:", "draw_line", {
                 start_point = line.start_position,
                 end_point = line.end_position,
-                color = vmath.vector4(1, 0, 0, 0.3)  -- Red, semi-transparent
+                color = vmath.vector4(1, 0, 0, 0.3)
             })
         end
     end
@@ -403,8 +423,11 @@ Get comprehensive statistics about navmesh pathfinding caches for performance mo
 
 **Syntax:**
 ```lua
-local stats = pathfinder.navmesh_get_stats()
+local stats = pathfinder.navmesh_get_stats(navmesh_id)
 ```
+
+**Parameters:**
+- `navmesh_id` (number): Navmesh context identifier returned by `navmesh_init()`
 
 **Returns:**
 - `stats` (table): Table containing cache statistics
@@ -420,38 +443,26 @@ local stats = pathfinder.navmesh_get_stats()
   - `miss_count` (number): Number of cache misses
   - `hit_rate` (number): Cache hit rate percentage (0-100)
 
-**Description:**
-
-Provides detailed performance metrics for monitoring navmesh pathfinding efficiency. Use this data to:
-- Tune cache sizes for optimal performance
-- Monitor cache effectiveness
-- Identify performance bottlenecks
-- Validate optimization strategies
-
 **Example:**
 ```lua
 function update(self, dt)
-    -- Update stats every second
     self.stats_timer = (self.stats_timer or 0) + dt
     if self.stats_timer >= 1.0 then
         self.stats_timer = 0
-        
-        local stats = pathfinder.navmesh_get_stats()
-        
-        -- Log path cache stats
+
+        local stats = pathfinder.navmesh_get_stats(self.navmesh_id)
+
         print(string.format("Path Cache: %d/%d entries, Hit Rate: %d%%",
             stats.path_cache.cache_entries,
             stats.path_cache.cache_capacity,
             stats.path_cache.cache_hit_rate
         ))
-        
-        -- Log distance cache stats
+
         print(string.format("Distance Cache: %d entries, Hit Rate: %d%%",
             stats.distance_cache.current_size,
             stats.distance_cache.hit_rate
         ))
-        
-        -- Warn if cache efficiency is low
+
         if stats.path_cache.cache_hit_rate < 20 then
             print("WARNING: Low path cache hit rate, consider increasing cache_size")
         end
@@ -494,26 +505,19 @@ When `enable_fallback = false`:
 **Usage:**
 ```lua
 local path_length, status, status_text, path = pathfinder.navmesh_find_path(
-    start_x, start_y, goal_x, goal_y, 128, 0.5, true
+    self.navmesh_id, start_x, start_y, goal_x, goal_y, 128, 0.5, true
 )
 
 if status == pathfinder.PathStatus.SUCCESS then
-    -- Normal path, both positions were in cells
     follow_path(path)
 elseif status == pathfinder.PathStatus.SUCCESS_START_FALLBACK then
-    -- Start was outside navmesh, moved to nearest cell
-    -- First waypoint is the corrected start position
     move_to_position(path[1])
     follow_path(path)
 elseif status == pathfinder.PathStatus.SUCCESS_GOAL_FALLBACK then
-    -- Goal was outside navmesh, moved to nearest cell
-    -- Agent will reach nearest valid position
     follow_path(path)
 elseif status == pathfinder.PathStatus.ERROR_START_NOT_IN_CELL then
-    -- Start position invalid and fallback disabled
     show_error("Cannot start from this position")
 elseif status == pathfinder.PathStatus.ERROR_NO_PATH then
-    -- No path exists between cells
     show_error("No path to target")
 else
     print("Pathfinding failed:", status_text)
@@ -528,9 +532,8 @@ end
 
 **For Tower Defense / RTS:**
 ```lua
-pathfinder.navmesh_init(
+self.navmesh_id = pathfinder.navmesh_init(
     600,   -- max_cells
-    6,     -- max_edges_per_cell
     32,    -- pool_block_size
     128,   -- cache_size (high for repeated queries)
     256    -- max_cache_path_length
@@ -539,9 +542,8 @@ pathfinder.navmesh_init(
 
 **For Action / Adventure:**
 ```lua
-pathfinder.navmesh_init(
+self.navmesh_id = pathfinder.navmesh_init(
     600,   -- max_cells
-    6,     -- max_edges_per_cell
     32,    -- pool_block_size
     16,    -- cache_size (lower for varied paths)
     256    -- max_cache_path_length
@@ -554,8 +556,6 @@ pathfinder.navmesh_init(
 - **Medium meshes** (200-500 cells): `pool_block_size = 64`
 - **Large meshes** (>500 cells): `pool_block_size = 128`
 
-
-
 ### Fallback Strategy
 
 - **Permissive**: `enable_fallback = true` - Always finds a path
@@ -563,3 +563,4 @@ pathfinder.navmesh_init(
 - Check status codes to handle fallback cases appropriately
 
 ---
+

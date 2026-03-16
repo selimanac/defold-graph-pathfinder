@@ -52,6 +52,12 @@ namespace pathfinder
         static dmHashTable32<Gameobject> m_Gameobjects;
 
         //==========================================================
+        // Navmeshs
+        //==========================================================
+        static dmHashTable16<pathfinder::navmesh::NavMeshContext*> m_NavmeshContext;
+        static uint8_t                                             m_NavmeshId = 0;
+
+        //==========================================================
         // Update
         //==========================================================
         static uint8_t  m_UpdateFrequency;
@@ -358,8 +364,53 @@ namespace pathfinder
             }
         }
 
-        void navmesh_set_buffer(dmBuffer::HBuffer& buffer)
+        uint8_t navmesh_init(pathfinder::navmesh::NavMeshContext* ctx)
         {
+            if (m_NavmeshContext.Full())
+            {
+                m_NavmeshContext.SetCapacity(m_NavmeshContext.Size() + 1);
+            }
+            m_NavmeshId++;
+            m_NavmeshContext.Put(m_NavmeshId, ctx);
+            return m_NavmeshId;
+        }
+
+        static inline pathfinder::navmesh::NavMeshContext* get_navmesh_ctx(uint8_t id)
+        {
+            pathfinder::navmesh::NavMeshContext** ctx = m_NavmeshContext.Get(id);
+            if (!ctx)
+                return 0;
+            return *ctx;
+        }
+
+        static inline void navmesh_iterate_callback(void* /*context*/, const uint16_t* /*key*/, pathfinder::navmesh::NavMeshContext** ctx)
+        {
+            pathfinder::navmesh::destroy_context(*ctx);
+        }
+
+        void navmesh_shutdown()
+        {
+            m_NavmeshContext.Iterate(navmesh_iterate_callback, (void*)0x0);
+            m_NavmeshContext.Clear();
+            m_NavmeshId = 0;
+        }
+
+        void navmesh_remove(uint8_t navmesh_id)
+        {
+            pathfinder::navmesh::NavMeshContext* ctx = get_navmesh_ctx(navmesh_id);
+            if (!ctx)
+                return;
+
+            pathfinder::navmesh::destroy_context(ctx);
+            m_NavmeshContext.Erase(navmesh_id);
+        }
+
+        void navmesh_set_buffer(uint8_t navmesh_id, dmBuffer::HBuffer& buffer)
+        {
+            pathfinder::navmesh::NavMeshContext* ctx = get_navmesh_ctx(navmesh_id);
+            if (!ctx)
+                return;
+
             void*            data = 0;
             uint32_t         count = 0;
             uint32_t         components = 0;
@@ -408,20 +459,73 @@ namespace pathfinder
                     //    dmLogInfo("t: %u - x %f -  y: % f", t, vertices[v].x, vertices[v].y);
                 }
 
-                // I'm are not doing anything with cell_id yet
-                uint32_t cell_id = pathfinder::navmesh::add_cell(vertices, 3, &status);
+                // not doing anything with cell_id yet
+                uint32_t cell_id = pathfinder::navmesh::add_cell(ctx, vertices, 3, &status);
                 if (status != pathfinder::SUCCESS)
                 {
                     dmLogError("Failed to add cell %u (status: %d)", t, status);
                     return;
                 }
             }
-            pathfinder::navmesh::build_adjacency();
+            pathfinder::navmesh::build_adjacency(ctx);
 
             dmLogInfo("Successfully built navmesh with %u triangles", tri_count);
         }
 
-        void navmesh_get_stats(uint32_t& cache_entries,
+        void navmesh_find_path(uint8_t          navmesh_id,
+                               uint32_t*        path_length,
+                               pathfinder::Vec2 start_position,
+                               pathfinder::Vec2 goal_position,
+                               dmArray<Vec2>*   smooth_path,
+                               uint32_t         max_path,
+                               float            agent_radius,
+                               bool             enable_fallback,
+                               PathStatus*      status)
+        {
+            pathfinder::navmesh::NavMeshContext* ctx = get_navmesh_ctx(navmesh_id);
+            if (!ctx)
+                return;
+
+            *path_length = pathfinder::navmesh::find_path_from_positions(ctx,
+                                                                         start_position,
+                                                                         goal_position,
+                                                                         smooth_path,
+                                                                         max_path,
+                                                                         agent_radius,
+                                                                         enable_fallback,
+                                                                         status);
+        }
+
+        void navmesh_cell_at_position(uint8_t navmesh_id, pathfinder::Vec2 position, uint32_t* cell_id, pathfinder::Vec2* center)
+        {
+            pathfinder::navmesh::NavMeshContext* ctx = get_navmesh_ctx(navmesh_id);
+            if (!ctx)
+                return;
+
+            *cell_id = pathfinder::navmesh::find_cell_at_position(ctx, position, false);
+            *center = pathfinder::navmesh::get_cell_center(ctx, *cell_id);
+        }
+
+        navmesh::NavMeshSpatialIndex* navmesh_get_spatial_index(uint8_t navmesh_id)
+        {
+            pathfinder::navmesh::NavMeshContext* ctx = get_navmesh_ctx(navmesh_id);
+            if (!ctx)
+                return 0;
+
+            return pathfinder::navmesh::get_spatial_index(ctx);
+        }
+
+        void navmesh_set_funnel(uint8_t navmesh_id, float portal_vertex_tolerance, float portal_collapse_threshold, float waypoint_duplicate_tolerance)
+        {
+            pathfinder::navmesh::NavMeshContext* ctx = get_navmesh_ctx(navmesh_id);
+            if (!ctx)
+                return;
+
+            pathfinder::navmesh::funnel_init(ctx, portal_vertex_tolerance, portal_collapse_threshold, waypoint_duplicate_tolerance);
+        }
+
+        void navmesh_get_stats(uint8_t   navmesh_id,
+                               uint32_t& cache_entries,
                                uint32_t& cache_capacity,
                                uint32_t& cache_hit_rate,
                                uint32_t& dist_cache_size,
@@ -429,8 +533,12 @@ namespace pathfinder
                                uint32_t& dist_cache_misses,
                                uint32_t& dist_cache_hit_rate)
         {
+            pathfinder::navmesh::NavMeshContext* ctx = get_navmesh_ctx(navmesh_id);
+            if (!ctx)
+                return;
+
             // Path cache statistics
-            pathfinder::cache::CacheContext* cache_ctx = pathfinder::navmesh::get_cache_context();
+            pathfinder::cache::CacheContext* cache_ctx = pathfinder::navmesh::get_cache_context(ctx);
 
             if (cache_ctx)
             {
@@ -438,7 +546,7 @@ namespace pathfinder
             }
 
             // Distance cache statistics
-            pathfinder::distance_cache::DistanceCacheContext* dist_cache_ctx = pathfinder::navmesh::get_distance_cache_context();
+            pathfinder::distance_cache::DistanceCacheContext* dist_cache_ctx = pathfinder::navmesh::get_distance_cache_context(ctx);
             if (dist_cache_ctx)
             {
                 pathfinder::distance_cache::get_stats(dist_cache_ctx, &dist_cache_size, &dist_cache_hits, &dist_cache_misses, &dist_cache_hit_rate);

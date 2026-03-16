@@ -1,0 +1,55 @@
+name: "basic"
+scale_along_z: 0
+embedded_instances {
+  id: "scripts"
+  data: "components {\n"
+  "  id: \"basic\"\n"
+  "  component: \"/example/scripts/navmesh_basic.script\"\n"
+  "}\n"
+  ""
+}
+embedded_instances {
+  id: "path_end"
+  data: "embedded_components {\n"
+  "  id: \"model\"\n"
+  "  type: \"model\"\n"
+  "  data: \"mesh: \\\"/builtins/assets/meshes/sphere.dae\\\"\\n"
+  "name: \\\"{{NAME}}\\\"\\n"
+  "materials {\\n"
+  "  name: \\\"default\\\"\\n"
+  "  material: \\\"/example/components/materials/unlit/model_unlit_instanced.material\\\"\\n"
+  "  textures {\\n"
+  "    sampler: \\\"tex0\\\"\\n"
+  "    texture: \\\"/example/assets/img/red.png\\\"\\n"
+  "  }\\n"
+  "}\\n"
+  "\"\n"
+  "}\n"
+  ""
+  position {
+    z: 8.216292
+  }
+}
+embedded_instances {
+  id: "path_start"
+  data: "embedded_components {\n"
+  "  id: \"model\"\n"
+  "  type: \"model\"\n"
+  "  data: \"mesh: \\\"/builtins/assets/meshes/sphere.dae\\\"\\n"
+  "name: \\\"{{NAME}}\\\"\\n"
+  "materials {\\n"
+  "  name: \\\"default\\\"\\n"
+  "  material: \\\"/example/components/materials/unlit/model_unlit_instanced.material\\\"\\n"
+  "  textures {\\n"
+  "    sampler: \\\"tex0\\\"\\n"
+  "    texture: \\\"/example/assets/img/green.png\\\"\\n"
+  "  }\\n"
+  "}\\n"
+  "\"\n"
+  "}\n"
+  ""
+  position {
+    x: -2.335069
+    z: -6.027575
+  }
+}

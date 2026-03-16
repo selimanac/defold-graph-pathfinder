@@ -1,0 +1,43 @@
+go.property("navmesh_buffer", resource.buffer("/example/assets/navmesh.buffer"))
+
+local navmesh_id = 0
+local function validate_spawn_point(x, y)
+	local cell_id, center_x, center_y = pathfinder.navmesh_cell_at_position(navmesh_id, x, y)
+
+	if cell_id ~= pathfinder.INVALID_ID then
+		print("Position is walkable, in cell", cell_id)
+		print("Cell center:", center_x, center_y)
+		return true
+	else
+		print("Position is not walkable (outside navmesh): ", x, y)
+		return false
+	end
+end
+
+
+function init(self)
+	profiler.enable_ui(true)
+	profiler.set_ui_view_mode(profiler.VIEW_MODE_MINIMIZED)
+
+
+	navmesh_id = pathfinder.navmesh_init(
+		600, -- max_cells
+		32, -- pool_block_size
+		16, -- cache_size
+		256, -- max_cache_path_length
+		5, -- min_cell_size
+		10, -- max_cell_size
+		1000, -- max_grid_dim
+		false -- debug
+	)
+
+
+	local navmesh_buffer = resource.get_buffer(self.navmesh_buffer)
+	pathfinder.navmesh_set_buffer(navmesh_id, navmesh_buffer)
+
+	start_position = go.get_position("/path_start")
+	goal_position = go.get_position("/path_end")
+
+	validate_spawn_point(start_position.x, start_position.z)
+	validate_spawn_point(100, 100)
+end
