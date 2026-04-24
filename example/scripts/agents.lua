@@ -1,11 +1,13 @@
-local data   = require("example.scripts.data")
-local const  = require("example.scripts.const")
-local draw   = require("example.scripts.draw")
+local data              = require("example.scripts.data")
+local const             = require("example.scripts.const")
+local draw              = require("example.scripts.draw")
 
 -- =================================
 -- MODULE
 -- =================================
-local agents = {}
+local agents            = {}
+
+local arrival_threshold = 0.1
 
 --==========================================================
 -- FUNCTIONS
@@ -19,16 +21,17 @@ local function get_current_waypoint_position(agent)
 	return vmath.vector3(node.x, 0, node.y)
 end
 
-function agents.add(start_position, goal_position)
+function agents.add(navmesh_id, start_position, goal_position)
 	local path_size                                = 0
 	local path_status                              = 0
 	local path_status_text                         = ""
 	local path                                     = {}
 	local goal_node_id                             = 0
 
-	path_size, path_status, path_status_text, path = pathfinder.navmesh_find_path(start_position.x, start_position.z, goal_position.x, goal_position.z, 128, 0.0, false)
+	path_size, path_status, path_status_text, path = pathfinder.navmesh_find_path(navmesh_id, start_position.x, start_position.z, goal_position.x, goal_position.z, 128, 0.0, false)
 
 	if path_status ~= pathfinder.PathStatus.SUCCESS and path_status ~= pathfinder.PathStatus.SUCCESS_START_FALLBACK and path_status ~= pathfinder.PathStatus.SUCCESS_GOAL_FALLBACK then
+		pprint(path_status_text)
 		return
 	end
 
@@ -75,8 +78,8 @@ local function check_waypoint_arrival(agent)
 	local waypoint_position = get_current_waypoint_position(agent)
 	local waypoint_distance = vmath.length(agent.position - waypoint_position)
 
-	-- Simple arrival threshold - very tight for point-to-point movement
-	local arrival_threshold = 0.1
+	-- Simple arrival threshold
+
 
 	if waypoint_distance <= arrival_threshold then
 		--  Reached waypoint, advance to next
@@ -114,31 +117,18 @@ function agents.update(dt)
 				local distance = vmath.length(to_target)
 
 				if distance >= const.EPSILON then
-					-- Calculate direction unit vector
-					local direction = to_target * (1.0 / distance)
-
-					-- Calculate target rotation angle
-					local target_rotation = math.atan2(direction.x, direction.z)
-					local target_quat = vmath.quat_rotation_y(target_rotation)
-
-					-- Get current rotation quaternion
-					local current_quat = agent.rotation --go.get_rotation(agent.instance)
-
-					-- Smooth rotation using slerp
-					-- The third parameter (t) controls interpolation speed (0.0 to 1.0)
-					-- Lower values = smoother/slower rotation, higher values = faster rotation
-					local t = math.min(1.0, agent.rotation_speed * dt)
-					agent.rotation = vmath.slerp(t, current_quat, target_quat)
-
-					-- Update agent.rotation for reference (optional, if you need the angle)
-					agent.rotation_angle = target_rotation
-
-					-- Calculate movement for this frame and clamp
+					local direction         = to_target * (1.0 / distance)
+					local target_rotation   = math.atan2(direction.x, direction.z)
+					local target_quat       = vmath.quat_rotation_y(target_rotation)
+					local current_quat      = agent.rotation
+					local t                 = math.min(1.0, agent.rotation_speed * dt)
 					local movement_distance = math.min(agent.max_speed * dt, distance)
 
-					-- Update position and rotation
-					agent.position = agent.position + (direction * movement_distance)
-					agent.position.y = 0.0
+					agent.rotation          = vmath.slerp(t, current_quat, target_quat)
+					agent.rotation_angle    = target_rotation
+					agent.position          = agent.position + (direction * movement_distance)
+					agent.position.y        = 0.0
+
 					go.set_position(agent.position, agent.instance)
 					go.set_rotation(agent.rotation, agent.instance) -- Use smoothed quaternion
 
@@ -147,11 +137,8 @@ function agents.update(dt)
 			else
 				agent.state = const.AGENT_STATES.ARRIVED
 
-				--	model.play_anim(agent.model, hash("Idle_Loop"), go.PLAYBACK_LOOP_FORWARD)
-
 				go.delete(agent.instance)
 				table.remove(data.agents, agent_id)
-
 				print("ARRIVED", agent.state)
 			end
 		else

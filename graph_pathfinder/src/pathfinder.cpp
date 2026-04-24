@@ -115,28 +115,41 @@ static inline void push_smoothed_path_table(lua_State* L, const dmArray<pathfind
 //=========================================================
 static int pathfinder_navmesh_init(lua_State* L)
 {
-    DM_LUA_STACK_CHECK(L, 0);
+    DM_LUA_STACK_CHECK(L, 1);
 
     uint32_t max_cells = luaL_checkint(L, 1);
-    uint32_t max_edges_per_cell = luaL_checkint(L, 2);
-    uint32_t pool_block_size = luaL_checkint(L, 3);
-    uint32_t cache_size = luaL_checkint(L, 4);
-    uint32_t max_cache_path_length = luaL_checkint(L, 5);
-    float    min_cell_size = (float)luaL_optnumber(L, 6, 5);
-    float    max_cell_size = (float)luaL_optnumber(L, 7, 10);
-    uint32_t max_grid_dim = (uint32_t)luaL_optinteger(L, 8, 1000);
-    bool     debug = lua_toboolean(L, 9);
+    // uint32_t max_edges_per_cell = luaL_checkint(L, 2);
+    uint32_t                             pool_block_size = luaL_checkint(L, 2);
+    uint32_t                             cache_size = luaL_checkint(L, 3);
+    uint32_t                             max_cache_path_length = luaL_checkint(L, 4);
+    float                                min_cell_size = (float)luaL_optnumber(L, 5, 5);
+    float                                max_cell_size = (float)luaL_optnumber(L, 6, 10);
+    uint32_t                             max_grid_dim = (uint32_t)luaL_optinteger(L, 7, 1000);
+    bool                                 debug = lua_toboolean(L, 8);
 
-    pathfinder::navmesh::init(max_cells, max_edges_per_cell, pool_block_size, min_cell_size, max_cell_size, max_grid_dim, cache_size, max_cache_path_length, debug);
-
-    return 0;
+    pathfinder::navmesh::NavMeshContext* navmesh_ctx = pathfinder::navmesh::create_context(max_cells, pool_block_size, min_cell_size, max_cell_size, max_grid_dim, cache_size, max_cache_path_length, debug);
+    // pathfinder::navmesh::init(max_cells, max_edges_per_cell, pool_block_size, min_cell_size, max_cell_size, max_grid_dim, cache_size, max_cache_path_length, debug);
+    uint8_t navmesh_id = pathfinder::extension::navmesh_init(navmesh_ctx);
+    lua_pushinteger(L, navmesh_id);
+    return 1;
 }
 
 static int pathfinder_navmesh_shutdown(lua_State* L)
 {
     DM_LUA_STACK_CHECK(L, 0);
 
-    pathfinder::navmesh::shutdown();
+    pathfinder::extension::navmesh_shutdown();
+
+    return 0;
+}
+
+static int pathfinder_navmesh_remove(lua_State* L)
+{
+    DM_LUA_STACK_CHECK(L, 0);
+
+    uint8_t navmesh_id = luaL_checkint(L, 1);
+
+    pathfinder::extension::navmesh_remove(navmesh_id);
 
     return 0;
 }
@@ -144,8 +157,11 @@ static int pathfinder_navmesh_shutdown(lua_State* L)
 static int pathfinder_navmesh_set_buffer(lua_State* L)
 {
     DM_LUA_STACK_CHECK(L, 0);
-    dmBuffer::HBuffer buffer = dmScript::CheckBufferUnpack(L, 1);
-    pathfinder::extension::navmesh_set_buffer(buffer);
+
+    uint8_t           navmesh_id = luaL_checkint(L, 1);
+    dmBuffer::HBuffer buffer = dmScript::CheckBufferUnpack(L, 2);
+
+    pathfinder::extension::navmesh_set_buffer(navmesh_id, buffer);
 
     return 0;
 }
@@ -155,22 +171,23 @@ static int pathfinder_navmesh_find_smoothed(lua_State* L)
     DM_LUA_STACK_CHECK(L, 4);
 
     // IN <-
-    float                     start_x = luaL_checknumber(L, 1);
-    float                     start_y = luaL_checknumber(L, 2);
-    float                     target_x = luaL_checknumber(L, 3);
-    float                     target_y = luaL_checknumber(L, 4);
-    uint32_t                  max_path = luaL_checkint(L, 5);
-    float                     agent_radius = (float)luaL_optnumber(L, 6, 0.0f);
-    bool                      enable_fallback = lua_toboolean(L, 7);
+    uint8_t                   navmesh_id = luaL_checkint(L, 1);
+    float                     start_x = luaL_checknumber(L, 2);
+    float                     start_y = luaL_checknumber(L, 3);
+    float                     target_x = luaL_checknumber(L, 4);
+    float                     target_y = luaL_checknumber(L, 5);
+    uint32_t                  max_path = luaL_checkint(L, 6);
+    float                     agent_radius = (float)luaL_optnumber(L, 7, 0.0f);
+    bool                      enable_fallback = lua_toboolean(L, 8);
 
     pathfinder::Vec2          start_position = { start_x, start_y };
     pathfinder::Vec2          goal_position = { target_x, target_y };
+    uint32_t                  path_length = 0;
     pathfinder::PathStatus    status;
     dmArray<pathfinder::Vec2> smooth_path;
     smooth_path.SetCapacity(max_path);
 
-    uint32_t path_length = pathfinder::navmesh::find_path_from_positions(
-    start_position, goal_position, &smooth_path, max_path, agent_radius, enable_fallback, &status);
+    pathfinder::extension::navmesh_find_path(navmesh_id, &path_length, start_position, goal_position, &smooth_path, max_path, agent_radius, enable_fallback, &status);
 
     // OUT ->
     lua_pushinteger(L, path_length);
@@ -210,7 +227,10 @@ static int pathfinder_navmesh_find_raw(lua_State* L)
 static int pathfinder_navmesh_get_spatial_index(lua_State* L)
 {
     DM_LUA_STACK_CHECK(L, 1);
-    pathfinder::navmesh::NavMeshSpatialIndex* spatial_index = pathfinder::navmesh::get_spatial_index();
+
+    uint8_t                                   navmesh_id = luaL_checkint(L, 1);
+
+    pathfinder::navmesh::NavMeshSpatialIndex* spatial_index = pathfinder::extension::navmesh_get_spatial_index(navmesh_id);
 
     // grid table
     lua_createtable(L, 0, 2);
@@ -288,10 +308,13 @@ static int pathfinder_navmesh_get_spatial_index(lua_State* L)
 static int pathfinder_navmesh_set_funnel(lua_State* L)
 {
     DM_LUA_STACK_CHECK(L, 0);
-    float portal_vertex_tolerance = luaL_checknumber(L, 1);
-    float portal_collapse_threshold = luaL_checknumber(L, 2);
-    float waypoint_duplicate_tolerance = luaL_checknumber(L, 3);
-    pathfinder::navmesh::funnel_init(portal_vertex_tolerance, portal_collapse_threshold, waypoint_duplicate_tolerance);
+
+    uint8_t navmesh_id = luaL_checkint(L, 1);
+    float   portal_vertex_tolerance = luaL_checknumber(L, 2);
+    float   portal_collapse_threshold = luaL_checknumber(L, 3);
+    float   waypoint_duplicate_tolerance = luaL_checknumber(L, 4);
+
+    pathfinder::extension::navmesh_set_funnel(navmesh_id, portal_vertex_tolerance, portal_collapse_threshold, waypoint_duplicate_tolerance);
 
     return 0;
 }
@@ -299,6 +322,8 @@ static int pathfinder_navmesh_set_funnel(lua_State* L)
 static int pathfinder_navmesh_get_stats(lua_State* L)
 {
     DM_LUA_STACK_CHECK(L, 1);
+
+    uint8_t  navmesh_id = luaL_checkint(L, 1);
 
     uint32_t cache_entries;
     uint32_t cache_capacity;
@@ -308,7 +333,7 @@ static int pathfinder_navmesh_get_stats(lua_State* L)
     uint32_t dist_cache_misses;
     uint32_t dist_cache_hit_rate;
 
-    pathfinder::extension::navmesh_get_stats(cache_entries, cache_capacity, cache_hit_rate, dist_cache_size, dist_cache_hits, dist_cache_misses, dist_cache_hit_rate);
+    pathfinder::extension::navmesh_get_stats(navmesh_id, cache_entries, cache_capacity, cache_hit_rate, dist_cache_size, dist_cache_hits, dist_cache_misses, dist_cache_hit_rate);
 
     // ============================================================================
     // CREATE RESULT TABLE
@@ -348,13 +373,15 @@ static int pathfinder_navmesh_find_cell_at_position(lua_State* L)
 {
     DM_LUA_STACK_CHECK(L, 3);
 
-    float            x = luaL_checknumber(L, 1);
-    float            y = luaL_checknumber(L, 2);
+    uint8_t          navmesh_id = luaL_checkint(L, 1);
+    float            x = luaL_checknumber(L, 2);
+    float            y = luaL_checknumber(L, 3);
 
     pathfinder::Vec2 position = pathfinder::Vec2(x, y);
+    uint32_t         cell_id = 0;
+    pathfinder::Vec2 center = pathfinder::Vec2(0, 0);
 
-    uint32_t         cell_id = pathfinder::navmesh::find_cell_at_position(position, false);
-    pathfinder::Vec2 center = pathfinder::navmesh::get_cell_center(cell_id);
+    pathfinder::extension::navmesh_cell_at_position(navmesh_id, position, &cell_id, &center);
 
     lua_pushinteger(L, cell_id);
     lua_pushinteger(L, center.x);
@@ -1436,11 +1463,12 @@ static const luaL_reg Module_methods[] = {
 
     // Navmesh
     { "navmesh_init", pathfinder_navmesh_init },
+    { "navmesh_remove", pathfinder_navmesh_remove },
     { "navmesh_shutdown", pathfinder_navmesh_shutdown },
     { "navmesh_set_buffer", pathfinder_navmesh_set_buffer },
+
     { "navmesh_find_path", pathfinder_navmesh_find_smoothed },
-    //{ "navmesh_find_path_raw", pathfinder_navmesh_find_raw }, // TODO -> No good use
-    { "navmesh_cell_at_position", pathfinder_navmesh_find_cell_at_position }, //  No good use
+    { "navmesh_cell_at_position", pathfinder_navmesh_find_cell_at_position },
     { "navmesh_get_stats", pathfinder_navmesh_get_stats },
     { "navmesh_get_spatial_index", pathfinder_navmesh_get_spatial_index },
     { "navmesh_set_funnel", pathfinder_navmesh_set_funnel },
@@ -1576,7 +1604,7 @@ static dmExtension::Result AppFinalizeGraphPathfinder(dmExtension::AppParams* pa
     dmLogInfo("AppFinalizeGraphPathfinder");
     pathfinder::extension::shutdown();
     pathfinder::path::shutdown();
-    pathfinder::navmesh::shutdown();
+    pathfinder::extension::navmesh_shutdown();
     return dmExtension::RESULT_OK;
 }
 
