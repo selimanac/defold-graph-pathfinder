@@ -36,17 +36,11 @@ end
 function init(self)
 	msg.post(".", "acquire_input_focus")
 
-	profiler.enable_ui(true)
-	profiler.set_ui_view_mode(profiler.VIEW_MODE_MINIMIZED)
-
 	local navmesh_buffer   = resource.get_buffer(self.navmesh_buffer)
 	cam                    = msg.url("/camera#camera")
 	data.path_smoothing_id = pathfinder.add_path_smoothing(const.SMOOTHING_CONFIG)
 
-
-
-	navmesh_id = pathfinder.navmesh_init(300, 32, 32, 128, 5, 10, 1000, true)
-
+	navmesh_id             = pathfinder.navmesh_init(300, 32, 32, 128, 5, 10, 1000, true)
 
 	pathfinder.navmesh_set_buffer(navmesh_id, navmesh_buffer)
 	spatial_index_grid = pathfinder.navmesh_get_spatial_index(navmesh_id)
@@ -54,8 +48,7 @@ function init(self)
 	start_position = go.get_position("/path_start")
 	goal_position = go.get_position("/path_end")
 
-
-	-- Example 8: Validate Cell at position
+	--  Validate Cell at position
 	validate_spawn_point(start_position.x, start_position.z)
 	validate_spawn_point(100, 100)
 end
@@ -88,12 +81,17 @@ function on_input(self, action_id, action)
 
 		if action_id == const.TRIGGERS.MOUSE_BUTTON_LEFT then -- LEFT CLICK for start position
 			start_position = utils.screen_to_plane(cam, action.screen_x, action.screen_y)
-			go.set_position(start_position, "/path_start")
-			validate_spawn_point(start_position.x, start_position.z)
+			if start_position then
+				go.set_position(start_position, "/path_start")
+				validate_spawn_point(start_position.x, start_position.z)
+			end
 		elseif action_id == const.TRIGGERS.MOUSE_BUTTON_RIGHT then -- RIGHT CLICK for goal position
 			goal_position = utils.screen_to_plane(cam, action.screen_x, action.screen_y)
-			go.set_position(goal_position, "/path_end")
-			validate_spawn_point(goal_position.x, goal_position.z)
+
+			if goal_position then
+				go.set_position(goal_position, "/path_end")
+				validate_spawn_point(goal_position.x, goal_position.z)
+			end
 		end
 
 		-- Press SPACE to add agent
