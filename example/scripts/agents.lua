@@ -78,9 +78,6 @@ local function check_waypoint_arrival(agent)
 	local waypoint_position = get_current_waypoint_position(agent)
 	local waypoint_distance = vmath.length(agent.position - waypoint_position)
 
-	-- Simple arrival threshold
-
-
 	if waypoint_distance <= arrival_threshold then
 		--  Reached waypoint, advance to next
 		agent.current_waypoint_id = agent.current_waypoint_id + 1
