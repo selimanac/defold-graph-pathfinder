@@ -29,6 +29,7 @@ function agents.add(navmesh_id, start_position, goal_position)
 	path_size, path_status, path_status_text, path = pathfinder.navmesh_find_path(navmesh_id, start_position.x, start_position.z, goal_position.x, goal_position.z, 128, 0.0, false)
 
 	if path_status ~= pathfinder.PathStatus.SUCCESS and path_status ~= pathfinder.PathStatus.SUCCESS_START_FALLBACK and path_status ~= pathfinder.PathStatus.SUCCESS_GOAL_FALLBACK then
+		pprint(path_status_text)
 		return
 	end
 
